@@ -21,8 +21,9 @@ export class NotesPage {
 }
 ```
 
-Add Scriviamo's stylesheet, and those of the add-ons you use, to the `styles` in your
-`angular.json`.
+Add Bootstrap 5's CSS and Bootstrap Icons, which Scriviamo's interface uses, then Scriviamo's
+stylesheet and those of the add-ons you use, to the `styles` in your `angular.json`. Bootstrap's
+JavaScript isn't needed.
 
 ## scriviamo-editor
 

@@ -2,17 +2,25 @@
 
 ## Requirements
 
-Scriviamo draws its interface with [Bootstrap 5](https://getbootstrap.com/) styles and
-[Bootstrap Icons](https://icons.getbootstrap.com/). Load both stylesheets on the page. The
-editor itself doesn't use Bootstrap's JavaScript.
+Scriviamo draws its interface with [Bootstrap 5](https://getbootstrap.com/) styles, 5.3 or later,
+and [Bootstrap Icons](https://icons.getbootstrap.com/), 1.11 or later. Load both stylesheets on
+any page with an editor: without them, the toolbar, menus, dialogs and settings panels show
+unstyled, and the toolbar has no icons.
+
+Only the stylesheets are needed. The editor doesn't use Bootstrap's JavaScript or Popper, so
+a page doesn't need to load them for the editor.
 
 ```html
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
 ```
 
+Installed from npm, Bootstrap and Bootstrap Icons are peer dependencies: your app provides
+them, so the editor uses the same Bootstrap as the rest of the page.
+
 The editor follows Bootstrap's color modes, so `data-bs-theme="dark"` on the page gives a dark
-editor.
+editor. It also takes its colors from Bootstrap's CSS variables, such as `--bs-primary` and
+`--bs-border-color`, so a customized Bootstrap theme carries over to it.
 
 ## Building
 

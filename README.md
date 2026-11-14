@@ -42,6 +42,14 @@ Premium add-ons, such as columns, data tables, an inspector panel and real-time
 collaboration, are available separately from [scriviamo.dev](https://scriviamo.dev/). Documents
 that use them still open in the free edition, which keeps their blocks unchanged.
 
+## Requirements
+
+Scriviamo's interface uses [Bootstrap 5](https://getbootstrap.com/) styles (5.3 or later) and
+[Bootstrap Icons](https://icons.getbootstrap.com/) (1.11 or later), so load both stylesheets on
+any page with an editor. Bootstrap's JavaScript isn't needed. The editor follows Bootstrap's
+theme variables and color modes, so it matches a Bootstrap site's colors and its light or dark
+mode. See [Getting started](docs/getting-started.md#requirements).
+
 ## Quick start
 
 You need [Node.js](https://nodejs.org/) to build.

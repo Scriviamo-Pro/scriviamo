@@ -14,7 +14,8 @@ Every wrapper offers the same things:
   JSON, HTML or Markdown that updates as people edit;
 - access to the `Editor` itself, for everything the components don't cover.
 
-Each framework's README shows how to use its components.
+Each framework's README shows how to use its components. Like Scriviamo itself, the components need Bootstrap 5's CSS
+and Bootstrap Icons on the page.
 
 ## Settings
 

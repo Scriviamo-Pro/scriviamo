@@ -11,6 +11,9 @@ Scriviamo is written in TypeScript and ships as ES modules. A free base package 
 editor and the common node types. Add-ons add more node types and features, such as forms,
 media and real-time collaboration.
 
+Its interface uses Bootstrap 5's styles and Bootstrap Icons, which a page loads alongside it;
+see [Getting started](getting-started.md#requirements).
+
 ## Contents
 
 | Page | What it covers |

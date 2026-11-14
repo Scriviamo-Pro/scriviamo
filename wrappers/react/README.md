@@ -22,7 +22,9 @@ export function NotesPage() {
 }
 ```
 
-Load Scriviamo's stylesheet, `dist/scriviamo.css`, and those of any add-ons, as you load other CSS.
+Load Bootstrap 5's CSS and Bootstrap Icons, which Scriviamo's interface uses, then Scriviamo's
+stylesheet, `dist/scriviamo.css`, and those of any add-ons, as you load other CSS. Bootstrap's
+JavaScript isn't needed.
 
 ## ScriviamoEditor
 

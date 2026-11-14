@@ -8,9 +8,7 @@
       "dom",
       "dom.iterable"
     ],
-    "types": [
-      "@types/bootstrap"
-    ],
+    "types": [],
     "rootDir": ".",
     "outDir": "../dist/types",
     "baseUrl": ".",
