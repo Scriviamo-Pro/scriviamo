@@ -1,0 +1,44 @@
+# Dependencies
+node_modules/
+
+# Build caches. dist/ holds the built packages and is committed, so the demo
+# and test pages work straight from a checkout.
+*.tsbuildinfo
+.esbuild/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+*.log
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+
+# Test and coverage output
+coverage/
+.nyc_output/
+
+# Editors and tools
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.claude/settings.local.json
+
+# Operating systems
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Framework wrappers: build output, and the copies of the shared bindings that
+# sync-shared.mjs makes in each package
+wrappers/*/dist/
+wrappers/*/src/editorbinding.ts
+wrappers/*/src/inspectorbinding.ts
+wrappers/*/inspector/src/inspectorbinding.ts
+wrappers/smoke/build/

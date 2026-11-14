@@ -1,0 +1,45 @@
+{
+  "compilerOptions": {
+    "target": "es2022",
+    "module": "es2022",
+    "moduleResolution": "bundler",
+    "lib": [
+      "es2022",
+      "dom",
+      "dom.iterable"
+    ],
+    "types": [
+      "@types/bootstrap"
+    ],
+    "rootDir": ".",
+    "outDir": "../dist/types",
+    "baseUrl": ".",
+    "paths": {
+      "scriviamo": [
+        "./index.ts"
+      ]
+    },
+    "isolatedModules": true,
+    "alwaysStrict": false,
+    "forceConsistentCasingInFileNames": true,
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitReturns": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noImplicitAny": false,
+    "noImplicitThis": false,
+    "strictNullChecks": false,
+    "skipLibCheck": true,
+    "declaration": true,
+    "emitDeclarationOnly": true
+  },
+  "include": [
+    "*.ts",
+    "nodes/*.ts",
+    "addons/*/*.ts",
+    "examples/*/*.ts"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "dependencies": {
+    "@popperjs/core": "^2.11.8",
+    "@types/bootstrap": "^5.2.10",
+    "bootstrap": "^5.3.3",
+    "typescript": "^5.4.5"
+  },
+  "devDependencies": {
+    "esbuild": "^0.20.2"
+  },
+  "scripts": {
+    "check": "tsc -p . --noEmit",
+    "build": "node build.mjs",
+    "build:base": "node build.mjs base"
+  },
+  "type": "module",
+  "version": "1.0.0-beta.1"
+}

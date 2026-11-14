@@ -1,0 +1,34 @@
+{
+  "name": "scriviamo-vue",
+  "version": "1.0.0-beta.1",
+  "description": "Vue 3 components for the Scriviamo editor",
+  "type": "module",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "sync": "node ../sync-shared.mjs",
+    "check": "npm run sync && vue-tsc -p . --noEmit",
+    "build": "npm run sync && vue-tsc -p . && esbuild src/index.ts --bundle --format=esm --target=es2022 --external:vue --external:scriviamo --outdir=dist"
+  },
+  "peerDependencies": {
+    "scriviamo": "*",
+    "vue": ">=3.3"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.0",
+    "typescript": "^5.8.0",
+    "vue": "^3.5.0",
+    "vue-tsc": "^2.2.0"
+  }
+}

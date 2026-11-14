@@ -1,0 +1,61 @@
+<!doctype html>
+<html data-bs-theme="light">
+  <head>
+    <title>Scriviamo Parity Tests</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
+    <script src="packages.js"></script>
+    <script>
+      // ?packages=base,forms tests the base package and the forms add-on; with no
+      // list, every package is tested. Each package's suites run only when it is loaded.
+      // Everything is loaded fresh on every run, so a rebuild is never read from the cache.
+      window.ParityVersion = Date.now()
+      window.ParityPackages = ParityPackageList(new URLSearchParams(location.search))
+      document.write(`<script type="importmap">${JSON.stringify({imports: {"scriviamo": `../dist/scriviamo.js?v=${ParityVersion}`}})}<\/script>`)
+      for (let name of ParityPackages) {
+        let path = name == "base" ? "../dist/scriviamo.css" : `../dist/addons/scriviamo.${name}.css`
+        if (ParityStylesheets.includes(name)) document.write(`<link rel="stylesheet" href="${path}?v=${ParityVersion}">`)
+      }
+    </script>
+    <style>
+      body { margin: 16px; font-family: var(--bs-font-monospace); font-size: 12px; }
+      #results { list-style: none; padding: 0; }
+      #results li { padding: 2px 0; white-space: pre-wrap; }
+      .pass { color: #1a7f37; }
+      .fail { color: #cf222e; }
+      .skip { color: #6e7781; }
+      #work { position: absolute; left: -10000px; top: 0; width: 640px; }
+      .parity-host { width: 640px; height: 400px; }
+    </style>
+  </head>
+  <body>
+    <h1 class="h5">Scriviamo parity tests</h1>
+    <p id="packages"></p>
+    <p id="summary">Running…</p>
+    <ul id="results"></ul>
+    <div id="work"></div>
+    <script type="module">
+      document.getElementById("packages").textContent = `Packages: ${ParityPackages.join(", ")}`
+      // The suites are plain scripts that read the editor from the Scriviamo global.
+      let modules = [await import("scriviamo")]
+      for (let name of ParityPackages) {
+        if (name != "base") modules.push(await import(`../dist/addons/scriviamo.${name}.js?v=${ParityVersion}`))
+      }
+      window.Scriviamo = Object.assign({}, ...modules)
+      let scripts = ["harness.js", ...ParityFixtures, ...ParitySuiteList(ParityPackages).map(path => `suites/${path}`)]
+      for (let path of scripts) {
+        await new Promise((resolve, reject) => {
+          let script = document.createElement("script")
+          script.src = `${path}?v=${ParityVersion}`
+          script.onload = resolve
+          script.onerror = () => reject(new Error(`${path} did not load`))
+          document.head.append(script)
+        })
+      }
+      runParityTests()
+    </script>
+  </body>
+</html>

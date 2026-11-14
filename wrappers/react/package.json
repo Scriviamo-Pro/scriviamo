@@ -1,0 +1,36 @@
+{
+  "name": "scriviamo-react",
+  "version": "1.0.0-beta.1",
+  "description": "React components for the Scriviamo editor",
+  "type": "module",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "sync": "node ../sync-shared.mjs",
+    "check": "npm run sync && tsc -p . --noEmit",
+    "build": "npm run sync && tsc -p . && esbuild src/index.tsx --bundle --format=esm --target=es2022 --jsx=automatic --external:react --external:react-dom --external:scriviamo --outdir=dist"
+  },
+  "peerDependencies": {
+    "react": ">=18",
+    "scriviamo": "*"
+  },
+  "devDependencies": {
+    "@types/react": "^19.1.0",
+    "@types/react-dom": "^19.1.0",
+    "esbuild": "^0.25.0",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "typescript": "^5.8.0"
+  }
+}

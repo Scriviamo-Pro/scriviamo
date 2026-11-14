@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en" data-bs-theme="light">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Scriviamo demo</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="dist/scriviamo.css">
+    <link rel="stylesheet" href="dist/addons/scriviamo.callouts.css">
+    <link rel="stylesheet" href="dist/addons/scriviamo.media.css">
+    <link rel="stylesheet" href="dist/addons/scriviamo.forms.css">
+    <script type="importmap">{"imports": {"scriviamo": "./dist/scriviamo.js"}}</script>
+    <style>
+      body { margin: 0; padding: 12px; }
+      #editor { height: 70vh; }
+      #output { height: 220px; font-family: var(--bs-font-monospace); font-size: 12px; }
+    </style>
+  </head>
+  <body>
+    <div class="d-flex flex-wrap gap-2 mb-2">
+      <button class="btn btn-sm btn-outline-secondary" id="toggleTheme" type="button">Light / Dark</button>
+      <button class="btn btn-sm btn-outline-secondary" id="toggleReadOnly" type="button">Read Only</button>
+      <div class="vr"></div>
+      <button class="btn btn-sm btn-outline-primary" data-export="json" type="button">JSON</button>
+      <button class="btn btn-sm btn-outline-primary" data-export="html" type="button">HTML</button>
+      <button class="btn btn-sm btn-outline-primary" data-export="markdown" type="button">Markdown</button>
+      <span class="ms-auto small text-body-secondary align-self-center" id="stats"></span>
+    </div>
+
+    <div id="editor"></div>
+    <textarea class="form-control mt-2" id="output" readonly placeholder="Choose JSON, HTML or Markdown to see the document."></textarea>
+
+    <script type="module">
+      import * as Base from "scriviamo"
+      import * as Callouts from "./dist/addons/scriviamo.callouts.js"
+      import * as RawContent from "./dist/addons/scriviamo.rawcontent.js"
+      import * as Media from "./dist/addons/scriviamo.media.js"
+      import * as Forms from "./dist/addons/scriviamo.forms.js"
+      import * as Example from "./dist/examples/scriviamo.example.examplenode.js"
+      import * as YouTube from "./dist/examples/scriviamo.example.youtube.js"
+
+      // The base package and every add-on, as one namespace for this page.
+      const Scriviamo = Object.assign({}, Base, Callouts, RawContent, Media, Forms, Example, YouTube)
+
+      const sample = [
+        "# Welcome to Scriviamo",
+        "",
+        "A **block-based** editor with _inline formatting_, `inline code`, ==highlights== and [links](https://scriviamo.dev/).",
+        "",
+        "> [!TIP]",
+        "> Type `/` in an empty paragraph to add a block, or start a line with `# `, `- `, `1. ` or `> `. Type `@` to mention someone.",
+        "",
+        "## A list",
+        "",
+        "- [x] Try the toolbar",
+        "- [ ] Add a table",
+        "",
+        "| Block | Package |",
+        "| --- | --- |",
+        "| Alerts | callouts |",
+        "| Audio and video | media |",
+        "| Forms | forms |",
+        "",
+        "```typescript",
+        "const editor = new Editor(element, {markdown: notes})",
+        "```"
+      ].join("\n")
+
+      const editor = new Scriviamo.Editor(document.getElementById("editor"), {markdown: sample})
+      const people = new Scriviamo.Suggestions.Provider("people", "@")
+      people.add("ada", "Ada Lovelace")
+      people.add("grace", "Grace Hopper")
+      editor.suggestionProviders.add(people)
+      editor.recognizeSuggestions(editor.nodes())
+      editor.history.reset()
+      window.editor = editor
+
+      const stats = document.getElementById("stats")
+      const showStats = () => {
+        stats.textContent = `${editor.statistics.words} words, ${editor.statistics.characters} characters`
+      }
+      editor.addEventListener("contentChanged", showStats)
+      showStats()
+
+      document.getElementById("toggleTheme").addEventListener("click", () => {
+        let root = document.documentElement
+        root.setAttribute("data-bs-theme", root.getAttribute("data-bs-theme") == "dark" ? "light" : "dark")
+      })
+      document.getElementById("toggleReadOnly").addEventListener("click", event => {
+        editor.readOnly = !editor.readOnly
+        event.currentTarget.classList.toggle("active", editor.readOnly)
+      })
+      document.querySelectorAll("[data-export]").forEach(button => {
+        button.addEventListener("click", () => {
+          let text = editor.export(button.dataset.export)
+          if (button.dataset.export == "json") text = JSON.stringify(JSON.parse(text), null, 2)
+          document.getElementById("output").value = text
+        })
+      })
+    </script>
+  </body>
+</html>
