@@ -231,7 +231,6 @@ async function typeKeys(t, editor, node, offset, text) {
     t.assert(annotations.lastIndex == -1 && editor.toJSON().indexOf("annotations") < 0, "Loading Markdown kept the previous document's annotations.")
   })
 
-  skip(section, "the server enforces who may change which annotations", "Checked against the collaboration server by its protocol checks: authorship, replies, resolving and deletion by access level.")
 
   test(section, "the emoji provider matches shortcodes and inserts plain text", async t => {
     let emoji = new PE.Suggestions.EmojiProvider()

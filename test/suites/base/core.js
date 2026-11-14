@@ -130,7 +130,6 @@
     t.assert(finder.replaceAll("dog", "cat") == 0 && finder.matchCount == 3, "A read-only editor allowed replacing, or stopped finding.")
   })
 
-  skip(section, "collaboration server construction and stored documents", "The server is a separate program here (src/addons/collaboration/server/collaboration-server.mjs), covered by its own protocol checks.")
 
   test(section, "JSON leaves out default values and restores them when missing", t => {
     let plain = new PE.TextNode("Plain")
