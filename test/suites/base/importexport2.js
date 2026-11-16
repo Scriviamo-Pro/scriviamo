@@ -502,3 +502,14 @@
     t.assert(node && node.borderBottom.visible && node.borderBottom.size == 4 && node.borderBottom.color.red == 68 && !node.borderLeft.visible, "Node HTML changed imported border properties.")
   })
 }
+
+{
+  // Without the math add-on, $$ blocks stay as code in the "math" language.
+  test("Import and export", "Markdown $$ blocks are kept as math code without the math add-on", t => {
+    if (PE.MathNode) return
+    let editor = t.editor()
+    editor.fromMarkdown("$$\nx^2\n$$")
+    let node = editor.nodeAt(0)
+    t.assert(node instanceof PE.CodeBlockNode && node.language == "math" && node.content.text == "x^2", "The $$ block wasn't kept as math code")
+  })
+}

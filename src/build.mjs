@@ -12,7 +12,7 @@
 //   node build.mjs base         the base package only
 //   node build.mjs forms media  only the named add-ons
 import {execFileSync} from "node:child_process"
-import {copyFileSync, existsSync, mkdirSync, readdirSync, rmSync} from "node:fs"
+import {copyFileSync, existsSync, mkdirSync, readdirSync, rmSync, writeFileSync} from "node:fs"
 import {join} from "node:path"
 import * as esbuild from "esbuild"
 
@@ -49,6 +49,10 @@ async function stylesheet(source, outfile) {
 // Checks every module, then writes the declarations.
 rmSync(join(dist, "types"), {recursive: true, force: true})
 execFileSync(join(root, "node_modules/.bin/tsc"), ["-p", root], {stdio: "inherit"})
+
+// Node reads the bundles as ES modules, such as for rendering documents on a server.
+mkdirSync(dist, {recursive: true})
+writeFileSync(join(dist, "package.json"), `${JSON.stringify({type: "module"}, null, 2)}\n`)
 
 if (wanted("base")) {
   await bundle(join(root, "index.ts"), join(dist, "scriviamo.js"), [])

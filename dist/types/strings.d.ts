@@ -77,6 +77,8 @@ export declare class Strings {
     TextStretchCaption: string;
     TextActualSizeCaption: string;
     TextImageOpenErrorMessage: string;
+    TextUploadingCaption: string;
+    TextUploadFailedMessage: string;
     TextTableCaption: string;
     TextTableSizeCaptionFormat: string;
     TextDefaultTableHeadingFormat: string;
@@ -126,6 +128,17 @@ export declare class Strings {
     TextDoneCaption: string;
     TextWordsCountFormat: string;
     TextCharactersCountFormat: string;
+    TextOneWordCaption: string;
+    TextOneCharacterCaption: string;
+    TextSelectedWordsFormat: string;
+    TextSelectedCharactersFormat: string;
+    TextReadingTimeFormat: string;
+    TextSavedCaption: string;
+    TextSavingCaption: string;
+    TextUnsavedCaption: string;
+    TextSaveFailedCaption: string;
+    TextTryAgainCaption: string;
+    TextStatusBarCaption: string;
     TextAudioCaption: string;
     TextVideoCaption: string;
     TextBookmarkCaption: string;

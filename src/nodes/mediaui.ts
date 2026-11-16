@@ -1,4 +1,4 @@
-import {Node, Utilities} from "../internal"
+import {Editor, Node, Utilities} from "../internal"
 
 /** Shared pieces for blocks that show media: the empty-state chooser and the resize handle. */
 export class MediaUI {
@@ -83,3 +83,30 @@ export class MediaUI {
     input.click()
   }
 }
+
+/** What a file is being stored for. */
+export type FileUploadKind = "image" | "audio" | "video" | "background" | "file"
+
+/** One file for an application's uploader to store. */
+export interface FileUpload {
+  file: Blob
+  /** The file's name, or "" for pasted content without one. */
+  name: string
+  /** The file's MIME type, such as "image/png", or "". */
+  type: string
+  kind: FileUploadKind
+  /** The node the file is for, or null for the document's background and the inspector. */
+  node: Node | null
+  editor: Editor
+  /** Reports progress, from 0 to 1, for the editor to show. */
+  progress(fraction: number): void
+  /** Aborted when the user cancels; pass it to fetch. */
+  signal: AbortSignal
+}
+
+/**
+ * The application's uploader: stores a file and returns the address to show it from. Returning
+ * null or "" embeds the file in the document as data instead; throwing or rejecting reports a
+ * failed upload.
+ */
+export type FileUploader = (upload: FileUpload) => Promise<string | null | undefined> | string | null | undefined

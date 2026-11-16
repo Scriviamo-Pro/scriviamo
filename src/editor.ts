@@ -1,4 +1,4 @@
-import {Alignments, Annotation, AnnotationHandler, Annotations, BackgroundImage, BlockShortcut, ChoiceItem, ChoicePopup, CodeBlockNode, CodePoints, Colors, CurrentDocumentVersion, DefaultFontSize, Dialog, DialogField, Directions, DocumentColor, DocumentStyle, ExportFormats, Exporter, Exporters, FontOptions, Formatting, FormattingStyles, HTMLImporter, HeadingNode, History, InsertionChooser, InspectorDefaults, InspectorSection, LineBreak, MarkdownConverter, MediaUI, Node, NodeClass, NodeSelection, NodeTypes, Notification, NotificationTypes, ParagraphBreak, Popup, PopupMenu, RichText, Search, SelectionState, Statistics, Strings, Stylesheet, SuggestionProviders, Suggestions, TableNode, TextHost, TextHostModes, TextNode, TextStyle, ThemeColors, ToolbarDisplayModes, ToolbarItem, ToolbarItemKinds, ToolbarItems, ToolbarMenuItem, ToolbarView, UnknownNode, Utilities} from "./internal"
+import {Alignments, Annotation, AnnotationHandler, Annotations, Autosave, AutosaveFunction, BackgroundImage, BlockShortcut, ChoiceItem, ChoicePopup, CodeBlockNode, CodePoints, Colors, CurrentDocumentVersion, DefaultFontSize, Dialog, DialogField, Directions, DocumentColor, DocumentStyle, Exporter, Exporters, ExportFormats, FileUploader, FileUploadKind, FontOptions, Formatting, FormattingStyles, HeadingNode, History, HTMLImporter, InsertionChoice, InsertionChooser, InspectorDefaults, InspectorSection, LineBreak, MarkdownConverter, MediaUI, Node, NodeClass, NodeSelection, NodeTypes, Notification, NotificationTypes, ParagraphBreak, Popup, PopupMenu, RichText, Search, SelectionState, Statistics, StatusBar, Strings, Stylesheet, SuggestionProviders, Suggestions, TableNode, TextHost, TextHostModes, TextNode, TextStyle, ThemeColors, ToolbarDisplayModes, ToolbarItem, ToolbarItemKinds, ToolbarItems, ToolbarMenuItem, ToolbarView, UnknownNode, Utilities} from "./internal"
 
 export enum ValidationSeverities {
   warning = 0,
@@ -37,6 +37,12 @@ export interface EditorOptions {
   strings?: string | object
   /** Extra classes for the editor element. */
   class?: string
+  /** Shows the status bar under the document: word and character counts, reading time, and the autosave state. */
+  statusBar?: boolean
+  /** Uploads files the user adds, such as pictures, and returns their addresses; see FileUploader. */
+  fileUploader?: FileUploader | null
+  /** Saves the document a moment after each change: a save function, or one with settings. See Autosave. */
+  autosave?: AutosaveFunction | {save: AutosaveFunction, delay?: number, maximumWait?: number, retryDelay?: number, warnBeforeLeaving?: boolean}
 }
 
 interface PendingStyle {
@@ -70,6 +76,7 @@ const ClipboardType: string = "application/x-scriviamo"
  * - toolbarCustomized: {state} when the customizer closes with changes; toolbarReset after resetToolbar.
  * - scrollChanged: {x, y}; editingChanged: {node}; readOnlyChanged.
  * - heightChanged: the editor's height, while adaptiveHeight is true.
+ * - autosaveStateChanged: {state, error} as autosave moves between saved, unsaved, saving and failed.
  *
  * While a collaboration client is attached (the collaboration add-on):
  * - collaborationConnected: {user} after a shared document opened; collaborationDisconnected when it closed.
@@ -99,6 +106,8 @@ export interface EditorExtension {
   updateToolbarState?(editor: Editor, set: (identifier: string, enabled: boolean, active?: boolean) => void): void
   /** Handles a key press with the command key held. Return true when handled. */
   handleCommandKey?(editor: Editor, event: KeyboardEvent): boolean
+  /** Choices the insertion chooser ("/" and Insert) and command search offer besides node types. */
+  insertionChoices?(editor: Editor): Array<InsertionChoice>
 }
 
 /**
@@ -181,6 +190,15 @@ export class Editor extends EventTarget {
   exporters: Exporters
   /** The document's discussion threads. */
   annotations: Annotations
+  /** Saves the document after changes, through the application's save function. */
+  autosave: Autosave
+  /** The bar under the document; shown while statusBarVisible is true. */
+  statusBar: StatusBar
+  /**
+   * Uploads files the user adds (pictures, audio, video and backgrounds) and returns the address
+   * each is shown from. Without one, files are embedded in the document as data.
+   */
+  fileUploader: FileUploader | null = null
 
   /** The font names and sizes the toolbar offers, and the character formats available. A node's own fontOptions replace these while it is formatted. */
   fontOptions: FontOptions = new FontOptions()
@@ -209,10 +227,12 @@ export class Editor extends EventTarget {
     return node && node.fontOptions ? node.fontOptions : this.fontOptions
   }
 
-  #parentElement: HTMLElement
+  #parentElement: HTMLElement | null
   #element: HTMLDivElement | null = null
   #toolbarElement: HTMLDivElement | null = null
   #searchContainer: HTMLDivElement | null = null
+  #statusBarElement: HTMLDivElement | null = null
+  #statusBarVisible: boolean = false
   #scrollerElement: HTMLDivElement | null = null
   #pageElement: HTMLDivElement | null = null
   #documentElement: HTMLDivElement | null = null
@@ -268,7 +288,8 @@ export class Editor extends EventTarget {
   /** Turns Markdown typed while editing into the formatting or block it describes. False types the characters as they are. */
   markdownShortcuts: boolean = true
 
-  #heightObserver: ResizeObserver = new ResizeObserver(() => {
+  // Not on a server, where there is nothing to observe.
+  #heightObserver: ResizeObserver | null = typeof ResizeObserver == "undefined" ? null : new ResizeObserver(() => {
     if (this.#adaptiveHeight && this.#element) this.dispatchEvent(new CustomEvent("heightChanged", {detail: this.#element.offsetHeight}))
     this.#positionNodeToolbar()
     this.#scheduleAnnotationMarkers()
@@ -277,7 +298,12 @@ export class Editor extends EventTarget {
 
   #selectionChangeHandler = () => this.#onSelectionChange()
 
-  constructor(element: HTMLElement, options?: EditorOptions) {
+  /**
+   * Creates an editor in element. With null instead of an element, the editor is headless: it
+   * draws nothing and needs no browser, but loads, changes and exports documents, such as for
+   * rendering saved documents to HTML on a server.
+   */
+  constructor(element: HTMLElement | null, options?: EditorOptions) {
     super()
     this.#parentElement = element
     this.nodeTypes = new NodeTypes(this)
@@ -290,6 +316,8 @@ export class Editor extends EventTarget {
     this.suggestionProviders = new SuggestionProviders(this)
     this.suggestionProviders.add(new Suggestions.EmojiProvider())
     this.annotations = new Annotations(this, this.#annotationHandler())
+    this.autosave = new Autosave(this)
+    this.statusBar = new StatusBar(this)
     this.exporters = new Exporters(this)
     this.exporters.add(new Exporter("html", ExportFormats.html))
     this.exporters.add(new Exporter("json", ExportFormats.json))
@@ -305,6 +333,60 @@ export class Editor extends EventTarget {
 
     this.updateOptions(options)
     Editor.#extensions.forEach(extension => extension.install?.(this))
+  }
+
+  /**
+   * Stores a file the user added and returns the address to show it from: the fileUploader's
+   * result, or a data: URI when there's no uploader or it returns null. Rejects when the upload
+   * fails or is aborted.
+   */
+  async storeFile(file: Blob, kind: FileUploadKind, node: Node | null = null, progress?: (fraction: number) => void, signal?: AbortSignal): Promise<string> {
+    let uploader = this.fileUploader
+    if (!uploader) return MediaUI.readDataURI(file)
+    let result = await uploader({
+      file,
+      name: typeof (file as File).name == "string" ? (file as File).name : "",
+      type: file.type || "",
+      kind,
+      node,
+      editor: this,
+      progress: fraction => progress?.(Utilities.clamp(Number(fraction) || 0, 0, 1)),
+      signal: signal || new AbortController().signal
+    })
+    if (signal && signal.aborted) throw new DOMException("The upload was cancelled.", "AbortError")
+    if (result === null || result === undefined || result === "") return MediaUI.readDataURI(file)
+    if (typeof result != "string") throw new TypeError("The file uploader didn't return an address.")
+    return result
+  }
+
+  /**
+   * A saved document (JSON, as a string or object) as HTML, without a page or a visible editor,
+   * such as on a server. includeDocumentElements makes a whole page with its stylesheet. Import
+   * the add-ons the document uses first.
+   */
+  static renderHTML(content: string | object, includeDocumentElements: boolean = false, includeAnnotations: boolean = false): string {
+    return new Editor(null, {content}).toHTML(includeDocumentElements, includeAnnotations)
+  }
+
+  /** A saved document as Markdown, without a page or a visible editor. */
+  static renderMarkdown(content: string | object): string {
+    return new Editor(null, {content}).toMarkdown()
+  }
+
+  /** A saved document as plain text, without a page or a visible editor. */
+  static renderPlainText(content: string | object): string {
+    return new Editor(null, {content}).toPlainText()
+  }
+
+  /** Sets up autosave from a save function, a save function with settings, or null to turn it off. */
+  updateAutosave(value: EditorOptions["autosave"] | null) {
+    if (value && typeof value == "object") {
+      for (let name of ["delay", "maximumWait", "retryDelay"]) if (typeof value[name] == "number") this.autosave[name] = value[name]
+      if (typeof value.warnBeforeLeaving == "boolean") this.autosave.warnBeforeLeaving = value.warnBeforeLeaving
+      this.autosave.save = value.save
+    } else {
+      this.autosave.save = typeof value == "function" ? value : null
+    }
   }
 
   updateOptions(options?: EditorOptions) {
@@ -332,6 +414,9 @@ export class Editor extends EventTarget {
     this.#allowAnnotations = instanceOptions.allowAnnotations !== false
     this.#adaptiveHeight = instanceOptions.adaptiveHeight
     this.#class = instanceOptions.class
+    if (instanceOptions.statusBar !== undefined) this.#statusBarVisible = !!instanceOptions.statusBar
+    if (instanceOptions.autosave) this.updateAutosave(instanceOptions.autosave)
+    if (instanceOptions.fileUploader !== undefined) this.fileUploader = typeof instanceOptions.fileUploader == "function" ? instanceOptions.fileUploader : null
 
     this.render()
 
@@ -383,6 +468,19 @@ export class Editor extends EventTarget {
 
   get class(): string {
     return this.#class
+  }
+
+  /** Shows the bar under the document, with word and character counts and the autosave state. */
+  get statusBarVisible(): boolean {
+    return this.#statusBarVisible
+  }
+
+  set statusBarVisible(value: boolean) {
+    value = !!value
+    if (this.#statusBarVisible == value) return
+    this.#statusBarVisible = value
+    this.#statusBarElement?.classList.toggle("d-none", !value)
+    if (value) this.statusBar.update()
   }
 
   set class(value: string) {
@@ -530,8 +628,9 @@ export class Editor extends EventTarget {
   // Rendering
 
   render() {
+    if (!this.#parentElement) return
     if (this.#element) {
-      this.#heightObserver.disconnect()
+      this.#heightObserver?.disconnect()
       document.removeEventListener("selectionchange", this.#selectionChangeHandler)
       this.#element.remove()
     }
@@ -581,6 +680,11 @@ export class Editor extends EventTarget {
     this.#presenceLayer = Utilities.element("div", "scv-presence-layer", {contenteditable: "false", "aria-hidden": "true"})
     this.#pageElement.append(this.#presenceLayer)
 
+    this.#statusBarElement = Utilities.element("div", "scv-statusbar", {role: "group", "aria-label": this.strings.TextStatusBarCaption})
+    this.#statusBarElement.classList.toggle("d-none", !this.#statusBarVisible)
+    root.append(this.#statusBarElement)
+    this.statusBar.attach(this.#statusBarElement)
+
     this.#messagesElement = Utilities.element("div", "scv-messages")
     root.append(this.#messagesElement)
 
@@ -590,7 +694,7 @@ export class Editor extends EventTarget {
 
     this.#attachEvents()
     this.#parentElement.append(root)
-    this.#heightObserver.observe(root)
+    this.#heightObserver?.observe(root)
     document.addEventListener("selectionchange", this.#selectionChangeHandler)
 
     this.#renderToolbar()
@@ -601,8 +705,10 @@ export class Editor extends EventTarget {
   /** Removes the editor from the page and releases its listeners. */
   destroy() {
     Popup.closeAll()
-    this.#heightObserver.disconnect()
-    document.removeEventListener("selectionchange", this.#selectionChangeHandler)
+    this.statusBar.detach()
+    this.autosave.dispose()
+    this.#heightObserver?.disconnect()
+    if (typeof document != "undefined") document.removeEventListener("selectionchange", this.#selectionChangeHandler)
     if (this.#element) this.#element.remove()
     this.#element = null
   }
@@ -1393,8 +1499,9 @@ export class Editor extends EventTarget {
   }
 
   #scheduleTableOfContents() {
+    if (!this.#element) return
     clearTimeout(this.#tocTimer)
-    this.#tocTimer = window.setTimeout(() => {
+    this.#tocTimer = setTimeout(() => {
       this.allNodes().forEach(node => { if (node.followsHeadings) this.refreshNode(node) })
     }, 250)
   }
@@ -2413,8 +2520,9 @@ export class Editor extends EventTarget {
   }
 
   #scheduleAnnotationMarkers() {
+    if (!this.#element) return
     clearTimeout(this.#annotationTimer)
-    this.#annotationTimer = window.setTimeout(() => this.#renderAnnotationMarkers(), 0)
+    this.#annotationTimer = setTimeout(() => this.#renderAnnotationMarkers(), 0)
   }
 
   /** The DOM range an annotation covers, or null for a whole node or an orphan. */
@@ -3534,9 +3642,12 @@ export class Editor extends EventTarget {
       if (this.canMoveNodes(targets, 1)) add(strings.TextMoveDownCaption, "bi bi-arrow-down", group, false, () => this.moveNodes(targets, 1))
     }
 
-    // Node types to insert.
+    // Node types to insert, and the extensions' other insertion choices.
     this.nodeTypes.items().filter(type => type.insertable).forEach(type => {
       add(type.caption, type.icon, strings.TextInsertCaption, true, () => this.insertNodeOfType(type), `${type.keywords} ${type.identifier}`)
+    })
+    this.insertionChoices().forEach(choice => {
+      add(choice.caption, choice.icon, strings.TextInsertCaption, true, () => choice.choose(null), choice.keywords || "")
     })
 
     // Every other tool: the toolbar's, then the rest of the catalog.
@@ -4107,7 +4218,7 @@ export class Editor extends EventTarget {
 
   /** Refreshes toolbar buttons for the current selection. */
   updateToolbarState() {
-    if (this.#stateFrame) return
+    if (this.#stateFrame || !this.#element) return
     this.#stateFrame = requestAnimationFrame(() => {
       this.#stateFrame = 0
       this.#applyToolbarState()
@@ -4248,7 +4359,13 @@ export class Editor extends EventTarget {
     }
     if (identifier == "choose") {
       MediaUI.pickFile("image/*", async file => {
-        let data = await MediaUI.readDataURI(file)
+        let data: string
+        try {
+          data = await this.storeFile(file, "background", node)
+        } catch {
+          this.showMessage(this.strings.TextUploadFailedMessage, "danger")
+          return
+        }
         apply(image => image.source = data)
       })
     } else if (identifier == "source") {
@@ -4430,16 +4547,28 @@ export class Editor extends EventTarget {
   }
 
   /** Shows the searchable list of blocks. Choosing one inserts it, replacing replace when given. */
+  /** What the extensions add to the insertion chooser and command search. */
+  insertionChoices(): Array<InsertionChoice> {
+    let result: Array<InsertionChoice> = []
+    Editor.#extensions.forEach(extension => {
+      if (extension.insertionChoices) result.push(...extension.insertionChoices(this))
+    })
+    return result
+  }
+
   showInsertionChooser(anchor?: HTMLElement | DOMRect, replace: Node | null = null) {
     if (this.#readOnly) return
     let state = this.captureSelection()
-    let chooser = new InsertionChooser(this.strings, this.nodeTypes.items(), type => {
+    let prepare = (): Node | null => {
       this.restoreSelection(state)
       if (replace && replace instanceof TextNode && replace.content.text == "/") {
         replace.content.remove(0, 1)
       }
-      this.insertNodeOfType(type, replace && replace instanceof TextNode && replace.content.length == 0 ? replace : null)
-    })
+      return replace && replace instanceof TextNode && replace.content.length == 0 ? replace : null
+    }
+    let chooser = new InsertionChooser(this.strings, this.nodeTypes.items(), type => {
+      this.insertNodeOfType(type, prepare())
+    }, this.insertionChoices(), choice => choice.choose(prepare()))
     chooser.onClose = () => {
       if (!this.#documentElement.contains(document.activeElement)) this.restoreSelection(state)
     }
@@ -4850,7 +4979,7 @@ export class Editor extends EventTarget {
   }
 
   #schedulePresence() {
-    if (this.#presenceFrame) return
+    if (this.#presenceFrame || !this.#element) return
     this.#presenceFrame = requestAnimationFrame(() => {
       this.#presenceFrame = 0
       this.#renderPresence()

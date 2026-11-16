@@ -45,7 +45,13 @@ export interface TextRun {
  * Indexes are JavaScript string (UTF-16) indexes. JSON uses character
  * (code point) counts, and conversion happens in fromJSON and toJSON.
  */
+/** How an add-on exports its own tags; see RichText.registerTagExport. */
+export interface TagExport {
+    html?(text: string, identifier: string, style: TextStyle): string;
+    markdown?(text: string, identifier: string, style: TextStyle): string;
+}
 export declare class RichText {
+    #private;
     text: string;
     styles: Array<TextStyle>;
     alertType: number;
@@ -98,6 +104,13 @@ export declare class RichText {
     paragraphIndexAt(offset: number): number;
     /** Exported HTML for the range. Paragraph and line breaks become br elements. */
     htmlText(start?: number, end?: number): string;
+    /**
+     * Exports one provider's tags differently from the default span, such as footnote references
+     * as links to their notes. Each function receives the tag's text, its suggestion identifier
+     * and its style, and returns HTML or Markdown.
+     */
+    static registerTagExport(provider: string, exporter: TagExport | null): void;
+    static tagExport(provider: string): TagExport | null;
     static htmlRun(value: string, style: TextStyle): string;
     /** Markdown for the range. */
     markdownText(start?: number, end?: number, ignoreBold?: boolean): string;

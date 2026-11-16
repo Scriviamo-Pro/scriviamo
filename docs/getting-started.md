@@ -110,6 +110,13 @@ The second argument is optional. It can include:
 | `fontName`, `fontSize` | The document font and size |
 | `strings` | A locale pack or an object of localized strings; see [Localization](localization.md) |
 | `class` | Extra classes for the editor element |
+| `statusBar` | Shows the status bar under the document: counts, reading time and the autosave state |
+| `fileUploader` | Uploads pictures and other files people add, instead of embedding them; see [Files and uploads](import-export.md#files-and-uploads) |
+| `autosave` | Saves the document a moment after each change; see [Autosave](undo-search-statistics.md#autosave) |
+
+To show saved documents on a server, without the editor, see
+[Server rendering](server-rendering.md). For a whole app to start from, see the Next.js and Nuxt
+starters in [`starters/`](../starters/README.md).
 
 `editor.updateOptions(options)` changes them later. Most also have a property of their own,
 such as `editor.readOnly`.
@@ -130,6 +137,9 @@ editor.addEventListener("contentChanged", () => saveButton.disabled = !editor.is
 // After saving:
 editor.isChanged = false
 ```
+
+To save automatically as the user writes, give the editor a save function; see
+[Autosave](undo-search-statistics.md#autosave).
 
 See [Import and export](import-export.md) for HTML, Markdown and plain text.
 

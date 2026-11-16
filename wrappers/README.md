@@ -29,10 +29,18 @@ Every editor component takes these:
 | `hoverInsertion` | The add and drag buttons beside the block under the pointer |
 | `locale` | A locale pack, or an object of localized strings |
 | `editorClass` | Extra classes for the editor element |
+| `statusBar` | Shows the status bar: word and character counts, reading time and the autosave state |
+| `fileUploader` | Uploads the files people add, such as pictures, and returns their addresses; see [Files and uploads](../docs/import-export.md#files-and-uploads) |
+| `autosave` | A save function, or `{save, delay, …}`, that saves the document after changes; see [Autosave](../docs/undo-search-statistics.md#autosave) |
 | `changeDelay` | Milliseconds to wait after typing stops before reporting a change; 0, the default, reports every change |
 | `events` | Editor events to listen to, by name, such as `{linkPressed: event => …}` |
 
 A setting that isn't given keeps the editor's default.
+
+## Starters
+
+[`starters/`](../starters/README.md) has a Next.js app and a Nuxt app that use these components:
+an editor with autosave, a save endpoint, and documents rendered on the server.
 
 ## Add-ons
 

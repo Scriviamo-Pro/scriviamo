@@ -467,9 +467,15 @@ export class Node {
     return this.toHTML()
   }
 
+  /** The node's own text before it is drawn, such as in a headless editor, where it has no text hosts. */
+  protected undrawnTexts(): Array<RichText> {
+    return []
+  }
+
   toPlainText(): string {
     let parts: Array<string> = []
-    this.hosts().forEach(host => { if (host.rich.text.length > 0) parts.push(host.rich.text.replace(/\u2028/g, "\n")) })
+    let texts = this.hosts().length > 0 ? this.hosts().map(host => host.rich) : this.undrawnTexts()
+    texts.forEach(rich => { if (rich.text.length > 0) parts.push(rich.text.replace(/\u2028/g, "\n")) })
     this.childLists().forEach(list => list.forEach(child => {
       let value = child.toPlainText()
       if (value.length > 0) parts.push(value)

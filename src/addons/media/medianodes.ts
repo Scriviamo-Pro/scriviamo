@@ -117,9 +117,9 @@ export class MediaNode extends Node {
   /** Embeds a media file. */
   async loadFile(file: Blob) {
     try {
-      this.setResource(await MediaUI.readDataURI(file))
-    } catch {
-      if (this.editor) this.editor.showMessage(this.strings.TextMediaUnavailableCaption, "danger")
+      this.setResource(this.editor ? await this.editor.storeFile(file, (file.type || this.accept).startsWith("video") ? "video" : "audio", this) : await MediaUI.readDataURI(file))
+    } catch (error) {
+      if (this.editor && !(error instanceof DOMException && error.name == "AbortError")) this.editor.showMessage(this.editor.fileUploader ? this.strings.TextUploadFailedMessage : this.strings.TextMediaUnavailableCaption, "danger")
     }
   }
 

@@ -24,9 +24,11 @@ see [Getting started](getting-started.md#requirements).
 | [Node types](node-types.md) | The built-in node types, their JSON names, and the properties every node has |
 | [Text and formatting](text-and-formatting.md) | Rich text, text styles, formatting commands, and font choices |
 | [The toolbar](toolbar.md) | The built-in tools, adding your own, and saving each user's arrangement |
-| [Undo, search and statistics](undo-search-statistics.md) | Undo and redo, find and replace, and word counts |
+| [Undo, search, statistics and autosave](undo-search-statistics.md) | Undo and redo, find and replace, word counts, the status bar, and autosave |
 | [Comments and suggestions](comments-and-suggestions.md) | Comment threads, and suggestions such as @-mentions |
+| [Math and diagrams](math-and-diagrams.md) | Formulas in LaTeX, drawn with KaTeX, and diagrams in Mermaid |
 | [Writing node types](custom-node-types.md) | Adding your own node types and editor extensions |
-| [Import and export](import-export.md) | JSON, HTML, Markdown and plain text; exporters, stylesheets and theme colors |
+| [Server rendering](server-rendering.md) | Turning saved documents into HTML, Markdown or text on a server, with no browser |
+| [Import and export](import-export.md) | JSON, HTML, Markdown and plain text; uploading files; exporters, stylesheets and theme colors |
 | [Node settings](node-settings.md) | How node types describe their settings, and adding your own |
 | [Localization](localization.md) | Interface text, locale packs, and add-on strings |

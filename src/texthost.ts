@@ -131,6 +131,11 @@ export class TextHost {
     span.dataset.s = String(styleIndex)
     let css = style.editorCSS()
     if (css.length > 0) span.setAttribute("style", css)
+    // A tag names its provider, so a stylesheet can style one kind of tag.
+    if (style.suggestionProviderIdentifier.length > 0) {
+      span.dataset.scvTag = style.suggestionProviderIdentifier
+      if (style.suggestionIdentifier.length > 0) span.dataset.scvTagId = style.suggestionIdentifier
+    }
     let inner: HTMLElement = span
     let wrap = (tag: string) => {
       let element = document.createElement(tag)

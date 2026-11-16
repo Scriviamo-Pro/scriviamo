@@ -37,6 +37,12 @@ export class ScriviamoEditorComponent implements OnInit, OnChanges, OnDestroy, C
   /** A locale pack, or an object of localized strings. */
   @Input() locale: string | object | undefined
   @Input() editorClass: string | undefined
+  /** Shows the status bar: counts, reading time and the autosave state. */
+  @Input() statusBar: boolean | undefined
+  /** Saves the document after changes: a save function, or one with its settings. */
+  @Input() autosave: ScriviamoSettings["autosave"]
+  /** Uploads the files people add, such as pictures, and returns their addresses. */
+  @Input() fileUploader: ScriviamoSettings["fileUploader"]
   /** Milliseconds to wait after typing stops before reporting a change. */
   @Input() changeDelay: number | undefined
   /** Editor events to listen to, by name. */
@@ -78,6 +84,9 @@ export class ScriviamoEditorComponent implements OnInit, OnChanges, OnDestroy, C
       fontSize: this.fontSize,
       locale: this.locale,
       editorClass: this.editorClass,
+      statusBar: this.statusBar,
+      autosave: this.autosave,
+      fileUploader: this.fileUploader,
       changeDelay: this.changeDelay,
       events: this.events
     }

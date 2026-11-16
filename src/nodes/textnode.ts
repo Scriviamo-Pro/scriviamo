@@ -91,6 +91,10 @@ export class TextNode extends Node {
   }
 
   /** The content without this block type's own styling, for converting it into another type. */
+  protected undrawnTexts(): Array<RichText> {
+    return [this.content]
+  }
+
   plainContent(): RichText {
     let content = this.content.clone()
     content.headingLevel = 0

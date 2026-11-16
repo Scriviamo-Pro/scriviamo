@@ -113,3 +113,79 @@ export declare class NodeSelection {
     cut(): void;
     paste(): void;
 }
+/** Where an editor's autosave is. */
+export declare enum AutosaveStates {
+    /** Nothing to save: no changes since the document was loaded or last saved. */
+    saved = "saved",
+    /** Changes are waiting for the next save. */
+    unsaved = "unsaved",
+    /** The save function is running. */
+    saving = "saving",
+    /** The last save failed; it is tried again after retryDelay, or on the next change. */
+    failed = "failed"
+}
+/** The function an application gives autosave. It may return a Promise; a rejection or exception is a failed save. */
+export type AutosaveFunction = (editor: Editor) => unknown;
+/**
+ * Saves the document a moment after the user stops changing it. Give it a save function, and it
+ * calls it delay milliseconds after the last change, and at least every maximumWait milliseconds
+ * while changes keep coming. It tracks whether everything is saved, raises autosaveStateChanged
+ * on the editor, and warns before the page is closed with changes unsaved.
+ *
+ *     editor.autosave.save = async editor => {
+ *       await fetch("/documents/42", {method: "PUT", body: JSON.stringify(editor.toJSON())})
+ *     }
+ *
+ * Only the user's own changes start a save. Loading a document doesn't, and neither do changes
+ * that arrive from other people while collaborating: the person who made a change saves it.
+ */
+export declare class Autosave {
+    #private;
+    /** Milliseconds to wait after the last change before saving. */
+    delay: number;
+    /** The longest to wait while changes keep coming, in milliseconds, so long typing sessions are still saved. */
+    maximumWait: number;
+    /** Milliseconds before a failed save is tried again. */
+    retryDelay: number;
+    /** Asks the browser to warn before the page closes while changes aren't saved. */
+    warnBeforeLeaving: boolean;
+    constructor(editor: Editor);
+    get owner(): Editor;
+    /** The application's save function, or null to turn autosave off. */
+    get save(): AutosaveFunction | null;
+    set save(value: AutosaveFunction | null);
+    get enabled(): boolean;
+    get state(): AutosaveStates;
+    /** What the last failed save threw or rejected with, or null. */
+    get lastError(): unknown;
+    /** When the document was last saved, or null. */
+    get lastSaved(): Date | null;
+    /**
+     * Saves now, without waiting. Resolves true when the document is saved. While a save is
+     * running, waits for it and saves again if anything changed meanwhile.
+     */
+    saveNow(): Promise<boolean>;
+    /** Stops autosave and its listeners; the editor calls it when it is destroyed. */
+    dispose(): void;
+}
+/**
+ * The bar under the document: word and character counts, the reading time, and the autosave
+ * state. Turn it on with the statusBar option or editor.statusBarVisible. While text is
+ * selected, the counts show the selection's share.
+ */
+export declare class StatusBar {
+    #private;
+    showWords: boolean;
+    showCharacters: boolean;
+    showReadingTime: boolean;
+    showSaveState: boolean;
+    constructor(editor: Editor);
+    get owner(): Editor;
+    get element(): HTMLElement | null;
+    /** Builds the bar in an element; the editor calls it as it draws itself. */
+    attach(element: HTMLElement): void;
+    detach(): void;
+    /** Updates the bar shortly, once, however many changes arrive meanwhile. */
+    scheduleUpdate(): void;
+    update(): void;
+}

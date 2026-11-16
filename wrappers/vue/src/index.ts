@@ -32,6 +32,9 @@ export const ScriviamoEditor = defineComponent({
     fontSize: {type: Number, default: undefined},
     locale: {type: [String, Object] as PropType<string | object>, default: undefined},
     editorClass: {type: String, default: undefined},
+    statusBar: {type: Boolean, default: undefined},
+    autosave: {type: [Function, Object] as PropType<ScriviamoSettings["autosave"]>, default: undefined},
+    fileUploader: {type: Function as PropType<ScriviamoSettings["fileUploader"]>, default: undefined},
     changeDelay: {type: Number, default: undefined},
     events: {type: Object as PropType<ScriviamoSettings["events"]>, default: undefined}
   },

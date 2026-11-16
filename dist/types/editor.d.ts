@@ -1,4 +1,4 @@
-import { Alignments, Annotation, Annotations, BackgroundImage, DialogField, Directions, DocumentColor, Exporters, FontOptions, Formatting, HTMLImporter, HeadingNode, History, InspectorSection, Node, NodeClass, NodeSelection, NodeTypes, Notification, Search, SelectionState, Statistics, Strings, Stylesheet, SuggestionProviders, TextHost, TextNode, TextStyle, ThemeColors, ToolbarDisplayModes, ToolbarItem, ToolbarItems, ToolbarMenuItem } from "./internal";
+import { Alignments, Annotation, Annotations, Autosave, AutosaveFunction, BackgroundImage, DialogField, Directions, DocumentColor, Exporters, FileUploader, FileUploadKind, FontOptions, Formatting, HeadingNode, History, HTMLImporter, InsertionChoice, InspectorSection, Node, NodeClass, NodeSelection, NodeTypes, Notification, Search, SelectionState, Statistics, StatusBar, Strings, Stylesheet, SuggestionProviders, TextHost, TextNode, TextStyle, ThemeColors, ToolbarDisplayModes, ToolbarItem, ToolbarItems, ToolbarMenuItem } from "./internal";
 export declare enum ValidationSeverities {
     warning = 0,
     error = 1
@@ -30,6 +30,18 @@ export interface EditorOptions {
     strings?: string | object;
     /** Extra classes for the editor element. */
     class?: string;
+    /** Shows the status bar under the document: word and character counts, reading time, and the autosave state. */
+    statusBar?: boolean;
+    /** Uploads files the user adds, such as pictures, and returns their addresses; see FileUploader. */
+    fileUploader?: FileUploader | null;
+    /** Saves the document a moment after each change: a save function, or one with settings. See Autosave. */
+    autosave?: AutosaveFunction | {
+        save: AutosaveFunction;
+        delay?: number;
+        maximumWait?: number;
+        retryDelay?: number;
+        warnBeforeLeaving?: boolean;
+    };
 }
 /**
  * A block-based rich text editor. The document is an ordered list of nodes;
@@ -54,6 +66,7 @@ export interface EditorOptions {
  * - toolbarCustomized: {state} when the customizer closes with changes; toolbarReset after resetToolbar.
  * - scrollChanged: {x, y}; editingChanged: {node}; readOnlyChanged.
  * - heightChanged: the editor's height, while adaptiveHeight is true.
+ * - autosaveStateChanged: {state, error} as autosave moves between saved, unsaved, saving and failed.
  *
  * While a collaboration client is attached (the collaboration add-on):
  * - collaborationConnected: {user} after a shared document opened; collaborationDisconnected when it closed.
@@ -83,6 +96,8 @@ export interface EditorExtension {
     updateToolbarState?(editor: Editor, set: (identifier: string, enabled: boolean, active?: boolean) => void): void;
     /** Handles a key press with the command key held. Return true when handled. */
     handleCommandKey?(editor: Editor, event: KeyboardEvent): boolean;
+    /** Choices the insertion chooser ("/" and Insert) and command search offer besides node types. */
+    insertionChoices?(editor: Editor): Array<InsertionChoice>;
 }
 /**
  * A connection that shares the document with other users, such as the collaboration
@@ -144,6 +159,15 @@ export declare class Editor extends EventTarget {
     exporters: Exporters;
     /** The document's discussion threads. */
     annotations: Annotations;
+    /** Saves the document after changes, through the application's save function. */
+    autosave: Autosave;
+    /** The bar under the document; shown while statusBarVisible is true. */
+    statusBar: StatusBar;
+    /**
+     * Uploads files the user adds (pictures, audio, video and backgrounds) and returns the address
+     * each is shown from. Without one, files are embedded in the document as data.
+     */
+    fileUploader: FileUploader | null;
     /** The font names and sizes the toolbar offers, and the character formats available. A node's own fontOptions replace these while it is formatted. */
     fontOptions: FontOptions;
     /** Font families offered by the Font menu. "System" is the platform's interface font. */
@@ -158,7 +182,30 @@ export declare class Editor extends EventTarget {
     isHoverInsertionEnabled: boolean;
     /** Turns Markdown typed while editing into the formatting or block it describes. False types the characters as they are. */
     markdownShortcuts: boolean;
-    constructor(element: HTMLElement, options?: EditorOptions);
+    /**
+     * Creates an editor in element. With null instead of an element, the editor is headless: it
+     * draws nothing and needs no browser, but loads, changes and exports documents, such as for
+     * rendering saved documents to HTML on a server.
+     */
+    constructor(element: HTMLElement | null, options?: EditorOptions);
+    /**
+     * Stores a file the user added and returns the address to show it from: the fileUploader's
+     * result, or a data: URI when there's no uploader or it returns null. Rejects when the upload
+     * fails or is aborted.
+     */
+    storeFile(file: Blob, kind: FileUploadKind, node?: Node | null, progress?: (fraction: number) => void, signal?: AbortSignal): Promise<string>;
+    /**
+     * A saved document (JSON, as a string or object) as HTML, without a page or a visible editor,
+     * such as on a server. includeDocumentElements makes a whole page with its stylesheet. Import
+     * the add-ons the document uses first.
+     */
+    static renderHTML(content: string | object, includeDocumentElements?: boolean, includeAnnotations?: boolean): string;
+    /** A saved document as Markdown, without a page or a visible editor. */
+    static renderMarkdown(content: string | object): string;
+    /** A saved document as plain text, without a page or a visible editor. */
+    static renderPlainText(content: string | object): string;
+    /** Sets up autosave from a save function, a save function with settings, or null to turn it off. */
+    updateAutosave(value: EditorOptions["autosave"] | null): void;
     updateOptions(options?: EditorOptions): void;
     get element(): HTMLElement | null;
     /** The element the search bar is placed in. */
@@ -168,6 +215,9 @@ export declare class Editor extends EventTarget {
     get readOnly(): boolean;
     set readOnly(value: boolean);
     get class(): string;
+    /** Shows the bar under the document, with word and character counts and the autosave state. */
+    get statusBarVisible(): boolean;
+    set statusBarVisible(value: boolean);
     set class(value: string);
     get adaptiveHeight(): boolean;
     set adaptiveHeight(value: boolean);
@@ -381,6 +431,8 @@ export declare class Editor extends EventTarget {
     /** Refreshes toolbar buttons for the current selection. */
     updateToolbarState(): void;
     /** Shows the searchable list of blocks. Choosing one inserts it, replacing replace when given. */
+    /** What the extensions add to the insertion chooser and command search. */
+    insertionChoices(): Array<InsertionChoice>;
     showInsertionChooser(anchor?: HTMLElement | DOMRect, replace?: Node | null): void;
     /**
      * Shows a short notification over the editor: a Notification, or text with a

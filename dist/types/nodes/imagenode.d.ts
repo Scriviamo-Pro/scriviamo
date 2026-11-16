@@ -38,12 +38,17 @@ export declare class ImageNode extends Node {
     /** The address the picture is shown from: a data URI for embedded pictures, otherwise sourceURL. */
     get source(): string;
     get hasImage(): boolean;
+    /** True while a picture is uploading through the editor's fileUploader. */
+    get isUploading(): boolean;
     protected build(body: HTMLElement): void;
     /** Asks for a picture file and embeds it. */
     inserted(): void;
     inspectorSections(): Array<InspectorSection>;
     chooseFile(): void;
-    /** Embeds a picture file, such as one dropped or pasted. */
+    /**
+     * Adds a picture file, such as one chosen, dropped or pasted. With the editor's fileUploader,
+     * it is uploaded and shown from its address; otherwise it is embedded in the document.
+     */
     loadFile(file: Blob): Promise<boolean>;
     /** Asks for a picture address. */
     enterURL(): Promise<void>;

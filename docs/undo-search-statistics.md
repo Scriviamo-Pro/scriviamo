@@ -1,4 +1,4 @@
-# Undo, search and statistics
+# Undo, search, statistics and autosave
 
 ## Undo and redo
 
@@ -74,3 +74,53 @@ editor.addEventListener("contentChanged", () => {
   status.textContent = `${editor.statistics.words} words`
 })
 ```
+
+## The status bar
+
+The status bar under the document shows the word and character counts and the reading time,
+and, with autosave, whether everything is saved. While text is selected, the counts show the
+selection's share, such as "12 of 300 words".
+
+```ts
+let editor = new Editor(element, {statusBar: true})
+editor.statusBarVisible = false            // hides it again
+editor.statusBar.showReadingTime = false   // also showWords, showCharacters, showSaveState
+```
+
+## Autosave
+
+Give the editor a save function, and it saves the document a moment after the user stops
+changing it:
+
+```ts
+let editor = new Editor(element, {
+  statusBar: true,
+  autosave: async editor => {
+    let response = await fetch("/documents/42", {method: "PUT", body: editor.toJSON()})
+    if (!response.ok) throw new Error(`Saving failed: ${response.status}`)
+  }
+})
+```
+
+The function may return a Promise. A rejection or exception is a failed save: autosave reports
+it, and tries again after `retryDelay` or at the next change. After a successful save,
+`editor.isChanged` is false.
+
+Only the user's own changes start a save. Loading a document doesn't, and neither do changes
+from other people while collaborating, since the person who made a change saves it.
+
+| Member | Meaning |
+|---|---|
+| `save` | The save function, or null to turn autosave off. The `autosave` option sets it. |
+| `delay` | Milliseconds after the last change before saving (1500) |
+| `maximumWait` | The longest it waits while changes keep coming, so long typing is still saved (10000) |
+| `retryDelay` | Milliseconds before a failed save is tried again (10000) |
+| `warnBeforeLeaving` | Asks the browser to warn before the page closes with changes unsaved (true) |
+| `state` | `AutosaveStates.saved`, `unsaved`, `saving` or `failed` |
+| `lastSaved`, `lastError` | When it last saved, and what the last failed save threw |
+| `saveNow()` | Saves straight away; resolves true once everything is saved |
+
+The `autosave` option also takes the settings: `{save, delay, maximumWait, retryDelay,
+warnBeforeLeaving}`. Each change of state raises `autosaveStateChanged` on the editor, with
+`{state, error}`. When the page is hidden, such as when the user switches tabs or closes it on
+a phone, unsaved changes are saved straight away.

@@ -84,9 +84,41 @@ export class ImageNode extends Node {
     return this.source.length > 0
   }
 
+  /** The upload in progress: a preview of the file, and how to cancel it. */
+  #upload: {preview: string, controller: AbortController, bar: HTMLElement | null} | null = null
+
+  /** True while a picture is uploading through the editor's fileUploader. */
+  get isUploading(): boolean {
+    return this.#upload !== null
+  }
+
   protected build(body: HTMLElement) {
     let figure = Utilities.element("figure", "scv-image")
     body.append(figure)
+
+    if (this.#upload) {
+      let upload = this.#upload
+      let frame = Utilities.element("div", "scv-image-frame scv-image-uploading", {contenteditable: "false", "aria-busy": "true"})
+      if (this.displayWidth > 0) frame.style.width = `${this.displayWidth}px`
+      frame.append(Utilities.element("img", "", {src: upload.preview, alt: "", draggable: "false"}))
+      let overlay = Utilities.element("div", "scv-image-upload")
+      let label = Utilities.element("span", "scv-image-upload-label")
+      label.textContent = this.strings.TextUploadingCaption
+      let progress = Utilities.element("div", "progress", {role: "progressbar", "aria-label": this.strings.TextUploadingCaption, "aria-valuemin": "0", "aria-valuemax": "100", "aria-valuenow": "0"})
+      upload.bar = Utilities.element("div", "progress-bar progress-bar-striped progress-bar-animated")
+      upload.bar.style.width = "100%"
+      progress.append(upload.bar)
+      let cancel = Utilities.element("button", "btn btn-sm btn-light", {type: "button"})
+      cancel.textContent = this.strings.TextCancelCaption
+      cancel.addEventListener("click", event => {
+        event.stopPropagation()
+        upload.controller.abort()
+      })
+      overlay.append(label, progress, cancel)
+      frame.append(overlay)
+      figure.append(frame)
+      return
+    }
 
     if (!this.hasImage) {
       let placeholder = Utilities.element("div", "scv-image-placeholder", {contenteditable: "false"})
@@ -219,8 +251,12 @@ export class ImageNode extends Node {
     input.click()
   }
 
-  /** Embeds a picture file, such as one dropped or pasted. */
+  /**
+   * Adds a picture file, such as one chosen, dropped or pasted. With the editor's fileUploader,
+   * it is uploaded and shown from its address; otherwise it is embedded in the document.
+   */
   loadFile(file: Blob): Promise<boolean> {
+    if (this.editor && this.editor.fileUploader) return this.#uploadFile(file, this.editor)
     return new Promise(resolve => {
       let reader = new FileReader()
       reader.addEventListener("load", () => {
@@ -245,6 +281,48 @@ export class ImageNode extends Node {
       })
       reader.readAsDataURL(file)
     })
+  }
+
+  async #uploadFile(file: Blob, editor: Editor): Promise<boolean> {
+    if (this.#upload) this.#upload.controller.abort()
+    let upload = {preview: URL.createObjectURL(file), controller: new AbortController(), bar: null as HTMLElement | null}
+    this.#upload = upload
+    this.refresh()
+    let finish = () => {
+      if (this.#upload !== upload) return false
+      this.#upload = null
+      URL.revokeObjectURL(upload.preview)
+      return true
+    }
+    let address: string
+    try {
+      address = await editor.storeFile(file, "image", this, fraction => {
+        if (!upload.bar) return
+        upload.bar.classList.remove("progress-bar-striped", "progress-bar-animated")
+        upload.bar.style.width = `${Math.round(fraction * 100)}%`
+        upload.bar.parentElement?.setAttribute("aria-valuenow", String(Math.round(fraction * 100)))
+      }, upload.controller.signal)
+    } catch (error) {
+      if (!finish()) return false
+      this.refresh()
+      let cancelled = upload.controller.signal.aborted || (error instanceof DOMException && error.name == "AbortError")
+      if (!cancelled) editor.showMessage(this.strings.TextUploadFailedMessage, "danger")
+      return false
+    }
+    if (!finish()) return false
+    if (address.toLowerCase().startsWith("data:")) {
+      let comma = address.indexOf(",")
+      this.willChange()
+      this.imageData = comma >= 0 ? address.substring(comma + 1) : ""
+      this.sourceURL = ""
+      this.displayWidth = 0
+      this.displayHeight = 0
+      this.refresh()
+      this.changed()
+    } else {
+      this.setURL(address)
+    }
+    return true
   }
 
   /** Asks for a picture address. */

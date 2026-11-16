@@ -42,3 +42,11 @@ wrappers/*/src/editorbinding.ts
 wrappers/*/src/inspectorbinding.ts
 wrappers/*/inspector/src/inspectorbinding.ts
 wrappers/smoke/build/
+
+# Starters: build output and the documents they save
+starters/*/.next/
+starters/*/.nuxt/
+starters/*/.output/
+starters/*/.data/
+starters/*/data/
+starters/nextjs/next-env.d.ts

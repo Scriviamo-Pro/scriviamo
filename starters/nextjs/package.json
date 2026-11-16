@@ -1,0 +1,26 @@
+{
+  "name": "scriviamo-nextjs-starter",
+  "private": true,
+  "description": "A Next.js app with Scriviamo: an editor with autosave, and pages rendered on the server",
+  "type": "module",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start"
+  },
+  "dependencies": {
+    "bootstrap": "^5.3.3",
+    "bootstrap-icons": "^1.13.1",
+    "next": "^16.4.6",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "scriviamo-react": "file:../../wrappers/react"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "typescript": "^5.4.5"
+  },
+  "version": "1.0.1-beta.5"
+}

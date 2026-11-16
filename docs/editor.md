@@ -29,8 +29,10 @@ its options.
 | `allowAnnotations` | Comments: the margin markers, Add Comment and the comment popover |
 | `contextMenuEnabled` | The editor's own context menu. Holding Shift shows the browser's, with its spelling suggestions. |
 | `adaptiveHeight` | Makes the editor as tall as its content, raising `heightChanged` |
+| `statusBarVisible` | The bar under the document, with word and character counts, reading time and the autosave state; `editor.statusBar` sets what it shows |
 | `fontNames`, `fontSizes` | The choices in the Font and Size menus |
 | `strings` | The interface text; see [Localization](localization.md) |
+| `fileUploader` | Uploads the files people add and returns their addresses; see [Files and uploads](import-export.md#files-and-uploads) |
 
 ## Nodes
 
@@ -178,6 +180,7 @@ Every event is a `CustomEvent` with its details in `detail`.
 | `scrollChanged` | `{x, y}` | When the document scrolls |
 | `readOnlyChanged` | `{readOnly}` | When `readOnly` changes |
 | `heightChanged` | the height | When the height changes, while `adaptiveHeight` is true |
+| `autosaveStateChanged` | `{state, error}` | When autosave's state changes; `error` is set for `"failed"` |
 
 
 ## Registering node types and extensions

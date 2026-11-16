@@ -113,6 +113,12 @@ export interface TextRun {
  * Indexes are JavaScript string (UTF-16) indexes. JSON uses character
  * (code point) counts, and conversion happens in fromJSON and toJSON.
  */
+/** How an add-on exports its own tags; see RichText.registerTagExport. */
+export interface TagExport {
+  html?(text: string, identifier: string, style: TextStyle): string
+  markdown?(text: string, identifier: string, style: TextStyle): string
+}
+
 export class RichText {
   text: string = ""
   styles: Array<TextStyle> = []
@@ -453,8 +459,27 @@ export class RichText {
     return result
   }
 
+  /** How tags from one suggestion provider are exported, set by an add-on with registerTagExport. */
+  static #tagExports: {[provider: string]: TagExport} = {}
+
+  /**
+   * Exports one provider's tags differently from the default span, such as footnote references
+   * as links to their notes. Each function receives the tag's text, its suggestion identifier
+   * and its style, and returns HTML or Markdown.
+   */
+  static registerTagExport(provider: string, exporter: TagExport | null) {
+    if (exporter) RichText.#tagExports[provider] = exporter
+    else delete RichText.#tagExports[provider]
+  }
+
+  static tagExport(provider: string): TagExport | null {
+    return provider.length > 0 ? RichText.#tagExports[provider] || null : null
+  }
+
   static htmlRun(value: string, style: TextStyle): string {
     if (value.length == 0) return ""
+    let custom = RichText.tagExport(style.suggestionProviderIdentifier)
+    if (custom && custom.html) return custom.html(value, style.suggestionIdentifier, style)
     let content = Utilities.escapeText(value)
     let suggestionAttributes = ""
     if (style.suggestionProviderIdentifier.length > 0) suggestionAttributes = ` data-scriviamo-suggestion-provider="${Utilities.escapeAttribute(style.suggestionProviderIdentifier)}" data-scriviamo-suggestion-id="${Utilities.escapeAttribute(style.suggestionIdentifier)}"`
@@ -482,6 +507,11 @@ export class RichText {
     this.runs(start, end, markdownMatches).forEach(run => {
       let style = run.style
       let raw = run.text
+      let custom = RichText.tagExport(style.suggestionProviderIdentifier)
+      if (custom && custom.markdown) {
+        result += custom.markdown(raw, style.suggestionIdentifier, style)
+        return
+      }
       let content = RichText.markdownEscape(raw).replace(/\u2028/g, "  \n")
       if (style.code) content = RichText.markdownCodeSpan(raw)
       if (style.keyboard) content = `<kbd>${content}</kbd>`

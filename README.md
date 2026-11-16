@@ -15,13 +15,16 @@ This repository is the free edition, MIT licensed.
   drag handles, and command search
 - Rich text formatting, links, colors and fonts, with Markdown shortcuts as you type
 - Tables with merged cells, header and footer rows, and blocks inside cells
-- Alerts, audio and video, forms, and raw HTML, as add-ons
+- Alerts, audio and video, forms, raw HTML, math in LaTeX and diagrams in Mermaid, as add-ons
 - Comments on text or whole blocks, with threads that can be answered and resolved
 - Text suggestions, such as @-mentions and emoji
-- Find and replace, undo and redo, and word counts
+- Find and replace, undo and redo, and a status bar with word counts and the save state
+- Autosave, with retries and a warning before leaving unsaved changes
+- Uploading pictures, audio and video to your own storage, with progress
 - Localization of all interface text, including add-ons'
 - Your own node types, toolbar items and export formats
-- Components for React, Vue and Angular
+- Rendering saved documents to HTML, Markdown or text on a server, with no browser
+- Components for React, Vue and Angular, and Next.js and Nuxt starter apps
 
 ## Packages
 
@@ -34,12 +37,14 @@ Scriviamo is a base package plus add-ons, all ES modules.
 | `rawcontent` | HTML written into exports unchanged |
 | `media` | Audio and video |
 | `forms` | Forms and form controls |
+| `math` | Formulas written in LaTeX, drawn with KaTeX |
+| `diagrams` | Diagrams written in Mermaid |
 
 `src/examples/` has two example node types an application might add: a text block with its own
 commands, and an embedded YouTube video.
 
-Premium add-ons, such as columns, data tables, an inspector panel and real-time
-collaboration, are available separately from [scriviamo.dev](https://scriviamo.dev/). Documents
+Premium add-ons, such as columns, footnotes, templates, PDF export, an AI writing assistant,
+data tables, an inspector panel and real-time collaboration, are available separately from [scriviamo.dev](https://scriviamo.dev/). Documents
 that use them still open in the free edition, which keeps their blocks unchanged.
 
 ## Requirements

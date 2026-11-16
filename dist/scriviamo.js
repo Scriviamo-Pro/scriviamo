@@ -1085,9 +1085,28 @@ var RichText = class _RichText {
     });
     return result;
   }
+  /** How tags from one suggestion provider are exported, set by an add-on with registerTagExport. */
+  static #tagExports = {};
+  /**
+   * Exports one provider's tags differently from the default span, such as footnote references
+   * as links to their notes. Each function receives the tag's text, its suggestion identifier
+   * and its style, and returns HTML or Markdown.
+   */
+  static registerTagExport(provider, exporter) {
+    if (exporter)
+      _RichText.#tagExports[provider] = exporter;
+    else
+      delete _RichText.#tagExports[provider];
+  }
+  static tagExport(provider) {
+    return provider.length > 0 ? _RichText.#tagExports[provider] || null : null;
+  }
   static htmlRun(value, style) {
     if (value.length == 0)
       return "";
+    let custom = _RichText.tagExport(style.suggestionProviderIdentifier);
+    if (custom && custom.html)
+      return custom.html(value, style.suggestionIdentifier, style);
     let content = Utilities.escapeText(value);
     let suggestionAttributes = "";
     if (style.suggestionProviderIdentifier.length > 0)
@@ -1121,6 +1140,11 @@ var RichText = class _RichText {
     this.runs(start, end, markdownMatches).forEach((run) => {
       let style = run.style;
       let raw = run.text;
+      let custom = _RichText.tagExport(style.suggestionProviderIdentifier);
+      if (custom && custom.markdown) {
+        result += custom.markdown(raw, style.suggestionIdentifier, style);
+        return;
+      }
       let content = _RichText.markdownEscape(raw).replace(/\u2028/g, "  \n");
       if (style.code)
         content = _RichText.markdownCodeSpan(raw);
@@ -1275,6 +1299,11 @@ var TextHost = class _TextHost {
     let css = style.editorCSS();
     if (css.length > 0)
       span.setAttribute("style", css);
+    if (style.suggestionProviderIdentifier.length > 0) {
+      span.dataset.scvTag = style.suggestionProviderIdentifier;
+      if (style.suggestionIdentifier.length > 0)
+        span.dataset.scvTagId = style.suggestionIdentifier;
+    }
     let inner = span;
     let wrap = (tag) => {
       let element = document.createElement(tag);
@@ -2454,6 +2483,8 @@ var Strings = class _Strings {
   TextStretchCaption = "Stretch";
   TextActualSizeCaption = "Actual Size";
   TextImageOpenErrorMessage = "The image could not be opened.";
+  TextUploadingCaption = "Uploading\u2026";
+  TextUploadFailedMessage = "The file couldn't be uploaded.";
   TextTableCaption = "Table";
   TextTableSizeCaptionFormat = "%rows% \xD7 %columns%";
   TextDefaultTableHeadingFormat = "Heading %number%";
@@ -2503,6 +2534,17 @@ var Strings = class _Strings {
   TextDoneCaption = "Done";
   TextWordsCountFormat = "%count% words";
   TextCharactersCountFormat = "%count% characters";
+  TextOneWordCaption = "1 word";
+  TextOneCharacterCaption = "1 character";
+  TextSelectedWordsFormat = "%selected% of %count% words";
+  TextSelectedCharactersFormat = "%selected% of %count% characters";
+  TextReadingTimeFormat = "%count% min read";
+  TextSavedCaption = "Saved";
+  TextSavingCaption = "Saving\u2026";
+  TextUnsavedCaption = "Unsaved changes";
+  TextSaveFailedCaption = "Couldn't save";
+  TextTryAgainCaption = "Try again";
+  TextStatusBarCaption = "Document status";
   TextAudioCaption = "Audio";
   TextVideoCaption = "Video";
   TextBookmarkCaption = "Bookmark";
@@ -3536,11 +3578,16 @@ var Node3 = class _Node {
   toMarkdown() {
     return this.toHTML();
   }
+  /** The node's own text before it is drawn, such as in a headless editor, where it has no text hosts. */
+  undrawnTexts() {
+    return [];
+  }
   toPlainText() {
     let parts = [];
-    this.hosts().forEach((host) => {
-      if (host.rich.text.length > 0)
-        parts.push(host.rich.text.replace(/\u2028/g, "\n"));
+    let texts = this.hosts().length > 0 ? this.hosts().map((host) => host.rich) : this.undrawnTexts();
+    texts.forEach((rich) => {
+      if (rich.text.length > 0)
+        parts.push(rich.text.replace(/\u2028/g, "\n"));
     });
     this.childLists().forEach((list) => list.forEach((child) => {
       let value = child.toPlainText();
@@ -3675,6 +3722,9 @@ var TextNode2 = class _TextNode extends Node3 {
     return addition;
   }
   /** The content without this block type's own styling, for converting it into another type. */
+  undrawnTexts() {
+    return [this.content];
+  }
   plainContent() {
     let content = this.content.clone();
     content.headingLevel = 0;
@@ -5630,9 +5680,39 @@ var ImageNode = class _ImageNode extends Node3 {
   get hasImage() {
     return this.source.length > 0;
   }
+  /** The upload in progress: a preview of the file, and how to cancel it. */
+  #upload = null;
+  /** True while a picture is uploading through the editor's fileUploader. */
+  get isUploading() {
+    return this.#upload !== null;
+  }
   build(body) {
     let figure = Utilities.element("figure", "scv-image");
     body.append(figure);
+    if (this.#upload) {
+      let upload = this.#upload;
+      let frame2 = Utilities.element("div", "scv-image-frame scv-image-uploading", { contenteditable: "false", "aria-busy": "true" });
+      if (this.displayWidth > 0)
+        frame2.style.width = `${this.displayWidth}px`;
+      frame2.append(Utilities.element("img", "", { src: upload.preview, alt: "", draggable: "false" }));
+      let overlay = Utilities.element("div", "scv-image-upload");
+      let label = Utilities.element("span", "scv-image-upload-label");
+      label.textContent = this.strings.TextUploadingCaption;
+      let progress = Utilities.element("div", "progress", { role: "progressbar", "aria-label": this.strings.TextUploadingCaption, "aria-valuemin": "0", "aria-valuemax": "100", "aria-valuenow": "0" });
+      upload.bar = Utilities.element("div", "progress-bar progress-bar-striped progress-bar-animated");
+      upload.bar.style.width = "100%";
+      progress.append(upload.bar);
+      let cancel = Utilities.element("button", "btn btn-sm btn-light", { type: "button" });
+      cancel.textContent = this.strings.TextCancelCaption;
+      cancel.addEventListener("click", (event) => {
+        event.stopPropagation();
+        upload.controller.abort();
+      });
+      overlay.append(label, progress, cancel);
+      frame2.append(overlay);
+      figure.append(frame2);
+      return;
+    }
     if (!this.hasImage) {
       let placeholder = Utilities.element("div", "scv-image-placeholder", { contenteditable: "false" });
       placeholder.innerHTML = `<i class="bi bi-image"></i>`;
@@ -5767,8 +5847,13 @@ var ImageNode = class _ImageNode extends Node3 {
     });
     input.click();
   }
-  /** Embeds a picture file, such as one dropped or pasted. */
+  /**
+   * Adds a picture file, such as one chosen, dropped or pasted. With the editor's fileUploader,
+   * it is uploaded and shown from its address; otherwise it is embedded in the document.
+   */
   loadFile(file) {
+    if (this.editor && this.editor.fileUploader)
+      return this.#uploadFile(file, this.editor);
     return new Promise((resolve) => {
       let reader = new FileReader();
       reader.addEventListener("load", () => {
@@ -5794,6 +5879,53 @@ var ImageNode = class _ImageNode extends Node3 {
       });
       reader.readAsDataURL(file);
     });
+  }
+  async #uploadFile(file, editor) {
+    if (this.#upload)
+      this.#upload.controller.abort();
+    let upload = { preview: URL.createObjectURL(file), controller: new AbortController(), bar: null };
+    this.#upload = upload;
+    this.refresh();
+    let finish = () => {
+      if (this.#upload !== upload)
+        return false;
+      this.#upload = null;
+      URL.revokeObjectURL(upload.preview);
+      return true;
+    };
+    let address;
+    try {
+      address = await editor.storeFile(file, "image", this, (fraction) => {
+        if (!upload.bar)
+          return;
+        upload.bar.classList.remove("progress-bar-striped", "progress-bar-animated");
+        upload.bar.style.width = `${Math.round(fraction * 100)}%`;
+        upload.bar.parentElement?.setAttribute("aria-valuenow", String(Math.round(fraction * 100)));
+      }, upload.controller.signal);
+    } catch (error) {
+      if (!finish())
+        return false;
+      this.refresh();
+      let cancelled = upload.controller.signal.aborted || error instanceof DOMException && error.name == "AbortError";
+      if (!cancelled)
+        editor.showMessage(this.strings.TextUploadFailedMessage, "danger");
+      return false;
+    }
+    if (!finish())
+      return false;
+    if (address.toLowerCase().startsWith("data:")) {
+      let comma = address.indexOf(",");
+      this.willChange();
+      this.imageData = comma >= 0 ? address.substring(comma + 1) : "";
+      this.sourceURL = "";
+      this.displayWidth = 0;
+      this.displayHeight = 0;
+      this.refresh();
+      this.changed();
+    } else {
+      this.setURL(address);
+    }
+    return true;
   }
   /** Asks for a picture address. */
   async enterURL() {
@@ -6379,6 +6511,297 @@ var NodeSelection = class {
     this.#editor.pasteFromClipboard();
   }
 };
+var AutosaveStates = /* @__PURE__ */ ((AutosaveStates2) => {
+  AutosaveStates2["saved"] = "saved";
+  AutosaveStates2["unsaved"] = "unsaved";
+  AutosaveStates2["saving"] = "saving";
+  AutosaveStates2["failed"] = "failed";
+  return AutosaveStates2;
+})(AutosaveStates || {});
+var Autosave = class {
+  #editor;
+  #save = null;
+  #state = "saved" /* saved */;
+  #lastError = null;
+  #lastSaved = null;
+  #timer = null;
+  #firstChange = 0;
+  #running = null;
+  #again = false;
+  #generation = 0;
+  #listening = false;
+  /** Milliseconds to wait after the last change before saving. */
+  delay = 1500;
+  /** The longest to wait while changes keep coming, in milliseconds, so long typing sessions are still saved. */
+  maximumWait = 1e4;
+  /** Milliseconds before a failed save is tried again. */
+  retryDelay = 1e4;
+  /** Asks the browser to warn before the page closes while changes aren't saved. */
+  warnBeforeLeaving = true;
+  constructor(editor) {
+    this.#editor = editor;
+    editor.addEventListener("contentChanged", (event) => {
+      if (event.detail && event.detail.remote)
+        return;
+      if (editor.isChanged)
+        this.#changed();
+      else
+        this.#loaded();
+    });
+  }
+  get owner() {
+    return this.#editor;
+  }
+  /** The application's save function, or null to turn autosave off. */
+  get save() {
+    return this.#save;
+  }
+  set save(value) {
+    this.#save = typeof value == "function" ? value : null;
+    if (!this.#save) {
+      this.#clearTimer();
+      this.#setState("saved" /* saved */);
+    } else if (this.#editor.isChanged && this.#state == "saved" /* saved */) {
+      this.#changed();
+    }
+  }
+  get enabled() {
+    return this.#save !== null;
+  }
+  get state() {
+    return this.#state;
+  }
+  /** What the last failed save threw or rejected with, or null. */
+  get lastError() {
+    return this.#lastError;
+  }
+  /** When the document was last saved, or null. */
+  get lastSaved() {
+    return this.#lastSaved;
+  }
+  /**
+   * Saves now, without waiting. Resolves true when the document is saved. While a save is
+   * running, waits for it and saves again if anything changed meanwhile.
+   */
+  async saveNow() {
+    this.#clearTimer();
+    if (!this.#save)
+      return false;
+    if (this.#running) {
+      this.#again = true;
+      await this.#running;
+      return this.#state == "saved" /* saved */;
+    }
+    this.#running = this.#run();
+    try {
+      return await this.#running;
+    } finally {
+      this.#running = null;
+      if (this.#again) {
+        this.#again = false;
+        if (this.#state == "unsaved" /* unsaved */)
+          this.#schedule(0);
+      }
+    }
+  }
+  /** Stops autosave and its listeners; the editor calls it when it is destroyed. */
+  dispose() {
+    this.#clearTimer();
+    this.#listen(false);
+    this.#save = null;
+  }
+  async #run() {
+    let generation = this.#generation;
+    this.#setState("saving" /* saving */);
+    try {
+      await this.#save(this.#editor);
+    } catch (error) {
+      this.#lastError = error;
+      this.#setState("failed" /* failed */);
+      this.#schedule(this.retryDelay);
+      return false;
+    }
+    this.#lastError = null;
+    this.#lastSaved = /* @__PURE__ */ new Date();
+    if (generation == this.#generation) {
+      this.#editor.isChanged = false;
+      this.#setState("saved" /* saved */);
+      return true;
+    }
+    this.#setState("unsaved" /* unsaved */);
+    this.#schedule(this.delay);
+    return true;
+  }
+  #changed() {
+    this.#generation++;
+    if (!this.#save)
+      return;
+    if (this.#state != "saving" /* saving */)
+      this.#setState("unsaved" /* unsaved */);
+    if (this.#running) {
+      this.#again = true;
+      return;
+    }
+    if (this.#firstChange == 0)
+      this.#firstChange = Date.now();
+    let waited = Date.now() - this.#firstChange;
+    this.#schedule(Math.max(0, Math.min(this.delay, this.maximumWait - waited)));
+  }
+  #loaded() {
+    this.#generation++;
+    this.#clearTimer();
+    if (!this.#running)
+      this.#setState("saved" /* saved */);
+  }
+  #schedule(milliseconds) {
+    if (this.#timer !== null)
+      clearTimeout(this.#timer);
+    this.#timer = setTimeout(() => {
+      this.#timer = null;
+      this.saveNow();
+    }, Math.max(0, milliseconds));
+  }
+  #clearTimer() {
+    if (this.#timer !== null)
+      clearTimeout(this.#timer);
+    this.#timer = null;
+    this.#firstChange = 0;
+  }
+  #setState(state) {
+    if (state != "unsaved" /* unsaved */ && state != "saving" /* saving */)
+      this.#firstChange = 0;
+    this.#listen(state != "saved" /* saved */ && this.#save !== null);
+    if (state == this.#state)
+      return;
+    this.#state = state;
+    this.#editor.dispatchEvent(new CustomEvent("autosaveStateChanged", { detail: { state, error: state == "failed" /* failed */ ? this.#lastError : null } }));
+  }
+  // The page listeners are added only while something is unsaved: a beforeunload listener keeps
+  // some browsers from caching the page for the back button.
+  #listen(value) {
+    if (typeof window == "undefined" || value == this.#listening)
+      return;
+    this.#listening = value;
+    if (value) {
+      window.addEventListener("beforeunload", this.#beforeUnload);
+      document.addEventListener("visibilitychange", this.#visibilityChange);
+    } else {
+      window.removeEventListener("beforeunload", this.#beforeUnload);
+      document.removeEventListener("visibilitychange", this.#visibilityChange);
+    }
+  }
+  #beforeUnload = (event) => {
+    if (!this.warnBeforeLeaving || this.#state == "saved" /* saved */)
+      return;
+    event.preventDefault();
+    event.returnValue = "";
+  };
+  // Saves straight away when the page is hidden, as when the user switches tabs or closes it on a phone.
+  #visibilityChange = () => {
+    if (document.visibilityState == "hidden" && this.#state == "unsaved" /* unsaved */)
+      this.saveNow();
+  };
+};
+var StatusBar = class {
+  #editor;
+  #element = null;
+  #counts = null;
+  #save = null;
+  #timer = null;
+  showWords = true;
+  showCharacters = true;
+  showReadingTime = true;
+  showSaveState = true;
+  constructor(editor) {
+    this.#editor = editor;
+    let schedule = () => this.scheduleUpdate();
+    for (let name of ["contentChanged", "selectionChanged", "editingChanged", "autosaveStateChanged"])
+      editor.addEventListener(name, schedule);
+  }
+  get owner() {
+    return this.#editor;
+  }
+  get element() {
+    return this.#element;
+  }
+  /** Builds the bar in an element; the editor calls it as it draws itself. */
+  attach(element) {
+    document.addEventListener("selectionchange", this.#selectionChange);
+    this.#element = element;
+    element.replaceChildren();
+    this.#counts = Utilities.element("span", "scv-status-counts");
+    this.#save = Utilities.element("span", "scv-status-save");
+    element.append(this.#counts, this.#save);
+    this.update();
+  }
+  detach() {
+    document.removeEventListener("selectionchange", this.#selectionChange);
+    if (this.#timer !== null)
+      clearTimeout(this.#timer);
+    this.#timer = null;
+    this.#element = null;
+    this.#counts = null;
+    this.#save = null;
+  }
+  // Selecting text inside a block raises no editor event.
+  #selectionChange = () => {
+    if (this.#editor.isEditingText && this.#editor.statusBarVisible)
+      this.scheduleUpdate();
+  };
+  /** Updates the bar shortly, once, however many changes arrive meanwhile. */
+  scheduleUpdate() {
+    if (this.#timer !== null || !this.#element)
+      return;
+    this.#timer = setTimeout(() => {
+      this.#timer = null;
+      this.update();
+    }, 150);
+  }
+  update() {
+    let editor = this.#editor;
+    if (!this.#element || !this.#counts || !this.#save || !editor.statusBarVisible)
+      return;
+    let strings = editor.strings;
+    let statistics = editor.statistics;
+    let number = (value) => value.toLocaleString();
+    let parts = [];
+    let text = editor.toPlainText();
+    let words = Statistics.countWords(text);
+    let selected = editor.isEditingText ? editor.selectedText() : "";
+    if (this.showWords) {
+      if (selected.length > 0)
+        parts.push(Utilities.format(strings.TextSelectedWordsFormat, { selected: number(Statistics.countWords(selected)), count: number(words) }));
+      else
+        parts.push(words == 1 ? strings.TextOneWordCaption : Utilities.format(strings.TextWordsCountFormat, { count: number(words) }));
+    }
+    if (this.showCharacters) {
+      let characters = CodePoints.count(text.replace(/\n/g, ""));
+      if (selected.length > 0)
+        parts.push(Utilities.format(strings.TextSelectedCharactersFormat, { selected: number(CodePoints.count(selected.replace(/\n/g, ""))), count: number(characters) }));
+      else
+        parts.push(characters == 1 ? strings.TextOneCharacterCaption : Utilities.format(strings.TextCharactersCountFormat, { count: number(characters) }));
+    }
+    if (this.showReadingTime && words > 0)
+      parts.push(Utilities.format(strings.TextReadingTimeFormat, { count: number(Math.max(1, Math.ceil(words / statistics.wordsPerMinute))) }));
+    this.#counts.textContent = parts.join(" \xB7 ");
+    let autosave = editor.autosave;
+    this.#save.replaceChildren();
+    this.#save.className = "scv-status-save";
+    if (!this.showSaveState || !autosave.enabled)
+      return;
+    let state = autosave.state;
+    this.#save.classList.add(`scv-status-${state}`);
+    let icons = { saved: "bi bi-check2", unsaved: "bi bi-circle-fill", saving: "bi bi-arrow-repeat", failed: "bi bi-exclamation-triangle-fill" };
+    let captions = { saved: strings.TextSavedCaption, unsaved: strings.TextUnsavedCaption, saving: strings.TextSavingCaption, failed: strings.TextSaveFailedCaption };
+    this.#save.append(Utilities.element("i", icons[state], { "aria-hidden": "true" }), document.createTextNode(` ${captions[state]}`));
+    if (state == "failed" /* failed */) {
+      let retry = Utilities.element("button", "btn btn-link btn-sm scv-status-retry", { type: "button" });
+      retry.textContent = strings.TextTryAgainCaption;
+      retry.addEventListener("click", () => autosave.saveNow());
+      this.#save.append(retry);
+    }
+  }
+};
 
 // importers.ts
 var HTMLImporter7 = class _HTMLImporter {
@@ -6445,9 +6868,10 @@ var HTMLImporter7 = class _HTMLImporter {
         inline.push(child);
         return;
       }
-      if (!(child instanceof HTMLElement))
+      if (!(child instanceof HTMLElement) && !(typeof MathMLElement != "undefined" && child instanceof MathMLElement))
         return;
-      let block = this.blockNode(child);
+      let element = child;
+      let block = this.blockNode(element);
       if (block === void 0) {
         inline.push(child);
         return;
@@ -6455,10 +6879,10 @@ var HTMLImporter7 = class _HTMLImporter {
       flush();
       if (Array.isArray(block)) {
         if (block.length == 1)
-          this.readBlockStyle(child, block[0]);
+          this.readBlockStyle(element, block[0]);
         result.push(...block);
       } else if (block) {
-        this.readBlockStyle(child, block);
+        this.readBlockStyle(element, block);
         result.push(block);
       }
     });
@@ -6664,6 +7088,8 @@ var HTMLImporter7 = class _HTMLImporter {
   }
   /** Whether an element starts a block of its own rather than continuing the text around it. */
   isBlockElement(element) {
+    if (element.tagName.toLowerCase() == "math")
+      return element.getAttribute("display") == "block";
     return /^(P|DIV|H[1-6]|UL|OL|LI|PRE|BLOCKQUOTE|ASIDE|HR|TABLE|FIGURE|DETAILS|SECTION|ARTICLE|MAIN|HEADER|FOOTER|NAV|CENTER|FORM|FIELDSET|DL|DD|DT|IMG|PICTURE)$/.test(element.tagName);
   }
   /** Reads a text block's alignment from an element's text-align or align. */
@@ -6841,7 +7267,36 @@ var HTMLImporter7 = class _HTMLImporter {
 var MarkdownConverter = class _MarkdownConverter {
   static toHTML(markdown) {
     let lines = markdown.replace(/\r\n?/g, "\n").replace(/\t/g, "    ").split("\n");
-    return _MarkdownConverter.#blocks(lines);
+    let notes = _MarkdownConverter.#footnotes(lines);
+    return _MarkdownConverter.#blocks(lines) + notes;
+  }
+  /**
+   * Takes footnote definitions ("[^label]: text", with indented lines continuing them) out of
+   * the lines, and returns them as a footnotes section, which the footnotes add-on reads.
+   * References, [^label], become tags in the inline text.
+   */
+  static #footnotes(lines) {
+    let items = [];
+    let fence = null;
+    for (let index = 0; index < lines.length; index++) {
+      let opening = lines[index].match(/^ {0,3}(`{3,}|~{3,})/);
+      if (opening)
+        fence = fence === null ? opening[1] : lines[index].trim().startsWith(fence) ? null : fence;
+      if (fence !== null)
+        continue;
+      let definition = lines[index].match(/^ {0,3}\[\^([^\]\s]+)\]:\s?(.*)$/);
+      if (!definition)
+        continue;
+      let text = [definition[2]];
+      let end = index + 1;
+      while (end < lines.length && /^( {4}|\t)\S/.test(lines[end]))
+        text.push(lines[end++].trim());
+      lines.splice(index, end - index);
+      index--;
+      let label = definition[1];
+      items.push(`<li id="fn-${Utilities.escapeAttribute(label)}" data-footnote-id="${Utilities.escapeAttribute(label)}">${_MarkdownConverter.inline(text.join(" ").trim())}</li>`);
+    }
+    return items.length == 0 ? "" : `<section class="footnotes" data-scriviamo-footnotes="true"><ol>${items.join("")}</ol></section>`;
   }
   static #blocks(lines) {
     let html = "";
@@ -6861,6 +7316,33 @@ var MarkdownConverter = class _MarkdownConverter {
     };
     while (index < lines.length) {
       let line = lines[index];
+      let math = line.match(/^ {0,3}\$\$(.*)$/);
+      if (math) {
+        flush();
+        let body = [];
+        let rest = math[1];
+        let oneLine = rest.match(/^(.*?)\$\$\s*$/);
+        if (oneLine) {
+          body.push(oneLine[1].trim());
+          index++;
+        } else {
+          if (rest.trim().length > 0)
+            body.push(rest.trim());
+          index++;
+          while (index < lines.length && !/^\s*\$\$\s*$/.test(lines[index])) {
+            let closing = lines[index].match(/^(.*?)\$\$\s*$/);
+            if (closing) {
+              body.push(closing[1]);
+              break;
+            }
+            body.push(lines[index]);
+            index++;
+          }
+          index++;
+        }
+        html += `<pre><code class="language-math">${Utilities.escapeText(body.join("\n").trim())}</code></pre>`;
+        continue;
+      }
       let fence = line.match(/^ {0,3}(`{3,}|~{3,})\s*([^`\s]*)/);
       if (fence) {
         flush();
@@ -7044,6 +7526,7 @@ var MarkdownConverter = class _MarkdownConverter {
     text = text.replace(/(`+)([\s\S]*?[^`])\1(?!`)/g, (_match, _fence, code) => stash(`<code>${Utilities.escapeText(code.trim().length > 0 ? code.replace(/^ (.*) $/, "$1") : code)}</code>`));
     text = text.replace(/<(\/?)(kbd|sup|sub|mark|u|br|span|a)([^>]*)>/gi, (match) => stash(match));
     text = text.replace(/\\([\\`*_{}\[\]()#+\-.!|~<>])/g, (_match, character) => stash(Utilities.escapeText(character)));
+    text = text.replace(/\[\^([^\]\s]+)\]/g, (_match, label) => stash(`<sup data-scriviamo-suggestion-provider="footnote" data-scriviamo-suggestion-id="${Utilities.escapeAttribute(label)}">${Utilities.escapeText(label)}</sup>`));
     text = text.replace(/!\[([^\]]*)\]\(\s*<?([^)\s>]+)>?(?:\s+"([^"]*)")?\s*\)/g, (_match, alt, source) => stash(`<img src="${Utilities.escapeAttribute(source)}" alt="${Utilities.escapeAttribute(alt)}">`));
     text = text.replace(/\[([^\]]+)\]\(\s*<?([^)\s>]+)>?(?:\s+"([^"]*)")?\s*\)/g, (_match, label, href, title) => stash(`<a href="${Utilities.escapeAttribute(href)}"${title ? ` title="${Utilities.escapeAttribute(title)}"` : ""}>`) + label + stash("</a>"));
     text = text.replace(/<(https?:\/\/[^>\s]+)>/g, (_match, href) => stash(`<a href="${Utilities.escapeAttribute(href)}">${Utilities.escapeText(href)}</a>`));
@@ -7574,17 +8057,15 @@ var Dialog = class {
   }
 };
 var InsertionChooser = class extends Popup {
-  #types;
+  #entries;
   #list;
   #search;
   #visible = [];
   #active = 0;
-  #onSelect;
-  constructor(strings, types, onSelect) {
+  constructor(strings, types, onSelect, choices = [], onChoice = (choice) => choice.choose(null)) {
     super("dropdown-menu show scv-chooser");
     this.keepsFocus = false;
-    this.#types = types.filter((type) => type.insertable);
-    this.#onSelect = onSelect;
+    this.#entries = types.filter((type) => type.insertable).map((type) => ({ caption: type.caption, icon: type.icon, search: `${type.caption} ${type.keywords} ${type.identifier}`.toLowerCase(), choose: () => onSelect(type) })).concat(choices.map((choice) => ({ caption: choice.caption, icon: choice.icon, search: `${choice.caption} ${choice.keywords || ""}`.toLowerCase(), choose: () => onChoice(choice) })));
     this.#search = Utilities.element("input", "form-control form-control-sm scv-chooser-search", { type: "search", placeholder: strings.TextInsertNodeSearchHint, "aria-label": strings.TextInsertNodeSearchHint });
     this.#search.addEventListener("input", () => this.#filter());
     this.element.append(this.#search);
@@ -7598,26 +8079,26 @@ var InsertionChooser = class extends Popup {
   }
   #filter() {
     let query = this.#search.value.trim().toLowerCase();
-    this.#visible = this.#types.filter((type) => query.length == 0 || `${type.caption} ${type.keywords} ${type.identifier}`.toLowerCase().indexOf(query) >= 0);
+    this.#visible = this.#entries.filter((entry) => query.length == 0 || entry.search.indexOf(query) >= 0);
     this.#active = 0;
     this.#list.textContent = "";
-    this.#visible.forEach((type, index) => {
+    this.#visible.forEach((entry, index) => {
       let button = Utilities.element("button", "dropdown-item scv-menu-item", { type: "button", role: "option" });
-      button.innerHTML = `<i class="scv-menu-icon ${type.icon}"></i>`;
+      let icon = Utilities.element("i", `scv-menu-icon ${entry.icon}`);
       let label = Utilities.element("span", "scv-menu-label");
-      label.textContent = type.caption;
-      button.append(label);
+      label.textContent = entry.caption;
+      button.append(icon, label);
       button.addEventListener("mousedown", (event) => event.preventDefault());
-      button.addEventListener("click", () => this.#choose(type));
+      button.addEventListener("click", () => this.#choose(entry));
       button.classList.toggle("scv-menu-focus", index == this.#active);
       this.#list.append(button);
     });
     if (this.isOpen)
       this.position();
   }
-  #choose(type) {
+  #choose(entry) {
     this.close();
-    this.#onSelect(type);
+    entry.choose();
   }
   handleKey(event) {
     if (event.key == "ArrowDown" || event.key == "ArrowUp") {
@@ -9596,6 +10077,15 @@ var Editor2 = class _Editor extends EventTarget {
   exporters;
   /** The document's discussion threads. */
   annotations;
+  /** Saves the document after changes, through the application's save function. */
+  autosave;
+  /** The bar under the document; shown while statusBarVisible is true. */
+  statusBar;
+  /**
+   * Uploads files the user adds (pictures, audio, video and backgrounds) and returns the address
+   * each is shown from. Without one, files are embedded in the document as data.
+   */
+  fileUploader = null;
   /** The font names and sizes the toolbar offers, and the character formats available. A node's own fontOptions replace these while it is formatted. */
   fontOptions = new FontOptions();
   /** Font families offered by the Font menu. "System" is the platform's interface font. */
@@ -9621,6 +10111,8 @@ var Editor2 = class _Editor extends EventTarget {
   #element = null;
   #toolbarElement = null;
   #searchContainer = null;
+  #statusBarElement = null;
+  #statusBarVisible = false;
   #scrollerElement = null;
   #pageElement = null;
   #documentElement = null;
@@ -9673,7 +10165,8 @@ var Editor2 = class _Editor extends EventTarget {
   isHoverInsertionEnabled = true;
   /** Turns Markdown typed while editing into the formatting or block it describes. False types the characters as they are. */
   markdownShortcuts = true;
-  #heightObserver = new ResizeObserver(() => {
+  // Not on a server, where there is nothing to observe.
+  #heightObserver = typeof ResizeObserver == "undefined" ? null : new ResizeObserver(() => {
     if (this.#adaptiveHeight && this.#element)
       this.dispatchEvent(new CustomEvent("heightChanged", { detail: this.#element.offsetHeight }));
     this.#positionNodeToolbar();
@@ -9681,6 +10174,11 @@ var Editor2 = class _Editor extends EventTarget {
     this.#schedulePresence();
   });
   #selectionChangeHandler = () => this.#onSelectionChange();
+  /**
+   * Creates an editor in element. With null instead of an element, the editor is headless: it
+   * draws nothing and needs no browser, but loads, changes and exports documents, such as for
+   * rendering saved documents to HTML on a server.
+   */
   constructor(element, options) {
     super();
     this.#parentElement = element;
@@ -9694,6 +10192,8 @@ var Editor2 = class _Editor extends EventTarget {
     this.suggestionProviders = new SuggestionProviders(this);
     this.suggestionProviders.add(new Suggestions.EmojiProvider());
     this.annotations = new Annotations(this, this.#annotationHandler());
+    this.autosave = new Autosave(this);
+    this.statusBar = new StatusBar(this);
     this.exporters = new Exporters(this);
     this.exporters.add(new Exporter("html", 1 /* html */));
     this.exporters.add(new Exporter("json", 2 /* json */));
@@ -9706,6 +10206,62 @@ var Editor2 = class _Editor extends EventTarget {
     this.history.addEventListener("changed", () => this.updateToolbarState());
     this.updateOptions(options);
     _Editor.#extensions.forEach((extension) => extension.install?.(this));
+  }
+  /**
+   * Stores a file the user added and returns the address to show it from: the fileUploader's
+   * result, or a data: URI when there's no uploader or it returns null. Rejects when the upload
+   * fails or is aborted.
+   */
+  async storeFile(file, kind, node = null, progress, signal) {
+    let uploader = this.fileUploader;
+    if (!uploader)
+      return MediaUI.readDataURI(file);
+    let result = await uploader({
+      file,
+      name: typeof file.name == "string" ? file.name : "",
+      type: file.type || "",
+      kind,
+      node,
+      editor: this,
+      progress: (fraction) => progress?.(Utilities.clamp(Number(fraction) || 0, 0, 1)),
+      signal: signal || new AbortController().signal
+    });
+    if (signal && signal.aborted)
+      throw new DOMException("The upload was cancelled.", "AbortError");
+    if (result === null || result === void 0 || result === "")
+      return MediaUI.readDataURI(file);
+    if (typeof result != "string")
+      throw new TypeError("The file uploader didn't return an address.");
+    return result;
+  }
+  /**
+   * A saved document (JSON, as a string or object) as HTML, without a page or a visible editor,
+   * such as on a server. includeDocumentElements makes a whole page with its stylesheet. Import
+   * the add-ons the document uses first.
+   */
+  static renderHTML(content, includeDocumentElements = false, includeAnnotations = false) {
+    return new _Editor(null, { content }).toHTML(includeDocumentElements, includeAnnotations);
+  }
+  /** A saved document as Markdown, without a page or a visible editor. */
+  static renderMarkdown(content) {
+    return new _Editor(null, { content }).toMarkdown();
+  }
+  /** A saved document as plain text, without a page or a visible editor. */
+  static renderPlainText(content) {
+    return new _Editor(null, { content }).toPlainText();
+  }
+  /** Sets up autosave from a save function, a save function with settings, or null to turn it off. */
+  updateAutosave(value) {
+    if (value && typeof value == "object") {
+      for (let name of ["delay", "maximumWait", "retryDelay"])
+        if (typeof value[name] == "number")
+          this.autosave[name] = value[name];
+      if (typeof value.warnBeforeLeaving == "boolean")
+        this.autosave.warnBeforeLeaving = value.warnBeforeLeaving;
+      this.autosave.save = value.save;
+    } else {
+      this.autosave.save = typeof value == "function" ? value : null;
+    }
   }
   updateOptions(options) {
     let defaults = {
@@ -9735,6 +10291,12 @@ var Editor2 = class _Editor extends EventTarget {
     this.#allowAnnotations = instanceOptions.allowAnnotations !== false;
     this.#adaptiveHeight = instanceOptions.adaptiveHeight;
     this.#class = instanceOptions.class;
+    if (instanceOptions.statusBar !== void 0)
+      this.#statusBarVisible = !!instanceOptions.statusBar;
+    if (instanceOptions.autosave)
+      this.updateAutosave(instanceOptions.autosave);
+    if (instanceOptions.fileUploader !== void 0)
+      this.fileUploader = typeof instanceOptions.fileUploader == "function" ? instanceOptions.fileUploader : null;
     this.render();
     if (instanceOptions.content) {
       this.fromJSON(instanceOptions.content);
@@ -9779,6 +10341,19 @@ var Editor2 = class _Editor extends EventTarget {
   }
   get class() {
     return this.#class;
+  }
+  /** Shows the bar under the document, with word and character counts and the autosave state. */
+  get statusBarVisible() {
+    return this.#statusBarVisible;
+  }
+  set statusBarVisible(value) {
+    value = !!value;
+    if (this.#statusBarVisible == value)
+      return;
+    this.#statusBarVisible = value;
+    this.#statusBarElement?.classList.toggle("d-none", !value);
+    if (value)
+      this.statusBar.update();
   }
   set class(value) {
     if (this.#element && this.#class.length > 0)
@@ -9896,8 +10471,10 @@ var Editor2 = class _Editor extends EventTarget {
   }
   // Rendering
   render() {
+    if (!this.#parentElement)
+      return;
     if (this.#element) {
-      this.#heightObserver.disconnect();
+      this.#heightObserver?.disconnect();
       document.removeEventListener("selectionchange", this.#selectionChangeHandler);
       this.#element.remove();
     }
@@ -9936,6 +10513,10 @@ var Editor2 = class _Editor extends EventTarget {
     this.#pageElement.append(this.#annotationLayer);
     this.#presenceLayer = Utilities.element("div", "scv-presence-layer", { contenteditable: "false", "aria-hidden": "true" });
     this.#pageElement.append(this.#presenceLayer);
+    this.#statusBarElement = Utilities.element("div", "scv-statusbar", { role: "group", "aria-label": this.strings.TextStatusBarCaption });
+    this.#statusBarElement.classList.toggle("d-none", !this.#statusBarVisible);
+    root.append(this.#statusBarElement);
+    this.statusBar.attach(this.#statusBarElement);
     this.#messagesElement = Utilities.element("div", "scv-messages");
     root.append(this.#messagesElement);
     this.#disabledLayer = Utilities.element("div", "scv-disabled-layer");
@@ -9943,7 +10524,7 @@ var Editor2 = class _Editor extends EventTarget {
     root.append(this.#disabledLayer);
     this.#attachEvents();
     this.#parentElement.append(root);
-    this.#heightObserver.observe(root);
+    this.#heightObserver?.observe(root);
     document.addEventListener("selectionchange", this.#selectionChangeHandler);
     this.#renderToolbar();
     this.#applyDocumentAppearance();
@@ -9952,8 +10533,11 @@ var Editor2 = class _Editor extends EventTarget {
   /** Removes the editor from the page and releases its listeners. */
   destroy() {
     Popup.closeAll();
-    this.#heightObserver.disconnect();
-    document.removeEventListener("selectionchange", this.#selectionChangeHandler);
+    this.statusBar.detach();
+    this.autosave.dispose();
+    this.#heightObserver?.disconnect();
+    if (typeof document != "undefined")
+      document.removeEventListener("selectionchange", this.#selectionChangeHandler);
     if (this.#element)
       this.#element.remove();
     this.#element = null;
@@ -10746,8 +11330,10 @@ var Editor2 = class _Editor extends EventTarget {
     this.nodeChanged(node);
   }
   #scheduleTableOfContents() {
+    if (!this.#element)
+      return;
     clearTimeout(this.#tocTimer);
-    this.#tocTimer = window.setTimeout(() => {
+    this.#tocTimer = setTimeout(() => {
       this.allNodes().forEach((node) => {
         if (node.followsHeadings)
           this.refreshNode(node);
@@ -11826,8 +12412,10 @@ var Editor2 = class _Editor extends EventTarget {
     });
   }
   #scheduleAnnotationMarkers() {
+    if (!this.#element)
+      return;
     clearTimeout(this.#annotationTimer);
-    this.#annotationTimer = window.setTimeout(() => this.#renderAnnotationMarkers(), 0);
+    this.#annotationTimer = setTimeout(() => this.#renderAnnotationMarkers(), 0);
   }
   /** The DOM range an annotation covers, or null for a whole node or an orphan. */
   #annotationRange(item, node) {
@@ -13027,6 +13615,9 @@ var Editor2 = class _Editor extends EventTarget {
     this.nodeTypes.items().filter((type) => type.insertable).forEach((type) => {
       add(type.caption, type.icon, strings.TextInsertCaption, true, () => this.insertNodeOfType(type), `${type.keywords} ${type.identifier}`);
     });
+    this.insertionChoices().forEach((choice) => {
+      add(choice.caption, choice.icon, strings.TextInsertCaption, true, () => choice.choose(null), choice.keywords || "");
+    });
     let group = strings.TextToolbarToolsCaption;
     let identifiers = this.toolbarItems.items().map((item) => item.identifier).concat(_Editor.catalogIdentifiers);
     identifiers.forEach((identifier) => {
@@ -13654,7 +14245,7 @@ var Editor2 = class _Editor extends EventTarget {
   }
   /** Refreshes toolbar buttons for the current selection. */
   updateToolbarState() {
-    if (this.#stateFrame)
+    if (this.#stateFrame || !this.#element)
       return;
     this.#stateFrame = requestAnimationFrame(() => {
       this.#stateFrame = 0;
@@ -13793,7 +14384,13 @@ var Editor2 = class _Editor extends EventTarget {
     };
     if (identifier == "choose") {
       MediaUI.pickFile("image/*", async (file) => {
-        let data = await MediaUI.readDataURI(file);
+        let data;
+        try {
+          data = await this.storeFile(file, "background", node);
+        } catch {
+          this.showMessage(this.strings.TextUploadFailedMessage, "danger");
+          return;
+        }
         apply((image) => image.source = data);
       });
     } else if (identifier == "source") {
@@ -13994,17 +14591,29 @@ var Editor2 = class _Editor extends EventTarget {
     menu.show(anchor, this.#element);
   }
   /** Shows the searchable list of blocks. Choosing one inserts it, replacing replace when given. */
+  /** What the extensions add to the insertion chooser and command search. */
+  insertionChoices() {
+    let result = [];
+    _Editor.#extensions.forEach((extension) => {
+      if (extension.insertionChoices)
+        result.push(...extension.insertionChoices(this));
+    });
+    return result;
+  }
   showInsertionChooser(anchor, replace = null) {
     if (this.#readOnly)
       return;
     let state = this.captureSelection();
-    let chooser = new InsertionChooser(this.strings, this.nodeTypes.items(), (type) => {
+    let prepare = () => {
       this.restoreSelection(state);
       if (replace && replace instanceof TextNode2 && replace.content.text == "/") {
         replace.content.remove(0, 1);
       }
-      this.insertNodeOfType(type, replace && replace instanceof TextNode2 && replace.content.length == 0 ? replace : null);
-    });
+      return replace && replace instanceof TextNode2 && replace.content.length == 0 ? replace : null;
+    };
+    let chooser = new InsertionChooser(this.strings, this.nodeTypes.items(), (type) => {
+      this.insertNodeOfType(type, prepare());
+    }, this.insertionChoices(), (choice) => choice.choose(prepare()));
     chooser.onClose = () => {
       if (!this.#documentElement.contains(document.activeElement))
         this.restoreSelection(state);
@@ -14425,7 +15034,7 @@ var Editor2 = class _Editor extends EventTarget {
     this.dispatchEvent(new CustomEvent("selectionChanged", { detail: { node: null } }));
   }
   #schedulePresence() {
-    if (this.#presenceFrame)
+    if (this.#presenceFrame || !this.#element)
       return;
     this.#presenceFrame = requestAnimationFrame(() => {
       this.#presenceFrame = 0;
@@ -15323,6 +15932,8 @@ export {
   Annotation,
   AnnotationPopover,
   Annotations,
+  Autosave,
+  AutosaveStates,
   BackgroundFills,
   BackgroundImage,
   BackgroundRepeats,
@@ -15375,6 +15986,7 @@ export {
   RichText,
   Search,
   Statistics,
+  StatusBar,
   Strings,
   Stylesheet8 as Stylesheet,
   SuggestionProviders,

@@ -1,4 +1,4 @@
-import {Colors, DocumentColor, NodeClass, Strings, ToolbarMenuItem, Utilities} from "./internal"
+import {Colors, DocumentColor, Node, NodeClass, Strings, ToolbarMenuItem, Utilities} from "./internal"
 
 /**
  * A floating menu or panel. Pressing in it doesn't take focus from the text
@@ -507,20 +507,40 @@ export class Dialog {
   }
 }
 
-/** A searchable list of the node types the editor can insert. */
+/**
+ * Something the insertion chooser offers besides node types, such as a template. An editor
+ * extension adds these with insertionChoices.
+ */
+export interface InsertionChoice {
+  caption: string
+  /** A Bootstrap Icons class. */
+  icon: string
+  /** Extra words the search matches. */
+  keywords?: string
+  /** Inserts it. replace is an empty paragraph the chooser was opened from, which the choice may replace, or null. */
+  choose(replace: Node | null): void
+}
+
+interface ChooserEntry {
+  caption: string
+  icon: string
+  search: string
+  choose: () => void
+}
+
+/** A searchable list of the node types the editor can insert, and any other insertion choices. */
 export class InsertionChooser extends Popup {
-  #types: Array<NodeClass>
+  #entries: Array<ChooserEntry>
   #list: HTMLElement
   #search: HTMLInputElement
-  #visible: Array<NodeClass> = []
+  #visible: Array<ChooserEntry> = []
   #active: number = 0
-  #onSelect: (type: NodeClass) => void
 
-  constructor(strings: Strings, types: Array<NodeClass>, onSelect: (type: NodeClass) => void) {
+  constructor(strings: Strings, types: Array<NodeClass>, onSelect: (type: NodeClass) => void, choices: Array<InsertionChoice> = [], onChoice: (choice: InsertionChoice) => void = choice => choice.choose(null)) {
     super("dropdown-menu show scv-chooser")
     this.keepsFocus = false
-    this.#types = types.filter(type => type.insertable)
-    this.#onSelect = onSelect
+    this.#entries = types.filter(type => type.insertable).map(type => ({caption: type.caption, icon: type.icon, search: `${type.caption} ${type.keywords} ${type.identifier}`.toLowerCase(), choose: () => onSelect(type)}))
+      .concat(choices.map(choice => ({caption: choice.caption, icon: choice.icon, search: `${choice.caption} ${choice.keywords || ""}`.toLowerCase(), choose: () => onChoice(choice)})))
     this.#search = Utilities.element("input", "form-control form-control-sm scv-chooser-search", {type: "search", placeholder: strings.TextInsertNodeSearchHint, "aria-label": strings.TextInsertNodeSearchHint})
     this.#search.addEventListener("input", () => this.#filter())
     this.element.append(this.#search)
@@ -536,26 +556,26 @@ export class InsertionChooser extends Popup {
 
   #filter() {
     let query = this.#search.value.trim().toLowerCase()
-    this.#visible = this.#types.filter(type => query.length == 0 || `${type.caption} ${type.keywords} ${type.identifier}`.toLowerCase().indexOf(query) >= 0)
+    this.#visible = this.#entries.filter(entry => query.length == 0 || entry.search.indexOf(query) >= 0)
     this.#active = 0
     this.#list.textContent = ""
-    this.#visible.forEach((type, index) => {
+    this.#visible.forEach((entry, index) => {
       let button = Utilities.element("button", "dropdown-item scv-menu-item", {type: "button", role: "option"})
-      button.innerHTML = `<i class="scv-menu-icon ${type.icon}"></i>`
+      let icon = Utilities.element("i", `scv-menu-icon ${entry.icon}`)
       let label = Utilities.element("span", "scv-menu-label")
-      label.textContent = type.caption
-      button.append(label)
+      label.textContent = entry.caption
+      button.append(icon, label)
       button.addEventListener("mousedown", event => event.preventDefault())
-      button.addEventListener("click", () => this.#choose(type))
+      button.addEventListener("click", () => this.#choose(entry))
       button.classList.toggle("scv-menu-focus", index == this.#active)
       this.#list.append(button)
     })
     if (this.isOpen) this.position()
   }
 
-  #choose(type: NodeClass) {
+  #choose(entry: ChooserEntry) {
     this.close()
-    this.#onSelect(type)
+    entry.choose()
   }
 
   protected handleKey(event: KeyboardEvent) {

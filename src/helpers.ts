@@ -418,3 +418,326 @@ export class NodeSelection {
     this.#editor.pasteFromClipboard()
   }
 }
+
+/** Where an editor's autosave is. */
+export enum AutosaveStates {
+  /** Nothing to save: no changes since the document was loaded or last saved. */
+  saved = "saved",
+  /** Changes are waiting for the next save. */
+  unsaved = "unsaved",
+  /** The save function is running. */
+  saving = "saving",
+  /** The last save failed; it is tried again after retryDelay, or on the next change. */
+  failed = "failed"
+}
+
+/** The function an application gives autosave. It may return a Promise; a rejection or exception is a failed save. */
+export type AutosaveFunction = (editor: Editor) => unknown
+
+/**
+ * Saves the document a moment after the user stops changing it. Give it a save function, and it
+ * calls it delay milliseconds after the last change, and at least every maximumWait milliseconds
+ * while changes keep coming. It tracks whether everything is saved, raises autosaveStateChanged
+ * on the editor, and warns before the page is closed with changes unsaved.
+ *
+ *     editor.autosave.save = async editor => {
+ *       await fetch("/documents/42", {method: "PUT", body: JSON.stringify(editor.toJSON())})
+ *     }
+ *
+ * Only the user's own changes start a save. Loading a document doesn't, and neither do changes
+ * that arrive from other people while collaborating: the person who made a change saves it.
+ */
+export class Autosave {
+  #editor: Editor
+  #save: AutosaveFunction | null = null
+  #state: AutosaveStates = AutosaveStates.saved
+  #lastError: unknown = null
+  #lastSaved: Date | null = null
+  #timer: ReturnType<typeof setTimeout> | null = null
+  #firstChange: number = 0
+  #running: Promise<boolean> | null = null
+  #again: boolean = false
+  #generation: number = 0
+  #listening: boolean = false
+
+  /** Milliseconds to wait after the last change before saving. */
+  delay: number = 1500
+  /** The longest to wait while changes keep coming, in milliseconds, so long typing sessions are still saved. */
+  maximumWait: number = 10000
+  /** Milliseconds before a failed save is tried again. */
+  retryDelay: number = 10000
+  /** Asks the browser to warn before the page closes while changes aren't saved. */
+  warnBeforeLeaving: boolean = true
+
+  constructor(editor: Editor) {
+    this.#editor = editor
+    editor.addEventListener("contentChanged", (event: CustomEvent) => {
+      if (event.detail && event.detail.remote) return
+      if (editor.isChanged) this.#changed()
+      else this.#loaded()
+    })
+  }
+
+  get owner(): Editor {
+    return this.#editor
+  }
+
+  /** The application's save function, or null to turn autosave off. */
+  get save(): AutosaveFunction | null {
+    return this.#save
+  }
+
+  set save(value: AutosaveFunction | null) {
+    this.#save = typeof value == "function" ? value : null
+    if (!this.#save) {
+      this.#clearTimer()
+      this.#setState(AutosaveStates.saved)
+    } else if (this.#editor.isChanged && this.#state == AutosaveStates.saved) {
+      this.#changed()
+    }
+  }
+
+  get enabled(): boolean {
+    return this.#save !== null
+  }
+
+  get state(): AutosaveStates {
+    return this.#state
+  }
+
+  /** What the last failed save threw or rejected with, or null. */
+  get lastError(): unknown {
+    return this.#lastError
+  }
+
+  /** When the document was last saved, or null. */
+  get lastSaved(): Date | null {
+    return this.#lastSaved
+  }
+
+  /**
+   * Saves now, without waiting. Resolves true when the document is saved. While a save is
+   * running, waits for it and saves again if anything changed meanwhile.
+   */
+  async saveNow(): Promise<boolean> {
+    this.#clearTimer()
+    if (!this.#save) return false
+    if (this.#running) {
+      this.#again = true
+      await this.#running
+      return this.#state == AutosaveStates.saved
+    }
+    this.#running = this.#run()
+    try {
+      return await this.#running
+    } finally {
+      this.#running = null
+      if (this.#again) {
+        this.#again = false
+        if (this.#state == AutosaveStates.unsaved) this.#schedule(0)
+      }
+    }
+  }
+
+  /** Stops autosave and its listeners; the editor calls it when it is destroyed. */
+  dispose() {
+    this.#clearTimer()
+    this.#listen(false)
+    this.#save = null
+  }
+
+  async #run(): Promise<boolean> {
+    let generation = this.#generation
+    this.#setState(AutosaveStates.saving)
+    try {
+      await this.#save!(this.#editor)
+    } catch (error) {
+      this.#lastError = error
+      this.#setState(AutosaveStates.failed)
+      this.#schedule(this.retryDelay)
+      return false
+    }
+    this.#lastError = null
+    this.#lastSaved = new Date()
+    if (generation == this.#generation) {
+      this.#editor.isChanged = false
+      this.#setState(AutosaveStates.saved)
+      return true
+    }
+    // Changed while saving: those changes still need a save.
+    this.#setState(AutosaveStates.unsaved)
+    this.#schedule(this.delay)
+    return true
+  }
+
+  #changed() {
+    this.#generation++
+    if (!this.#save) return
+    if (this.#state != AutosaveStates.saving) this.#setState(AutosaveStates.unsaved)
+    if (this.#running) {
+      this.#again = true
+      return
+    }
+    if (this.#firstChange == 0) this.#firstChange = Date.now()
+    let waited = Date.now() - this.#firstChange
+    this.#schedule(Math.max(0, Math.min(this.delay, this.maximumWait - waited)))
+  }
+
+  #loaded() {
+    this.#generation++
+    this.#clearTimer()
+    if (!this.#running) this.#setState(AutosaveStates.saved)
+  }
+
+  #schedule(milliseconds: number) {
+    if (this.#timer !== null) clearTimeout(this.#timer)
+    this.#timer = setTimeout(() => {
+      this.#timer = null
+      this.saveNow()
+    }, Math.max(0, milliseconds))
+  }
+
+  #clearTimer() {
+    if (this.#timer !== null) clearTimeout(this.#timer)
+    this.#timer = null
+    this.#firstChange = 0
+  }
+
+  #setState(state: AutosaveStates) {
+    if (state != AutosaveStates.unsaved && state != AutosaveStates.saving) this.#firstChange = 0
+    this.#listen(state != AutosaveStates.saved && this.#save !== null)
+    if (state == this.#state) return
+    this.#state = state
+    this.#editor.dispatchEvent(new CustomEvent("autosaveStateChanged", {detail: {state, error: state == AutosaveStates.failed ? this.#lastError : null}}))
+  }
+
+  // The page listeners are added only while something is unsaved: a beforeunload listener keeps
+  // some browsers from caching the page for the back button.
+  #listen(value: boolean) {
+    if (typeof window == "undefined" || value == this.#listening) return
+    this.#listening = value
+    if (value) {
+      window.addEventListener("beforeunload", this.#beforeUnload)
+      document.addEventListener("visibilitychange", this.#visibilityChange)
+    } else {
+      window.removeEventListener("beforeunload", this.#beforeUnload)
+      document.removeEventListener("visibilitychange", this.#visibilityChange)
+    }
+  }
+
+  #beforeUnload = (event: BeforeUnloadEvent) => {
+    if (!this.warnBeforeLeaving || this.#state == AutosaveStates.saved) return
+    event.preventDefault()
+    event.returnValue = ""
+  }
+
+  // Saves straight away when the page is hidden, as when the user switches tabs or closes it on a phone.
+  #visibilityChange = () => {
+    if (document.visibilityState == "hidden" && this.#state == AutosaveStates.unsaved) this.saveNow()
+  }
+}
+
+/**
+ * The bar under the document: word and character counts, the reading time, and the autosave
+ * state. Turn it on with the statusBar option or editor.statusBarVisible. While text is
+ * selected, the counts show the selection's share.
+ */
+export class StatusBar {
+  #editor: Editor
+  #element: HTMLElement | null = null
+  #counts: HTMLElement | null = null
+  #save: HTMLElement | null = null
+  #timer: ReturnType<typeof setTimeout> | null = null
+
+  showWords: boolean = true
+  showCharacters: boolean = true
+  showReadingTime: boolean = true
+  showSaveState: boolean = true
+
+  constructor(editor: Editor) {
+    this.#editor = editor
+    let schedule = () => this.scheduleUpdate()
+    for (let name of ["contentChanged", "selectionChanged", "editingChanged", "autosaveStateChanged"]) editor.addEventListener(name, schedule)
+  }
+
+  get owner(): Editor {
+    return this.#editor
+  }
+
+  get element(): HTMLElement | null {
+    return this.#element
+  }
+
+  /** Builds the bar in an element; the editor calls it as it draws itself. */
+  attach(element: HTMLElement) {
+    document.addEventListener("selectionchange", this.#selectionChange)
+    this.#element = element
+    element.replaceChildren()
+    this.#counts = Utilities.element("span", "scv-status-counts")
+    this.#save = Utilities.element("span", "scv-status-save")
+    element.append(this.#counts, this.#save)
+    this.update()
+  }
+
+  detach() {
+    document.removeEventListener("selectionchange", this.#selectionChange)
+    if (this.#timer !== null) clearTimeout(this.#timer)
+    this.#timer = null
+    this.#element = null
+    this.#counts = null
+    this.#save = null
+  }
+
+  // Selecting text inside a block raises no editor event.
+  #selectionChange = () => {
+    if (this.#editor.isEditingText && this.#editor.statusBarVisible) this.scheduleUpdate()
+  }
+
+  /** Updates the bar shortly, once, however many changes arrive meanwhile. */
+  scheduleUpdate() {
+    if (this.#timer !== null || !this.#element) return
+    this.#timer = setTimeout(() => {
+      this.#timer = null
+      this.update()
+    }, 150)
+  }
+
+  update() {
+    let editor = this.#editor
+    if (!this.#element || !this.#counts || !this.#save || !editor.statusBarVisible) return
+    let strings = editor.strings
+    let statistics = editor.statistics
+    let number = (value: number) => value.toLocaleString()
+    let parts: Array<string> = []
+    let text = editor.toPlainText()
+    let words = Statistics.countWords(text)
+    let selected = editor.isEditingText ? editor.selectedText() : ""
+    if (this.showWords) {
+      if (selected.length > 0) parts.push(Utilities.format(strings.TextSelectedWordsFormat, {selected: number(Statistics.countWords(selected)), count: number(words)}))
+      else parts.push(words == 1 ? strings.TextOneWordCaption : Utilities.format(strings.TextWordsCountFormat, {count: number(words)}))
+    }
+    if (this.showCharacters) {
+      let characters = CodePoints.count(text.replace(/\n/g, ""))
+      if (selected.length > 0) parts.push(Utilities.format(strings.TextSelectedCharactersFormat, {selected: number(CodePoints.count(selected.replace(/\n/g, ""))), count: number(characters)}))
+      else parts.push(characters == 1 ? strings.TextOneCharacterCaption : Utilities.format(strings.TextCharactersCountFormat, {count: number(characters)}))
+    }
+    if (this.showReadingTime && words > 0) parts.push(Utilities.format(strings.TextReadingTimeFormat, {count: number(Math.max(1, Math.ceil(words / statistics.wordsPerMinute)))}))
+    this.#counts.textContent = parts.join(" · ")
+
+    let autosave = editor.autosave
+    this.#save.replaceChildren()
+    this.#save.className = "scv-status-save"
+    if (!this.showSaveState || !autosave.enabled) return
+    let state = autosave.state
+    this.#save.classList.add(`scv-status-${state}`)
+    let icons: {[state: string]: string} = {saved: "bi bi-check2", unsaved: "bi bi-circle-fill", saving: "bi bi-arrow-repeat", failed: "bi bi-exclamation-triangle-fill"}
+    let captions: {[state: string]: string} = {saved: strings.TextSavedCaption, unsaved: strings.TextUnsavedCaption, saving: strings.TextSavingCaption, failed: strings.TextSaveFailedCaption}
+    this.#save.append(Utilities.element("i", icons[state], {"aria-hidden": "true"}), document.createTextNode(` ${captions[state]}`))
+    if (state == AutosaveStates.failed) {
+      let retry = Utilities.element("button", "btn btn-link btn-sm scv-status-retry", {type: "button"})
+      retry.textContent = strings.TextTryAgainCaption
+      retry.addEventListener("click", () => autosave.saveNow())
+      this.#save.append(retry)
+    }
+  }
+}

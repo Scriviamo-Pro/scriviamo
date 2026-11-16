@@ -1,0 +1,21 @@
+{
+  "name": "scriviamo-nuxt-starter",
+  "private": true,
+  "description": "A Nuxt app with Scriviamo: an editor with autosave, and pages rendered on the server",
+  "type": "module",
+  "scripts": {
+    "dev": "nuxt dev",
+    "build": "nuxt build",
+    "preview": "nuxt preview",
+    "start": "PORT=${npm_config_port:-3000} node .output/server/index.mjs",
+    "postinstall": "nuxt prepare"
+  },
+  "dependencies": {
+    "bootstrap": "^5.3.3",
+    "bootstrap-icons": "^1.13.1",
+    "nuxt": "^4.6.4",
+    "scriviamo-vue": "file:../../wrappers/vue",
+    "vue": "^3.5.0"
+  },
+  "version": "1.0.1-beta.5"
+}

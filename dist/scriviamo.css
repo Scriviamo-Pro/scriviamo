@@ -515,6 +515,38 @@
   opacity: 1;
 }
 
+/* A picture uploading through the editor's fileUploader */
+
+.scv-image-uploading {
+  min-width: 200px;
+  min-height: 120px;
+}
+
+.scv-image-uploading img {
+  opacity: 0.45;
+}
+
+.scv-image-upload {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px;
+}
+
+.scv-image-upload .progress {
+  width: min(240px, 80%);
+  height: 6px;
+}
+
+.scv-image-upload-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
 .scv-image-placeholder {
   display: flex;
   flex-direction: column;
@@ -846,6 +878,60 @@
 }
 
 /* Messages and disabled state */
+
+/* Status bar */
+
+.scv-statusbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2px 12px;
+  padding: 3px 10px;
+  border-top: 1px solid var(--scv-border);
+  background-color: var(--scv-surface);
+  color: var(--scv-muted);
+  font-size: 0.8rem;
+  user-select: none;
+}
+
+.scv-status-save {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-inline-start: auto;
+}
+
+.scv-status-unsaved .bi-circle-fill {
+  font-size: 0.45rem;
+  color: var(--bs-warning, #ffc107);
+}
+
+.scv-status-saved .bi {
+  color: var(--bs-success, #198754);
+}
+
+.scv-status-saving .bi {
+  animation: scv-status-spin 1s linear infinite;
+}
+
+.scv-status-failed {
+  color: var(--bs-danger-text-emphasis, #b02a37);
+}
+
+.scv-status-retry {
+  padding: 0 0 0 4px;
+  font-size: inherit;
+  vertical-align: baseline;
+}
+
+@keyframes scv-status-spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scv-status-saving .bi { animation: none; }
+}
 
 .scv-messages {
   position: absolute;

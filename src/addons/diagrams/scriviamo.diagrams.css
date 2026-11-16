@@ -1,0 +1,42 @@
+/* Diagrams: a diagram above its Mermaid source, which shows while the block is selected or edited. */
+
+.scv-diagram-output {
+  padding: 8px 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  text-align: center;
+}
+
+.scv-diagram-pending {
+  color: var(--scv-muted);
+  font-size: 0.85rem;
+}
+
+.scv-diagram-error {
+  color: var(--bs-danger-text-emphasis, #b02a37);
+  font-family: var(--scv-code-font);
+  font-size: 0.8rem;
+  white-space: pre-wrap;
+}
+
+.scv-diagram:not(.scv-diagram-empty) .scv-diagram-source {
+  display: none;
+}
+
+.scv-node.scv-selected .scv-diagram .scv-diagram-source,
+.scv-diagram:focus-within .scv-diagram-source {
+  display: block;
+}
+
+.scv-readonly .scv-diagram:not(.scv-diagram-empty) .scv-diagram-source {
+  display: none;
+}
+
+.scv-diagram-empty .scv-diagram-output {
+  display: none;
+}
+
+.scv-diagram-output svg {
+  max-width: 100%;
+  height: auto;
+}

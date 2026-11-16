@@ -37,9 +37,12 @@ has one.
 | `rawcontent` | Free | HTML written into exports unchanged | `rawcontent` | No |
 | `media` | Free | Audio and video | `audio`, `video` | Yes |
 | `forms` | Free | Forms and form controls | `form`, `label`, `textfield`, `textarea`, `checkbox`, `radiogroup`, `select`, `datalist`, `button` | Yes |
+| `math` | Free | Formulas written in LaTeX and drawn with KaTeX; see [Math and diagrams](math-and-diagrams.md) | `math` | Yes |
+| `diagrams` | Free | Diagrams written in Mermaid and drawn with it; see [Math and diagrams](math-and-diagrams.md) | `diagram` | Yes |
 
-The base package and these add-ons are MIT licensed. Premium add-ons, such as columns, data
-tables, an inspector panel and real-time collaboration, are available separately; see
+The base package and these add-ons are MIT licensed. Premium add-ons, such as columns,
+footnotes, templates, PDF export, an AI writing assistant, data tables, an inspector panel and
+real-time collaboration, are available separately; see
 [scriviamo.dev](https://scriviamo.dev/).
 
 Load an add-on by importing it after the base package and before creating editors:

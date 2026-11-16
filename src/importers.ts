@@ -72,8 +72,10 @@ export class HTMLImporter {
         inline.push(child)
         return
       }
-      if (!(child instanceof HTMLElement)) return
-      let block = this.blockNode(child)
+      // MathML elements, such as a displayed formula, are elements but not HTMLElements.
+      if (!(child instanceof HTMLElement) && !(typeof MathMLElement != "undefined" && child instanceof MathMLElement)) return
+      let element = child as HTMLElement
+      let block = this.blockNode(element)
       if (block === undefined) {
         inline.push(child)
         return
@@ -81,10 +83,10 @@ export class HTMLImporter {
       flush()
       if (Array.isArray(block)) {
         // A wrapper around one block, as Markdown export writes for a styled node, styles that block.
-        if (block.length == 1) this.readBlockStyle(child, block[0])
+        if (block.length == 1) this.readBlockStyle(element, block[0])
         result.push(...block)
       } else if (block) {
-        this.readBlockStyle(child, block)
+        this.readBlockStyle(element, block)
         result.push(block)
       }
     })
@@ -275,6 +277,7 @@ export class HTMLImporter {
 
   /** Whether an element starts a block of its own rather than continuing the text around it. */
   isBlockElement(element: HTMLElement): boolean {
+    if (element.tagName.toLowerCase() == "math") return element.getAttribute("display") == "block"
     return /^(P|DIV|H[1-6]|UL|OL|LI|PRE|BLOCKQUOTE|ASIDE|HR|TABLE|FIGURE|DETAILS|SECTION|ARTICLE|MAIN|HEADER|FOOTER|NAV|CENTER|FORM|FIELDSET|DL|DD|DT|IMG|PICTURE)$/.test(element.tagName)
   }
 
@@ -438,7 +441,33 @@ export class HTMLImporter {
 export class MarkdownConverter {
   static toHTML(markdown: string): string {
     let lines = markdown.replace(/\r\n?/g, "\n").replace(/\t/g, "    ").split("\n")
-    return MarkdownConverter.#blocks(lines)
+    let notes = MarkdownConverter.#footnotes(lines)
+    return MarkdownConverter.#blocks(lines) + notes
+  }
+
+  /**
+   * Takes footnote definitions ("[^label]: text", with indented lines continuing them) out of
+   * the lines, and returns them as a footnotes section, which the footnotes add-on reads.
+   * References, [^label], become tags in the inline text.
+   */
+  static #footnotes(lines: Array<string>): string {
+    let items: Array<string> = []
+    let fence: string | null = null
+    for (let index = 0; index < lines.length; index++) {
+      let opening = lines[index].match(/^ {0,3}(`{3,}|~{3,})/)
+      if (opening) fence = fence === null ? opening[1] : (lines[index].trim().startsWith(fence) ? null : fence)
+      if (fence !== null) continue
+      let definition = lines[index].match(/^ {0,3}\[\^([^\]\s]+)\]:\s?(.*)$/)
+      if (!definition) continue
+      let text = [definition[2]]
+      let end = index + 1
+      while (end < lines.length && /^( {4}|\t)\S/.test(lines[end])) text.push(lines[end++].trim())
+      lines.splice(index, end - index)
+      index--
+      let label = definition[1]
+      items.push(`<li id="fn-${Utilities.escapeAttribute(label)}" data-footnote-id="${Utilities.escapeAttribute(label)}">${MarkdownConverter.inline(text.join(" ").trim())}</li>`)
+    }
+    return items.length == 0 ? "" : `<section class="footnotes" data-scriviamo-footnotes="true"><ol>${items.join("")}</ol></section>`
   }
 
   static #blocks(lines: Array<string>): string {
@@ -459,6 +488,35 @@ export class MarkdownConverter {
 
     while (index < lines.length) {
       let line = lines[index]
+
+      // Display math: $$ on its own lines, or $$ formula $$ on one. It becomes code in the "math"
+      // language, which the math add-on reads as a formula and the base package keeps as code.
+      let math = line.match(/^ {0,3}\$\$(.*)$/)
+      if (math) {
+        flush()
+        let body: Array<string> = []
+        let rest = math[1]
+        let oneLine = rest.match(/^(.*?)\$\$\s*$/)
+        if (oneLine) {
+          body.push(oneLine[1].trim())
+          index++
+        } else {
+          if (rest.trim().length > 0) body.push(rest.trim())
+          index++
+          while (index < lines.length && !/^\s*\$\$\s*$/.test(lines[index])) {
+            let closing = lines[index].match(/^(.*?)\$\$\s*$/)
+            if (closing) {
+              body.push(closing[1])
+              break
+            }
+            body.push(lines[index])
+            index++
+          }
+          index++
+        }
+        html += `<pre><code class="language-math">${Utilities.escapeText(body.join("\n").trim())}</code></pre>`
+        continue
+      }
 
       // Fenced code
       let fence = line.match(/^ {0,3}(`{3,}|~{3,})\s*([^`\s]*)/)
@@ -655,6 +713,8 @@ export class MarkdownConverter {
     text = text.replace(/<(\/?)(kbd|sup|sub|mark|u|br|span|a)([^>]*)>/gi, match => stash(match))
     // Escapes
     text = text.replace(/\\([\\`*_{}\[\]()#+\-.!|~<>])/g, (_match, character) => stash(Utilities.escapeText(character)))
+    // Footnote references
+    text = text.replace(/\[\^([^\]\s]+)\]/g, (_match, label) => stash(`<sup data-scriviamo-suggestion-provider="footnote" data-scriviamo-suggestion-id="${Utilities.escapeAttribute(label)}">${Utilities.escapeText(label)}</sup>`))
     // Images and links
     text = text.replace(/!\[([^\]]*)\]\(\s*<?([^)\s>]+)>?(?:\s+"([^"]*)")?\s*\)/g, (_match, alt, source) => stash(`<img src="${Utilities.escapeAttribute(source)}" alt="${Utilities.escapeAttribute(alt)}">`))
     text = text.replace(/\[([^\]]+)\]\(\s*<?([^)\s>]+)>?(?:\s+"([^"]*)")?\s*\)/g, (_match, label, href, title) => stash(`<a href="${Utilities.escapeAttribute(href)}"${title ? ` title="${Utilities.escapeAttribute(title)}"` : ""}>`) + label + stash("</a>"))

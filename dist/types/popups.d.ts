@@ -1,4 +1,4 @@
-import { DocumentColor, NodeClass, Strings, ToolbarMenuItem } from "./internal";
+import { DocumentColor, Node, NodeClass, Strings, ToolbarMenuItem } from "./internal";
 /**
  * A floating menu or panel. Pressing in it doesn't take focus from the text
  * being edited, so the text selection survives choosing a command.
@@ -84,10 +84,23 @@ export declare class Dialog {
         [name: string]: any;
     } | null>;
 }
-/** A searchable list of the node types the editor can insert. */
+/**
+ * Something the insertion chooser offers besides node types, such as a template. An editor
+ * extension adds these with insertionChoices.
+ */
+export interface InsertionChoice {
+    caption: string;
+    /** A Bootstrap Icons class. */
+    icon: string;
+    /** Extra words the search matches. */
+    keywords?: string;
+    /** Inserts it. replace is an empty paragraph the chooser was opened from, which the choice may replace, or null. */
+    choose(replace: Node | null): void;
+}
+/** A searchable list of the node types the editor can insert, and any other insertion choices. */
 export declare class InsertionChooser extends Popup {
     #private;
-    constructor(strings: Strings, types: Array<NodeClass>, onSelect: (type: NodeClass) => void);
+    constructor(strings: Strings, types: Array<NodeClass>, onSelect: (type: NodeClass) => void, choices?: Array<InsertionChoice>, onChoice?: (choice: InsertionChoice) => void);
     show(anchor: HTMLElement | DOMRect, container: HTMLElement): void;
     protected handleKey(event: KeyboardEvent): void;
 }

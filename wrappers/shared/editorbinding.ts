@@ -1,4 +1,4 @@
-import {Editor, Node, ToolbarDisplayModes} from "scriviamo"
+import {AutosaveFunction, Editor, FileUploader, Node, ToolbarDisplayModes} from "scriviamo"
 
 /** The document format a wrapper's value is read and written in. */
 export type ScriviamoFormat = "json" | "html" | "markdown"
@@ -23,6 +23,12 @@ export interface ScriviamoSettings {
   locale?: string | object
   /** Extra classes for the editor element. */
   editorClass?: string
+  /** Shows the status bar: word and character counts, reading time and the autosave state. */
+  statusBar?: boolean
+  /** Saves the document after changes: a save function, or one with its settings. */
+  autosave?: AutosaveFunction | {save: AutosaveFunction, delay?: number, maximumWait?: number, retryDelay?: number, warnBeforeLeaving?: boolean} | null
+  /** Uploads the files people add, such as pictures, and returns their addresses. */
+  fileUploader?: FileUploader | null
   /** Milliseconds to wait after typing stops before reporting a change; 0 reports each change. */
   changeDelay?: number
   /** Editor events to listen to, by name, such as {linkPressed: event => ...}. */
@@ -88,6 +94,9 @@ export class EditorBinding {
     if (settings.fontSize) options.fontSize = settings.fontSize
     if (settings.locale) options.strings = settings.locale
     if (settings.editorClass) options.class = settings.editorClass
+    if (settings.statusBar !== undefined) options.statusBar = settings.statusBar
+    if (settings.autosave) options.autosave = settings.autosave
+    if (settings.fileUploader) options.fileUploader = settings.fileUploader
     return options
   }
 
@@ -111,6 +120,9 @@ export class EditorBinding {
     if (changed("fontSize")) editor.fontSize = settings.fontSize
     if (changed("editorClass")) editor.class = settings.editorClass
     if (changed("locale")) editor.localize(settings.locale)
+    if (changed("statusBar")) editor.statusBarVisible = !!settings.statusBar
+    if (settings.autosave !== previous.autosave) editor.updateAutosave(settings.autosave ?? null)
+    if (settings.fileUploader !== previous.fileUploader) editor.fileUploader = settings.fileUploader ?? null
   }
 
   /** Applies new settings from the framework component. */

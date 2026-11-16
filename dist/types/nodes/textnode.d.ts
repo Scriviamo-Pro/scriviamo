@@ -40,6 +40,7 @@ export declare class TextNode extends Node {
     /** Text from another block that is being joined onto the end of this one, adjusted to this block's kind. */
     joinedContent(addition: RichText): RichText;
     /** The content without this block type's own styling, for converting it into another type. */
+    protected undrawnTexts(): Array<RichText>;
     plainContent(): RichText;
     /**
      * Converts this block for setBlockType when the block handles the conversion itself,

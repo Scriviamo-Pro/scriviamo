@@ -204,6 +204,8 @@ export declare class Node {
     copyAppearanceTo(other: Node): void;
     toHTML(): string;
     toMarkdown(): string;
+    /** The node's own text before it is drawn, such as in a headless editor, where it has no text hosts. */
+    protected undrawnTexts(): Array<RichText>;
     toPlainText(): string;
     /** Whether the node writes anything into exported HTML. */
     get canExportHTML(): boolean;

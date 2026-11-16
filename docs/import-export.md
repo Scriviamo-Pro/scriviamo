@@ -64,6 +64,48 @@ is exported as inline HTML.
 let text = editor.toPlainText()
 ```
 
+## Files and uploads
+
+Pictures, audio, video and background images that people choose, drop or paste are embedded in
+the document as data by default. That keeps a document self-contained, but makes it large, and
+many applications can't store documents that size. Give the editor a `fileUploader` to store
+files on your own server or storage service instead; the document then keeps only each file's
+address.
+
+```ts
+let editor = new Editor(element, {
+  fileUploader: async upload => {
+    let body = new FormData()
+    body.append("file", upload.file, upload.name || "file")
+    let response = await fetch("/uploads", {method: "POST", body, signal: upload.signal})
+    if (!response.ok) throw new Error(`Upload failed: ${response.status}`)
+    return (await response.json()).url
+  }
+})
+```
+
+The uploader receives one `FileUpload`, and returns the address to show the file from, or a
+Promise of it:
+
+| Member | Meaning |
+|---|---|
+| `file`, `name`, `type` | The file, its name (or "" for pasted content), and its MIME type |
+| `kind` | What it's for: `"image"`, `"audio"`, `"video"`, `"background"` or `"file"` |
+| `node`, `editor` | The node it's for (null for the document's background and the inspector), and the editor |
+| `progress(fraction)` | Reports progress from 0 to 1; a picture shows it as a progress bar |
+| `signal` | An `AbortSignal` that fires when the user cancels; pass it to `fetch` |
+
+Returning null or "" embeds that file after all, so an uploader can, for example, embed small
+files and upload large ones. Throwing or rejecting shows "The file couldn't be uploaded." and
+leaves the document as it was.
+
+While a picture uploads, it shows a preview with a progress bar and a Cancel button, and its
+node's `isUploading` is true. The picture becomes part of the document, as one undo step, once
+the upload finishes, so a document saved during an upload doesn't have it yet.
+
+`editor.storeFile(file, kind, node)` runs the same steps for your own node types: it resolves
+with the uploader's address, or a data URI when there's no uploader.
+
 ## Exporters
 
 `editor.exporters` lists the formats `export` and `exportToFile` offer: `"html"`, `"json"`,
