@@ -14755,13 +14755,15 @@ var Editor2 = class _Editor extends EventTarget {
     let showing = new CustomEvent("messageShowing", { detail: { notification, text: notification.message, indicator: notification.indicator }, cancelable: true });
     if (!this.dispatchEvent(showing) || !this.#messagesElement)
       return;
-    let element = Utilities.element("div", `alert alert-${notification.indicator} alert-dismissible scv-message shadow-sm`, { role: notification.type == 3 /* danger */ ? "alert" : "status" });
+    let element = Utilities.element("div", `alert alert-${notification.indicator} scv-message shadow-sm`, { role: notification.type == 3 /* danger */ ? "alert" : "status" });
+    let text = Utilities.element("div", "scv-message-text");
     if (notification.title.length > 0) {
       let title = Utilities.element("strong", "d-block");
       title.textContent = notification.title;
-      element.append(title);
+      text.append(title);
     }
-    element.append(document.createTextNode(notification.message));
+    text.append(document.createTextNode(notification.message));
+    element.append(text);
     let close = Utilities.element("button", "btn-close", { type: "button", "aria-label": this.strings.TextDoneCaption });
     element.append(close);
     element.addEventListener("click", () => this.closeMessage(notification));
