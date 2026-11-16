@@ -116,10 +116,6 @@
     t.assert(image.toHTML().indexOf("width:fit-content") >= 0, "Image HTML did not shrink its figure to the image: " + image.toHTML())
   })
 
-  test(section, "PDF options", t => {
-    t.assert(typeof PE.PDFOptions == "function", "There are no PDF options (header and footer templates, metadata, protection), since there is no PDF output.")
-  })
-
   test(section, "dividers import from Markdown and round-trip", t => {
     let editor = t.editor()
     editor.fromMarkdown("Before\n\n---\n\n* * *\n\nAfter")

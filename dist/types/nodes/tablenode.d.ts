@@ -17,6 +17,8 @@ export declare class TableNode extends Node {
     static icon: string;
     static keywords: string;
     static create(editor: Editor): Node;
+    /** A new table with a header row, as the Insert menu and the table tool make them. */
+    static withSize(editor: Editor, rows: number, columns: number): TableNode;
     static headerStyle(): TextStyle;
     rows: number;
     columns: number;

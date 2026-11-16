@@ -1302,3 +1302,34 @@
   z-index: 4;
   overflow: hidden;
 }
+
+/* The table tool's size grid. */
+.scv-table-size {
+  padding: 8px;
+}
+
+.scv-table-size-grid {
+  display: grid;
+  gap: 3px;
+}
+
+.scv-table-size-cell {
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: 1px solid var(--bs-border-color, #dee2e6);
+  border-radius: 2px;
+  background: var(--bs-body-bg, #fff);
+}
+
+.scv-table-size-cell.active {
+  border-color: var(--bs-primary, #0d6efd);
+  background: var(--bs-primary-bg-subtle, #cfe2ff);
+}
+
+.scv-table-size-label {
+  margin-top: 6px;
+  text-align: center;
+  font-size: 0.8rem;
+  color: var(--scv-muted);
+}

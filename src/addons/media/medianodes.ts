@@ -7,7 +7,21 @@ const MediaStrings = {
   TextPreviewFromFrameCaption: "Use Current Frame as Preview",
   TextRemovePreviewCaption: "Remove Preview",
   TextMediaUnavailableCaption: "This media can't be played here.",
-  TextReplaceMediaCaption: "Replace"
+  TextReplaceMediaCaption: "Replace",
+  TextAudioCaption: "Audio",
+  TextVideoCaption: "Video",
+  TextAudioToolbarTooltip: "Add Audio",
+  TextVideoToolbarTooltip: "Add Video",
+  TextChooseMediaFileDialogTitle: "Choose a Media File",
+  TextChooseVideoPreviewImageDialogTitle: "Choose a Video Preview Image",
+  TextEmbeddedMediaCaption: "Embedded Media",
+  TextMediaPlaybackErrorMessage: "The media resource could not be played.",
+  TextMediaSourceCaption: "Media Source",
+  TextMediaURLDialogTitle: "Media URL",
+  TextNoMediaSelectedCaption: "No Media Selected",
+  TextPreviewImageOpenErrorMessage: "That preview image could not be opened.",
+  TextRemovePreviewImageCaption: "Remove Preview Image",
+  TextVideoPreviewImageCaption: "Video Preview Image"
 }
 
 type MediaStringsTable = typeof MediaStrings
@@ -57,7 +71,8 @@ export class MediaNode extends Node {
       if (target.resourceURL.length > 0) target.resourceData = ""
     })
     url.updatesLive = false
-    return [InspectorDefaults.section("media", this.typeName, [file, url])].concat(InspectorDefaults.node(this))
+    // The player covers the block and has no text, so there is no background image or line spacing.
+    return [InspectorDefaults.section("media", this.typeName, [file, url])].concat(InspectorDefaults.node(this, {appearance: false, backgroundImage: false}))
   }
 
   static exportStyles(sheet: Stylesheet, editor: Editor | null) {

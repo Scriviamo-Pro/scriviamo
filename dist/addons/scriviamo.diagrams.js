@@ -14,6 +14,8 @@ var DiagramRenderer = class _DiagramRenderer {
   static moduleURL = "https://cdn.jsdelivr.net/npm/mermaid@11.4.1/dist/mermaid.esm.min.mjs";
   /** Settings passed to mermaid.initialize. securityLevel "strict" keeps scripts and clicks out of diagrams. */
   static settings = { securityLevel: "strict" };
+  /** The Mermaid themes for light and dark pages. A theme in settings takes precedence over both. */
+  static themes = { light: "default", dark: "dark" };
   static #mermaid = null;
   static #loading = null;
   static #initializedTheme = "";
@@ -58,9 +60,9 @@ var DiagramRenderer = class _DiagramRenderer {
   /** Draws a diagram, resolving with its SVG. dark picks Mermaid's dark theme. */
   static async render(source, dark = false) {
     let mermaid = await _DiagramRenderer.load();
-    let theme = dark ? "dark" : "default";
+    let theme = String(_DiagramRenderer.settings.theme || (dark ? _DiagramRenderer.themes.dark : _DiagramRenderer.themes.light));
     if (_DiagramRenderer.#initializedTheme != theme && typeof mermaid.initialize == "function") {
-      mermaid.initialize({ startOnLoad: false, theme, ..._DiagramRenderer.settings });
+      mermaid.initialize({ startOnLoad: false, ..._DiagramRenderer.settings, theme });
       _DiagramRenderer.#initializedTheme = theme;
     }
     let id = `scv-diagram-${++_DiagramRenderer.#counter}`;
@@ -70,6 +72,25 @@ var DiagramRenderer = class _DiagramRenderer {
     } finally {
       if (typeof document != "undefined")
         document.getElementById(`d${id}`)?.remove();
+    }
+  }
+};
+var ThemeWatcher = class _ThemeWatcher {
+  static #nodes = /* @__PURE__ */ new Set();
+  static #observer = null;
+  static watch(node) {
+    _ThemeWatcher.#nodes.add(node);
+    if (_ThemeWatcher.#observer || typeof MutationObserver == "undefined" || typeof document == "undefined")
+      return;
+    _ThemeWatcher.#observer = new MutationObserver(() => _ThemeWatcher.#changed());
+    _ThemeWatcher.#observer.observe(document.documentElement, { attributes: true, attributeFilter: ["data-bs-theme"], subtree: true });
+  }
+  static #changed() {
+    for (let node of Array.from(_ThemeWatcher.#nodes)) {
+      if (!node.isShown)
+        _ThemeWatcher.#nodes.delete(node);
+      else if (node.drawnForOtherTheme)
+        node.redraw();
     }
   }
 };
@@ -111,6 +132,18 @@ var DiagramNode = class _DiagramNode extends CodeBlockNode {
   /** The last drawing, and the source it was drawn from, for HTML exports. */
   #drawn = null;
   #generation = 0;
+  /** Whether the diagram is on the page. */
+  get isShown() {
+    return !!this.#output && this.#output.isConnected;
+  }
+  /** Whether the diagram, as drawn, uses the other theme from the one around it now. */
+  get drawnForOtherTheme() {
+    return !!this.#output && !!this.#drawn && this.#drawn.dark != this.#isDark(this.#output);
+  }
+  #isDark(output) {
+    let place = this.editor && this.editor.element || output;
+    return place.closest("[data-bs-theme]")?.getAttribute("data-bs-theme") == "dark";
+  }
   /** The diagram's Mermaid source. */
   get source() {
     return this.content.text;
@@ -146,6 +179,7 @@ var DiagramNode = class _DiagramNode extends CodeBlockNode {
     this.#output = Utilities.element("div", "scv-diagram-output", { contenteditable: "false" });
     body.prepend(this.#output);
     body.classList.add("scv-diagram");
+    ThemeWatcher.watch(this);
     this.#render();
   }
   textChanged(host) {
@@ -172,8 +206,7 @@ var DiagramNode = class _DiagramNode extends CodeBlockNode {
       output.replaceChildren();
       return;
     }
-    let place = this.editor && this.editor.element || output;
-    let dark = !!place.closest("[data-bs-theme=dark]");
+    let dark = this.#isDark(output);
     if (this.#drawn && this.#drawn.source == source && this.#drawn.dark == dark) {
       output.innerHTML = this.#drawn.svg;
       output.className = "scv-diagram-output";

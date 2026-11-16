@@ -1,7 +1,10 @@
 // addons/rawcontent/rawcontentnode.ts
 import { CodeBlockNode, Editor, InspectorDefaults, InspectorEditors, InspectorItem, RichText, Strings } from "scriviamo";
 var RawcontentStrings = {
-  TextRawContentCaption: "Raw HTML"
+  TextRawContentCaption: "Raw HTML",
+  TextDefaultRawContent: "",
+  TextCopyRawContentTooltip: "Copy Raw Content",
+  TextRawContentToolbarTooltip: "Add Raw Content"
 };
 Strings.register(RawcontentStrings);
 var RawContentNode = class extends CodeBlockNode {

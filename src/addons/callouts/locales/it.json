@@ -1,0 +1,12 @@
+{
+  "language": "it",
+  "strings": {
+    "Editor": {
+      "TextAlertInspectorCaption": "Avviso",
+      "TextInfoCaption": "Informazione",
+      "TextSuccessCaption": "Operazione riuscita",
+      "TextWarningCaption": "Attenzione",
+      "TextDangerCaption": "Pericolo"
+    }
+  }
+}

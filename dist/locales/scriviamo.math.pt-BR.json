@@ -1,0 +1,16 @@
+{
+  "language": "pt-BR",
+  "strings": {
+    "Editor": {
+      "TextMathCaption": "Fórmula",
+      "TextMathSourceCaption": "LaTeX",
+      "TextMathPlaceholder": "LaTeX, como E = mc^2",
+      "TextMathLoadingCaption": "Carregando fórmulas…",
+      "TextMathUnavailableMessage": "Não foi possível carregar o renderizador de fórmulas.",
+      "TextInlineMathCaption": "Fórmula em linha",
+      "TextInsertInlineMathCaption": "Inserir fórmula em linha",
+      "TextInlineMathPlaceholder": "LaTeX, como x^2",
+      "TextInlineMathHint": "Enter para concluir. Deixe vazio para remover a fórmula."
+    }
+  }
+}

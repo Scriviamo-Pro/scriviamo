@@ -1,0 +1,12 @@
+{
+  "language": "ar",
+  "strings": {
+    "Editor": {
+      "TextAlertInspectorCaption": "تنبيه",
+      "TextInfoCaption": "معلومة",
+      "TextSuccessCaption": "نجاح",
+      "TextWarningCaption": "تحذير",
+      "TextDangerCaption": "خطر"
+    }
+  }
+}

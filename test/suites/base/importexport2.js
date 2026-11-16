@@ -308,13 +308,22 @@
     t.assert(typeof PE.ImageNode.droppedTextImportPriority == "function" || typeof PE.Node.importDroppedText == "function", "There is no way for node types to claim dropped or pasted addresses (image, audio, video URLs).")
   })
 
-  test(section, "the heading toolbar item inserts each level", t => {
+  test(section, "the block type menu offers each heading level", t => {
     let editor = t.editor()
-    let item = editor.toolbarItems.item("node:heading") || editor.toolbarItems.items().find(entry => entry.identifier == "node:heading")
-    t.assert(item && item.kind == PE.ToolbarItemKinds.menu && item.menuItems.length == 6, "The Heading toolbar item did not provide all six levels.")
-    if (item && item.menuItems.length == 6) {
-      editor.activateToolbarItem("node:heading", item.menuItems[0])
-      t.assert(editor.toMarkdown().indexOf("# Heading") >= 0, "The Heading toolbar menu did not insert its level: " + editor.toMarkdown())
+    editor.addNode(new PE.TextNode("Heading"))
+    editor.beginEditing(editor.nodeAt(0), 0)
+    let item = editor.toolbarItems.item("blocktype")
+    t.assert(item && item.element, "There is no block type menu on the toolbar.")
+    if (!item || !item.element) return
+    item.element.dispatchEvent(new MouseEvent("click", {bubbles: true, cancelable: true}))
+    let popup = PE.Popup.current
+    let levels = popup ? Array.from(popup.element.querySelectorAll("button")).map(button => button.textContent.trim()).filter(text => /^H\d/.test(text) || /Heading \d/.test(text)) : []
+    if (popup) popup.close()
+    t.equal(levels.length, 6, "The block type menu didn't offer all six heading levels")
+    for (let level = 1; level <= 6; level++) {
+      editor.activateToolbarItem("blocktype", new PE.ToolbarMenuItem(`heading:${level}`, ""))
+      let node = editor.nodeAt(0)
+      t.assert(node instanceof PE.HeadingNode && node.level == level, `Choosing Heading ${level} didn't make a level ${level} heading.`)
     }
   })
 
@@ -430,25 +439,53 @@
     t.assert(lengthened.cell(2, 0).insertionStyleAt(0).italic && !lengthened.cell(2, 0).insertionStyleAt(0).bold, "A new row was not styled like the body row above it.")
   })
 
-  test(section, "table insertion sizes", t => {
+  test(section, "table insertion sizes", async t => {
     let editor = t.editor()
-    let item = editor.toolbarItems.items().find(entry => entry.identifier == "node:table")
+    let item = editor.toolbarItems.item("table")
     t.assert(item, "There is no table toolbar item.")
     let table = editor.insertNodeOfType("table")
     t.assert(table instanceof PE.TableNode && table.rows == 3 && table.columns == 3, `A table inserted without a size was not 3 × 3 (${table && table.rows}×${table && table.columns}).`)
+    if (!item || !item.element) return
+    // In a paragraph, so the new tables go after it rather than into a cell of the first.
+    let paragraph = new PE.TextNode("After")
+    editor.addNode(paragraph)
+    editor.beginEditing(paragraph, 0)
+    // The size grid: pointing at a cell shows the size, and clicking it inserts that table.
+    item.element.dispatchEvent(new MouseEvent("click", {bubbles: true, cancelable: true}))
+    let picker = PE.Popup.current
+    t.assert(picker instanceof PE.TableSizePicker, "The table tool didn't open the size grid.")
+    if (!(picker instanceof PE.TableSizePicker)) return
+    let cell = picker.element.querySelector('[data-rows="2"][data-columns="4"]')
+    cell.dispatchEvent(new MouseEvent("mouseover", {bubbles: true}))
+    t.equal(picker.element.querySelector(".scv-table-size-label").textContent, "2 × 4", "The grid didn't show the size pointed at")
+    t.equal(picker.element.querySelectorAll(".scv-table-size-cell.active").length, 8, "The grid didn't highlight the size pointed at")
+    cell.dispatchEvent(new MouseEvent("click", {bubbles: true, cancelable: true}))
+    let inserted = editor.nodes().filter(node => node instanceof PE.TableNode).find(node => node !== table)
+    t.assert(inserted && inserted.rows == 2 && inserted.columns == 4, `The grid didn't insert a 2 × 4 table (${inserted && inserted.rows}×${inserted && inserted.columns}).`)
+    // The keyboard: arrows grow the size, Enter inserts it.
+    editor.beginEditing(paragraph, 0)
+    item.element.dispatchEvent(new MouseEvent("click", {bubbles: true, cancelable: true}))
+    picker = PE.Popup.current
+    for (let key of ["ArrowRight", "ArrowDown", "ArrowDown", "Enter"]) window.dispatchEvent(new KeyboardEvent("keydown", {key, bubbles: true, cancelable: true}))
+    inserted = editor.nodes().filter(node => node instanceof PE.TableNode).find(node => node !== table && node.columns == 2) || editor.nodes().filter(node => node instanceof PE.TableNode).pop()
+    t.assert(inserted.rows == 3 && inserted.columns == 2, `The keyboard didn't insert a 3 × 2 table (${inserted.rows}×${inserted.columns}).`)
+    t.assert(!picker.isOpen, "The size grid stayed open")
   })
-
-  skip(section, "table size picker, grid and list pickers", "Choosers are page popups driven by the browser's keyboard and pointer events, not picker objects with their own key and pointer handlers.")
 
   test(section, "toolbar state saves, loads and resets", t => {
     let editor = t.editor()
+    let identifiers = () => editor.toolbarItems.items().filter(item => item.kind != PE.ToolbarItemKinds.separator && item.kind != PE.ToolbarItemKinds.flexibleSpace).map(item => item.identifier)
+    let defaults = identifiers()
     let saved = editor.saveToolbarState()
     editor.toolbarDisplayMode = PE.ToolbarDisplayModes.iconAndText
     let changed = editor.saveToolbarState()
     t.assert(editor.loadToolbarState(saved) && editor.toolbarDisplayMode == PE.ToolbarDisplayModes.iconOnly, "Loading a saved toolbar state did not restore it.")
     t.assert(editor.loadToolbarState(changed) && editor.toolbarDisplayMode == PE.ToolbarDisplayModes.iconAndText, "Loading a changed toolbar state did not apply it.")
+    editor.loadToolbarState({items: ["bold", "italic"]})
+    t.equal(identifiers(), ["bold", "italic"], "Loading a shorter arrangement didn't replace the items")
     editor.resetToolbar()
-    t.equal(editor.toolbarDisplayMode, PE.ToolbarDisplayModes.iconOnly, "ResetToolbar did not restore the default display mode")
+    t.equal(identifiers(), defaults, "ResetToolbar didn't restore the default items")
+    t.equal(editor.toolbarDisplayMode, PE.ToolbarDisplayModes.iconAndText, "ResetToolbar changed the display mode, which is the user's choice")
     t.assert(editor.loadToolbarState(`{"version":1,"contextual":[{"type":3,"items":["insert","no-such-item","separator","separator","search"]}]}`), "A desktop toolbar state with unknown items did not load.")
   })
 

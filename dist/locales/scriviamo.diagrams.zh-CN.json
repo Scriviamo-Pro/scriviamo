@@ -1,0 +1,13 @@
+{
+  "language": "zh-CN",
+  "strings": {
+    "Editor": {
+      "TextDiagramCaption": "图表",
+      "TextDiagramSourceCaption": "Mermaid",
+      "TextDiagramRedrawCaption": "重新绘制",
+      "TextDiagramPlaceholder": "Mermaid 图表,例如:graph LR; A --> B",
+      "TextDiagramLoadingCaption": "正在绘制图表…",
+      "TextDiagramUnavailableMessage": "无法加载图表渲染器。"
+    }
+  }
+}

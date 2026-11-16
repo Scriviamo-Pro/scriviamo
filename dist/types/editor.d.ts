@@ -26,7 +26,7 @@ export interface EditorOptions {
     adaptiveHeight?: boolean;
     fontName?: string;
     fontSize?: number;
-    /** A locale pack or an object of localized strings. */
+    /** A locale pack, an object of localized strings, or a list of either. */
     strings?: string | object;
     /** Extra classes for the editor element. */
     class?: string;
@@ -316,6 +316,11 @@ export declare class Editor extends EventTarget {
     nodeFromJSON(data: any): Node | null;
     /** Inserts a node of a registered type where the user is working, and starts editing it. */
     insertNodeOfType(type: NodeClass | string, replace?: Node | null): Node | null;
+    /**
+     * Inserts a node made for this editor where the user is working, as insertNodeOfType does:
+     * at the caret, in place of an empty paragraph, or after the selected node. One undo step.
+     */
+    insertNewNode(node: Node, replace?: Node | null): Node | null;
     /**
      * Turns text blocks into another kind: "text", "heading" (with level),
      * "quote", "alert" (with alert type), "codeblock", or "list" (with list type).

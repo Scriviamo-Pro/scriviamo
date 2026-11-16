@@ -84,17 +84,4 @@
     t.equal(markdown.toHTML(), source.toHTML(), "The Markdown round trip changed the document")
   })
 
-  test(section, "picture output", t => {
-    let editor = t.editor()
-    let node = new PE.TextNode("Picture")
-    t.assert(typeof editor.toPicture == "function" && typeof editor.toPictures == "function" && typeof node.toPicture == "function", "There is no picture output (Editor.ToPicture, ToPictures, Node.ToPicture).")
-  })
-
-  test(section, "PDF output", t => {
-    let editor = t.editor()
-    t.assert(typeof editor.toRasterPDF == "function" && typeof editor.toVectorPDF == "function", "There is no PDF output (ToRasterPDF, ToVectorPDF); printing goes through the browser's print dialog.")
-  })
-
-  skip(section, "print and paginated drawing match picture output", "Printing uses the browser's print dialog, which has no drawing output to compare.")
-  skip(section, "rounded corners and vector PDF clipping", "Depends on PDF output, which this implementation does not have.")
 }

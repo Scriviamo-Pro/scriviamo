@@ -75,7 +75,106 @@ const FormsStrings = {
   TextOnCaption: "On",
   TextOffCaption: "Off",
   TextSoftCaption: "Soft",
-  TextHardCaption: "Hard"
+  TextHardCaption: "Hard",
+  TextTextFieldCaption: "Text Field",
+  TextDefaultTextFieldPlaceholder: "Text field",
+  TextAcceptedCharacterSetsCaption: "Accepted Character Sets",
+  TextAcceptedCharacterSetsDialogPrompt: "Enter space-separated character encodings:",
+  TextActionCaption: "Action",
+  TextAddOptionDialogPrompt: "Enter the option caption:",
+  TextAddRadioOptionDialogTitle: "Add Radio Option",
+  TextAllowMultipleSelectionsCaption: "Allow Multiple Selections",
+  TextAssociatedFormDialogPrompt: "Enter the owning form's ID, or leave empty:",
+  TextAssociatedFormDialogTitle: "Associated Form",
+  TextAssociatedFormIDCaption: "Associated Form ID",
+  TextAutocompleteDialogPrompt: "Enter the autocomplete token or leave empty:",
+  TextButtonCommandDialogPrompt: "Enter the command keyword:",
+  TextButtonCommandDialogTitle: "Button Command",
+  TextButtonFormActionDialogPrompt: "Enter the submission URL override:",
+  TextButtonPropertiesCaption: "Button Properties",
+  TextButtonToolbarTooltip: "Add Button",
+  TextButtonValueDialogTitle: "Button Value",
+  TextCheckboxPropertiesCaption: "Checkbox Properties",
+  TextCheckboxToolbarTooltip: "Add Checkbox",
+  TextCheckboxValueDialogTitle: "Checkbox Value",
+  TextColorTypeCaption: "Color",
+  TextControlIDDialogPrompt: "Enter the HTML element ID:",
+  TextControlIDDialogTitle: "Control ID",
+  TextControlNameDialogPrompt: "Enter the form submission name:",
+  TextControlNameDialogTitle: "Control Name",
+  TextDatalistDialogPrompt: "Enter the associated datalist ID:",
+  TextDatalistIDDialogPrompt: "Enter the ID referenced by text fields:",
+  TextDatalistIDDialogTitle: "Datalist ID",
+  TextDatalistOptionDialogPrompt: "Enter the option value:",
+  TextDatalistPropertiesCaption: "Datalist Properties",
+  TextDatalistToolbarTooltip: "Add Datalist",
+  TextDateTimeTypeCaption: "Date and Time",
+  TextDateTypeCaption: "Date",
+  TextDialogCaption: "Dialog",
+  TextDropdownPropertiesCaption: "Dropdown Properties",
+  TextDropdownToolbarTooltip: "Add Dropdown",
+  TextEmailTypeCaption: "Email",
+  TextEncodingTypeCaption: "Encoding Type",
+  TextFileTypeCaption: "File",
+  TextFormActionDialogPrompt: "Enter the form submission URL:",
+  TextFormEncodingCaption: "Form Encoding",
+  TextFormIDDialogPrompt: "Enter the form element ID:",
+  TextFormIDDialogTitle: "Form ID",
+  TextFormNameDialogPrompt: "Enter the form name:",
+  TextFormNameDialogTitle: "Form Name",
+  TextFormPropertiesCaption: "Form Properties",
+  TextFormRelationshipDialogPrompt: "Enter the relationship tokens:",
+  TextFormRelationshipDialogTitle: "Form Relationship",
+  TextFormTargetDialogPrompt: "Enter the browsing-context target:",
+  TextFormToolbarTooltip: "Add Form",
+  TextGetCaption: "GET",
+  TextGroupCaption: "Group",
+  TextGroupLegendDialogPrompt: "Enter the group legend:",
+  TextHiddenTypeCaption: "Hidden",
+  TextInputModeDialogPrompt: "Enter the inputmode value:",
+  TextInvalidPatternCaption: "Invalid pattern",
+  TextLabelPropertiesCaption: "Label Properties",
+  TextLabelTargetDialogPrompt: "Enter the ID of the labeled control:",
+  TextLabelTargetDialogTitle: "Label Target",
+  TextLabelToolbarTooltip: "Add Label",
+  TextMaximumLengthCaption: "Maximum Length",
+  TextMethodCaption: "Method",
+  TextMinimumLengthCaption: "Minimum Length",
+  TextMonthTypeCaption: "Month",
+  TextMultipartFormDataCaption: "Multipart Form Data",
+  TextNewOptionCaption: "New Option",
+  TextNoIDCaption: "(no ID)",
+  TextNumberTypeCaption: "Number",
+  TextOptionCaptionDialogPrompt: "Enter the visible option caption:",
+  TextOptionCaptionDialogTitle: "Option Caption",
+  TextOptionValueDialogPrompt: "Enter the submitted option value:",
+  TextOptionValueDialogTitle: "Option Value",
+  TextPOSTCaption: "POST",
+  TextPasswordTypeCaption: "Password",
+  TextPlaceholderDialogPrompt: "Enter the placeholder text:",
+  TextRadioGroupLegendDialogTitle: "Radio Group Legend",
+  TextRadioGroupPropertiesCaption: "Radio Group Properties",
+  TextRadioGroupToolbarTooltip: "Add Radio Group",
+  TextRadioLabelDialogPrompt: "Enter the accompanying label:",
+  TextRadioLabelDialogTitle: "Radio Label",
+  TextRadioValueDialogTitle: "Radio Value",
+  TextRangeTypeCaption: "Range",
+  TextSearchTypeCaption: "Search",
+  TextSkipValidationCaption: "Skip Validation",
+  TextSubmissionValueCaption: "Submission Value",
+  TextSubmittedValueDialogPrompt: "Enter the submitted value:",
+  TextSuggestionLabelDialogPrompt: "Enter the optional display label:",
+  TextSuggestionLabelDialogTitle: "Suggestion Label",
+  TextSuggestionValueDialogPrompt: "Enter the suggested value:",
+  TextSuggestionValueDialogTitle: "Suggestion Value",
+  TextTelephoneTypeCaption: "Telephone",
+  TextTextAreaToolbarTooltip: "Add Text Area",
+  TextTextFieldToolbarTooltip: "Add Text Field",
+  TextTimeTypeCaption: "Time",
+  TextURLEncodedCaption: "URL Encoded",
+  TextValidationPatternCaption: "Validation Pattern",
+  TextValidationPatternDialogPrompt: "Enter the regular-expression pattern:",
+  TextWeekTypeCaption: "Week"
 }
 
 type FormsStringsTable = typeof FormsStrings
@@ -187,7 +286,12 @@ export class FormSupport {
       section.add(InspectorItem.actionItem(`${prefix}:insertafter:${index}`, "", strings.TextAddAfterCaption, target => insert(target, index + 1)))
       let remove = section.add(InspectorItem.actionItem(`${prefix}:remove:${index}`, "", strings.TextRemoveOptionCaption, target => target.options.splice(index, 1)))
       remove.enabled = node.options.length > 1
+      // Resetting an option makes it a new one in its place.
       section.items().forEach(item => item.setDefaultValue(undefined))
+      section.item(`optioncaption${index}`)?.setDefaultValue(Utilities.format(strings.TextOptionNumberFormat, {number: index + 1}))
+      section.item(`optionvalue${index}`)?.setDefaultValue("")
+      section.item(`optionselected${index}`)?.setDefaultValue(false)
+      section.item(`optiondisabled${index}`)?.setDefaultValue(false)
       result.push(section)
     })
     return result
@@ -1322,6 +1426,11 @@ export class RadioGroupNode extends DropdownNode {
       InspectorItem.bound("activedisabled", strings.TextOptionDisabledCaption, InspectorEditors.toggle, target => option(target).disabled, (target, value) => option(target).disabled = value === true)
     ])
     content.items().forEach(entry => entry.setDefaultValue(undefined))
+    // Resetting the option being edited makes it a new one in its place.
+    content.item("activelabel")?.setDefaultValue((target: RadioGroupNode) => Utilities.format(strings.TextOptionNumberFormat, {number: activeIndex(target) + 1}))
+    content.item("activevalue")?.setDefaultValue("")
+    content.item("activeselected")?.setDefaultValue(false)
+    content.item("activedisabled")?.setDefaultValue(false)
     let layout = InspectorItem.menu("layout", strings.TextLayoutCaption, [[strings.TextVerticalCaption, RadioGroupLayouts.vertical], [strings.TextHorizontalCaption, RadioGroupLayouts.horizontal]], target => target.layout, (target, value) => target.layout = value)
     let group = InspectorDefaults.section("radiogroup", strings.TextRadioGroupCaption, [item("required", strings.TextRequiredCaption, "required", InspectorEditors.toggle), layout])
     let control = FormSupport.formControl(this).filter(entry => entry.identifier != "content" && entry.identifier != "typography")

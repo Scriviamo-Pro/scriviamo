@@ -1,0 +1,16 @@
+{
+  "language": "zh-CN",
+  "strings": {
+    "Editor": {
+      "TextMathCaption": "公式",
+      "TextMathSourceCaption": "LaTeX",
+      "TextMathPlaceholder": "LaTeX,例如 E = mc^2",
+      "TextMathLoadingCaption": "正在加载公式…",
+      "TextMathUnavailableMessage": "无法加载公式渲染器。",
+      "TextInlineMathCaption": "行内公式",
+      "TextInsertInlineMathCaption": "插入行内公式",
+      "TextInlineMathPlaceholder": "LaTeX,例如 x^2",
+      "TextInlineMathHint": "按 Enter 完成。留空即可删除公式。"
+    }
+  }
+}

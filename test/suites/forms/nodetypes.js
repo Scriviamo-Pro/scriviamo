@@ -27,12 +27,18 @@
     if (border) t.equal(border.defaultValueFor(heading), 1, "The border size inspector default was not a new node's size")
     if (size) t.equal(size.defaultValueFor(heading), 20, "The heading size inspector default was not its level's size")
     if (level) t.equal(level.defaultValueFor(heading), PE.HeadingLevels.heading2, "The heading level inspector default was not the prototype's level")
-    let dropdown = new PE.DropdownNode()
+    // A dropdown and a radio group as the Insert menu makes them, with two options.
+    let editor = t.editor()
+    let dropdown = PE.DropdownNode.create(editor)
     let option = inspectorItem(dropdown, "optiondisabled0")
     t.assert(option, "The dropdown inspector omitted its first option.")
     if (option) t.equal(option.defaultValueFor(dropdown), false, "A dropdown option's inspector default was not available")
-    let radio = new PE.RadioGroupNode()
+    let caption = inspectorItem(dropdown, "optioncaption1")
+    if (caption) t.equal(caption.defaultValueFor(dropdown), "Option 2", "A dropdown option's label did not reset to its position")
+    let radio = PE.RadioGroupNode.create(editor)
+    radio.activeOptionIndex = 1
     let label = inspectorItem(radio, "activelabel")
-    if (label) t.assert(String(label.defaultValueFor(radio)).startsWith("Option "), "A radio option's label did not reset to its position.")
+    t.assert(label, "The radio group inspector omitted the option being edited.")
+    if (label) t.equal(label.defaultValueFor(radio), "Option 2", "A radio option's label did not reset to its position")
   })
 }

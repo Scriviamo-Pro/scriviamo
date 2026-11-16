@@ -1,0 +1,12 @@
+{
+  "language": "ja",
+  "strings": {
+    "Editor": {
+      "TextAlertInspectorCaption": "アラート",
+      "TextInfoCaption": "情報",
+      "TextSuccessCaption": "成功",
+      "TextWarningCaption": "警告",
+      "TextDangerCaption": "危険"
+    }
+  }
+}

@@ -1,4 +1,4 @@
-import {Alignments, Annotation, AnnotationHandler, Annotations, Autosave, AutosaveFunction, BackgroundImage, BlockShortcut, ChoiceItem, ChoicePopup, CodeBlockNode, CodePoints, Colors, CurrentDocumentVersion, DefaultFontSize, Dialog, DialogField, Directions, DocumentColor, DocumentStyle, Exporter, Exporters, ExportFormats, FileUploader, FileUploadKind, FontOptions, Formatting, FormattingStyles, HeadingNode, History, HTMLImporter, InsertionChoice, InsertionChooser, InspectorDefaults, InspectorSection, LineBreak, MarkdownConverter, MediaUI, Node, NodeClass, NodeSelection, NodeTypes, Notification, NotificationTypes, ParagraphBreak, Popup, PopupMenu, RichText, Search, SelectionState, Statistics, StatusBar, Strings, Stylesheet, SuggestionProviders, Suggestions, TableNode, TextHost, TextHostModes, TextNode, TextStyle, ThemeColors, ToolbarDisplayModes, ToolbarItem, ToolbarItemKinds, ToolbarItems, ToolbarMenuItem, ToolbarView, UnknownNode, Utilities} from "./internal"
+import {Alignments, Annotation, AnnotationHandler, Annotations, Autosave, AutosaveFunction, BackgroundImage, BlockShortcut, ChoiceItem, ChoicePopup, CodeBlockNode, CodePoints, Colors, CurrentDocumentVersion, DefaultFontSize, Dialog, DialogField, Directions, DocumentColor, DocumentStyle, Exporter, Exporters, ExportFormats, FileUploader, FileUploadKind, FontOptions, Formatting, FormattingStyles, HeadingNode, History, HTMLImporter, InsertionChoice, InsertionChooser, InspectorDefaults, InspectorSection, LineBreak, MarkdownConverter, MediaUI, Node, NodeClass, NodeSelection, NodeTypes, Notification, NotificationTypes, ParagraphBreak, Popup, PopupMenu, RichText, Search, SelectionState, Statistics, StatusBar, Strings, Stylesheet, SuggestionProviders, Suggestions, TableNode, TableSizePicker, TextHost, TextHostModes, TextNode, TextStyle, ThemeColors, ToolbarDisplayModes, ToolbarItem, ToolbarItemKinds, ToolbarItems, ToolbarMenuItem, ToolbarView, UnknownNode, Utilities} from "./internal"
 
 export enum ValidationSeverities {
   warning = 0,
@@ -33,7 +33,7 @@ export interface EditorOptions {
   adaptiveHeight?: boolean
   fontName?: string
   fontSize?: number
-  /** A locale pack or an object of localized strings. */
+  /** A locale pack, an object of localized strings, or a list of either. */
   strings?: string | object
   /** Extra classes for the editor element. */
   class?: string
@@ -326,12 +326,14 @@ export class Editor extends EventTarget {
 
     Editor.registeredNodeTypes().forEach(type => this.nodeTypes.add(type))
 
+    // The editor's own text first, so the toolbar is built in its language.
+    if (options && options.strings) this.strings.apply(options.strings)
     this.#buildDefaultToolbar()
     this.toolbarItems.addEventListener("changed", () => this.#renderToolbar())
     this.nodeTypes.addEventListener("changed", () => this.#renderToolbar())
     this.history.addEventListener("changed", () => this.updateToolbarState())
 
-    this.updateOptions(options)
+    this.#applyOptions(options, true)
     Editor.#extensions.forEach(extension => extension.install?.(this))
   }
 
@@ -390,6 +392,10 @@ export class Editor extends EventTarget {
   }
 
   updateOptions(options?: EditorOptions) {
+    this.#applyOptions(options, false)
+  }
+
+  #applyOptions(options: EditorOptions | undefined, constructing: boolean) {
     let defaults: EditorOptions = {
       readOnly: false,
       toolbarVisible: true,
@@ -402,7 +408,9 @@ export class Editor extends EventTarget {
       class: ""
     }
     let instanceOptions: EditorOptions = {...defaults, ...options}
-    if (instanceOptions.strings) this.strings.apply(instanceOptions.strings)
+    // While constructing, the text was applied before the toolbar was built; later, the toolbar and
+    // the document are rebuilt in the new language.
+    if (instanceOptions.strings && !constructing) this.localize(instanceOptions.strings)
     if (instanceOptions.fontName) this.#fontName = instanceOptions.fontName
     if (instanceOptions.fontSize) this.#fontSize = instanceOptions.fontSize
     this.#readOnly = instanceOptions.readOnly
@@ -1139,7 +1147,15 @@ export class Editor extends EventTarget {
   insertNodeOfType(type: NodeClass | string, replace: Node | null = null): Node | null {
     let nodeClass = typeof type == "string" ? this.nodeTypes.item(type) : type
     if (!nodeClass || this.#readOnly) return null
-    let node = nodeClass.create(this)
+    return this.insertNewNode(nodeClass.create(this), replace)
+  }
+
+  /**
+   * Inserts a node made for this editor where the user is working, as insertNodeOfType does:
+   * at the caret, in place of an empty paragraph, or after the selected node. One undo step.
+   */
+  insertNewNode(node: Node, replace: Node | null = null): Node | null {
+    if (this.#readOnly) return null
     node.editor = this
     let host = this.#activeHost
     let point = host ? host.node.insertionPoint(host) : null
@@ -3452,6 +3468,7 @@ export class Editor extends EventTarget {
       return item
     }
     add("insert", strings.TextInsertCaption, "bi bi-plus-lg", ToolbarItemKinds.menu, true).tooltip = strings.TextInsertTooltip
+    items.add(this.#catalogItem("table")!)
     items.add(ToolbarItem.separator())
     add("undo", strings.TextUndoCaption, "bi bi-arrow-counterclockwise")
     add("redo", strings.TextRedoCaption, "bi bi-arrow-clockwise")
@@ -3509,6 +3526,15 @@ export class Editor extends EventTarget {
     }
     switch (identifier) {
       case "insert": return make(strings.TextInsertCaption, "bi bi-plus-lg", ToolbarItemKinds.menu, strings.TextInsertTooltip)
+      case "table": {
+        let item = make(strings.TextTableCaption, "bi bi-table", ToolbarItemKinds.menu)
+        item.makePopup = choose => new TableSizePicker(strings, (rows, columns) => {
+          let menuItem = new ToolbarMenuItem(`${rows}x${columns}`, Utilities.format(strings.TextTableSizeCaptionFormat, {rows, columns}))
+          menuItem.value = {rows, columns}
+          choose(menuItem)
+        })
+        return item
+      }
       case "undo": return make(strings.TextUndoCaption, "bi bi-arrow-counterclockwise")
       case "redo": return make(strings.TextRedoCaption, "bi bi-arrow-clockwise")
       case "blocktype": return make(strings.TextTextCaption, "", ToolbarItemKinds.menu, strings.TextBlockTypeCaption)
@@ -3550,7 +3576,7 @@ export class Editor extends EventTarget {
   /** The identifiers of every built-in tool, in the order the customizer lists them. */
   static get catalogIdentifiers(): Array<string> {
     let result = [
-      "insert", "undo", "redo", "blocktype", "font", "size", "bold", "italic", "underline", "strike", "inline",
+      "insert", "table", "undo", "redo", "blocktype", "font", "size", "bold", "italic", "underline", "strike", "inline",
       "code", "highlight", "keyboard", "superscript", "subscript", "textcolor", "background", "link",
       "alignment", "lineheight", "linespacing", "clearformatting",
       "comment", "documentbackground", "find", "replace", "print", "search"
@@ -3717,9 +3743,9 @@ export class Editor extends EventTarget {
     let identifiers: Array<string> = []
     if (Array.isArray(data.items)) {
       identifiers = data.items.map(item => String(item))
-    } else if (Array.isArray(data.classic)) {
+    } else if (Array.isArray(data.classic) || Array.isArray(data.contextual)) {
       // A saved arrangement of sections: a separator between sections.
-      data.classic.forEach((section, index) => {
+      ;(Array.isArray(data.classic) ? data.classic : data.contextual).forEach((section, index) => {
         if (index > 0) identifiers.push("separator")
         if (section && Array.isArray(section.items)) section.items.forEach(item => identifiers.push(String(item)))
       })
@@ -4208,6 +4234,12 @@ export class Editor extends EventTarget {
       case "insert":
         if (menuItem) this.insertNodeOfType(menuItem.identifier)
         break
+      case "table": {
+        // The size grid's choice, or the usual size without one.
+        let size = menuItem && menuItem.value ? menuItem.value : {rows: 3, columns: 3}
+        if (this.nodeTypes.item("table")) this.insertNewNode(TableNode.withSize(this, size.rows, size.columns))
+        break
+      }
       default:
         if (!Editor.#extensions.some(extension => extension.activateToolbarItem && extension.activateToolbarItem(this, identifier, menuItem))) {
           this.dispatchEvent(new CustomEvent("toolbarItemPressed", {detail: {item: item, menuItem: menuItem}}))
@@ -4256,6 +4288,7 @@ export class Editor extends EventTarget {
     Editor.#extensions.forEach(extension => extension.updateToolbarState?.(this, set))
     set("insert", !this.#readOnly)
     set("search", !this.#readOnly)
+    set("table", !this.#readOnly && !!this.nodeTypes.item("table"))
     set("find", true, this.search.visible)
     set("replace", !this.#readOnly)
     set("print", true)

@@ -67,6 +67,23 @@ export declare class ColorPalette extends Popup {
     static maximumRecentColors: number;
     constructor(strings: Strings, onSelect: (color: DocumentColor | null) => void);
 }
+/**
+ * A grid for choosing a table's size: pointing at a cell, or moving with the arrow keys, picks
+ * that many rows and columns, and clicking or Enter chooses it.
+ */
+export declare class TableSizePicker extends Popup {
+    #private;
+    static maximumRows: number;
+    static maximumColumns: number;
+    rows: number;
+    columns: number;
+    constructor(strings: Strings, onSelect: (rows: number, columns: number) => void);
+    /** Picks a size, highlighting it in the grid. */
+    select(rows: number, columns: number): void;
+    /** Chooses the size picked, and closes. */
+    choose(): void;
+    protected handleKey(event: KeyboardEvent): void;
+}
 export interface DialogField {
     name: string;
     label: string;

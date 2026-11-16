@@ -6,6 +6,8 @@ declare const CalloutsStrings: {
     TextSuccessCaption: string;
     TextWarningCaption: string;
     TextDangerCaption: string;
+    TextAddAlertCaption: string;
+    TextAlertTypeCaption: string;
 };
 type CalloutsStringsTable = typeof CalloutsStrings;
 declare module "scriviamo" {

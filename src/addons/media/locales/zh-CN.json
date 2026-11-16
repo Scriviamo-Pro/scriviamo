@@ -1,0 +1,13 @@
+{
+  "language": "zh-CN",
+  "strings": {
+    "Editor": {
+      "TextEnterMediaURLPrompt": "媒体地址",
+      "TextChoosePreviewImageCaption": "选择预览图…",
+      "TextPreviewFromFrameCaption": "将当前画面用作预览图",
+      "TextRemovePreviewCaption": "移除预览图",
+      "TextMediaUnavailableCaption": "此媒体无法在这里播放。",
+      "TextReplaceMediaCaption": "替换"
+    }
+  }
+}

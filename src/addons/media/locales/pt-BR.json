@@ -1,0 +1,13 @@
+{
+  "language": "pt-BR",
+  "strings": {
+    "Editor": {
+      "TextEnterMediaURLPrompt": "Endereço da mídia",
+      "TextChoosePreviewImageCaption": "Escolher imagem de prévia…",
+      "TextPreviewFromFrameCaption": "Usar o quadro atual como prévia",
+      "TextRemovePreviewCaption": "Remover prévia",
+      "TextMediaUnavailableCaption": "Esta mídia não pode ser reproduzida aqui.",
+      "TextReplaceMediaCaption": "Substituir"
+    }
+  }
+}

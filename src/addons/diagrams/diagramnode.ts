@@ -31,6 +31,8 @@ export class DiagramRenderer {
   static moduleURL: string = "https://cdn.jsdelivr.net/npm/mermaid@11.4.1/dist/mermaid.esm.min.mjs"
   /** Settings passed to mermaid.initialize. securityLevel "strict" keeps scripts and clicks out of diagrams. */
   static settings: {[name: string]: unknown} = {securityLevel: "strict"}
+  /** The Mermaid themes for light and dark pages. A theme in settings takes precedence over both. */
+  static themes: {light: string, dark: string} = {light: "default", dark: "dark"}
 
   static #mermaid: any = null
   static #loading: Promise<any> | null = null
@@ -74,9 +76,9 @@ export class DiagramRenderer {
   /** Draws a diagram, resolving with its SVG. dark picks Mermaid's dark theme. */
   static async render(source: string, dark: boolean = false): Promise<string> {
     let mermaid = await DiagramRenderer.load()
-    let theme = dark ? "dark" : "default"
+    let theme = String(DiagramRenderer.settings.theme || (dark ? DiagramRenderer.themes.dark : DiagramRenderer.themes.light))
     if (DiagramRenderer.#initializedTheme != theme && typeof mermaid.initialize == "function") {
-      mermaid.initialize({startOnLoad: false, theme, ...DiagramRenderer.settings})
+      mermaid.initialize({startOnLoad: false, ...DiagramRenderer.settings, theme})
       DiagramRenderer.#initializedTheme = theme
     }
     let id = `scv-diagram-${++DiagramRenderer.#counter}`
@@ -91,10 +93,34 @@ export class DiagramRenderer {
 }
 
 /**
+ * Redraws diagrams when the page switches between light and dark: when data-bs-theme changes on
+ * the editor or anything around it. One observer serves every editor on the page.
+ */
+class ThemeWatcher {
+  static #nodes: Set<DiagramNode> = new Set()
+  static #observer: MutationObserver | null = null
+
+  static watch(node: DiagramNode) {
+    ThemeWatcher.#nodes.add(node)
+    if (ThemeWatcher.#observer || typeof MutationObserver == "undefined" || typeof document == "undefined") return
+    ThemeWatcher.#observer = new MutationObserver(() => ThemeWatcher.#changed())
+    ThemeWatcher.#observer.observe(document.documentElement, {attributes: true, attributeFilter: ["data-bs-theme"], subtree: true})
+  }
+
+  static #changed() {
+    for (let node of Array.from(ThemeWatcher.#nodes)) {
+      if (!node.isShown) ThemeWatcher.#nodes.delete(node)
+      else if (node.drawnForOtherTheme) node.redraw()
+    }
+  }
+}
+
+/**
  * A diagram written in Mermaid's language and drawn with Mermaid: flowcharts, sequence diagrams,
  * Gantt charts and more. The source is edited like a code block; while the block isn't selected
  * only the diagram shows. HTML exports hold the drawn SVG; Markdown exports use ```mermaid
- * fences, which GitHub and many other sites draw.
+ * fences, which GitHub and many other sites draw. Inside an element with data-bs-theme="dark" the
+ * diagram uses a dark theme, and it's redrawn when that changes.
  */
 export class DiagramNode extends CodeBlockNode {
   static exportStyles(sheet: Stylesheet, editor: Editor | null) {
@@ -135,6 +161,22 @@ export class DiagramNode extends CodeBlockNode {
   /** The last drawing, and the source it was drawn from, for HTML exports. */
   #drawn: {source: string, svg: string, dark: boolean} | null = null
   #generation: number = 0
+
+  /** Whether the diagram is on the page. */
+  get isShown(): boolean {
+    return !!this.#output && this.#output.isConnected
+  }
+
+  /** Whether the diagram, as drawn, uses the other theme from the one around it now. */
+  get drawnForOtherTheme(): boolean {
+    return !!this.#output && !!this.#drawn && this.#drawn.dark != this.#isDark(this.#output)
+  }
+
+  #isDark(output: Element): boolean {
+    // The editor's element is on the page even while this block is still being built.
+    let place: Element = (this.editor && this.editor.element) || output
+    return place.closest("[data-bs-theme]")?.getAttribute("data-bs-theme") == "dark"
+  }
 
   /** The diagram's Mermaid source. */
   get source(): string {
@@ -177,6 +219,7 @@ export class DiagramNode extends CodeBlockNode {
     this.#output = Utilities.element("div", "scv-diagram-output", {contenteditable: "false"})
     body.prepend(this.#output)
     body.classList.add("scv-diagram")
+    ThemeWatcher.watch(this)
     this.#render()
   }
 
@@ -204,9 +247,7 @@ export class DiagramNode extends CodeBlockNode {
       output.replaceChildren()
       return
     }
-    // The editor's element is on the page even while this block is still being built.
-    let place: Element = (this.editor && this.editor.element) || output
-    let dark = !!place.closest("[data-bs-theme=dark]")
+    let dark = this.#isDark(output)
     if (this.#drawn && this.#drawn.source == source && this.#drawn.dark == dark) {
       output.innerHTML = this.#drawn.svg
       output.className = "scv-diagram-output"

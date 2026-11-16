@@ -312,7 +312,12 @@ export class InspectorDefaults {
   }
 
   /** Sections every node has: content, appearance, borders, corners, dimensions and background image. */
-  static node(node: Node): Array<InspectorSection> {
+  /**
+   * The sections every block shares: content, appearance, borders, corners, dimensions and
+   * background image. A block leaves out the ones that can't show on it: appearance for one with
+   * no text, the background image for one its content covers.
+   */
+  static node(node: Node, options: {appearance?: boolean, backgroundImage?: boolean} = {}): Array<InspectorSection> {
     let strings = node.strings
     let result: Array<InspectorSection> = []
     let content = new InspectorSection("content", strings.TextContentInspectorCaption)
@@ -326,12 +331,11 @@ export class InspectorDefaults {
     content.add(direction)
     result.push(content)
 
-    let appearance = new InspectorSection("appearance", strings.TextAppearanceInspectorCaption)
-    let lineHeight = appearance.add(InspectorItem.number("lineheight", strings.TextLineHeightInspectorCaption, target => target.lineHeight, (target, value) => target.lineHeight = value, 0.1, 10, 0.1))
-    lineHeight.setDefaultValue(1)
-    let lineSpacing = appearance.add(InspectorItem.number("linespacing", strings.TextLineSpacingInspectorCaption, target => target.lineSpacing, (target, value) => target.lineSpacing = value, 0, 100, 1))
-    lineSpacing.setDefaultValue(0)
-    result.push(appearance)
+    if (options.appearance !== false) {
+      let appearance = new InspectorSection("appearance", strings.TextAppearanceInspectorCaption)
+      InspectorDefaults.lineItems(strings).forEach(item => appearance.add(item))
+      result.push(appearance)
+    }
 
     let borders = new InspectorSection("borders", strings.TextBordersInspectorCaption)
     InspectorDefaults.borderItems(borders, strings, "border", (target, side) => target[`border${side}`], (target, side, change) => {
@@ -361,8 +365,17 @@ export class InspectorDefaults {
       result.push(dimensions)
     }
 
-    result.push(InspectorDefaults.backgroundImageSection(strings, target => target.backgroundImage, (target, value) => target.backgroundImage = value))
+    if (options.backgroundImage !== false) result.push(InspectorDefaults.backgroundImageSection(strings, target => target.backgroundImage, (target, value) => target.backgroundImage = value))
     return result
+  }
+
+  /** Line height and line spacing, for a block's text. */
+  static lineItems(strings: Strings): Array<InspectorItem> {
+    let lineHeight = InspectorItem.number("lineheight", strings.TextLineHeightInspectorCaption, target => target.lineHeight, (target, value) => target.lineHeight = value, 0.1, 10, 0.1)
+    lineHeight.setDefaultValue(1)
+    let lineSpacing = InspectorItem.number("linespacing", strings.TextLineSpacingInspectorCaption, target => target.lineSpacing, (target, value) => target.lineSpacing = value, 0, 100, 1)
+    lineSpacing.setDefaultValue(0)
+    return [lineHeight, lineSpacing]
   }
 
   /** Replaces a text block's text, keeping the style of its first character. */

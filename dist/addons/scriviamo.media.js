@@ -6,7 +6,21 @@ var MediaStrings = {
   TextPreviewFromFrameCaption: "Use Current Frame as Preview",
   TextRemovePreviewCaption: "Remove Preview",
   TextMediaUnavailableCaption: "This media can't be played here.",
-  TextReplaceMediaCaption: "Replace"
+  TextReplaceMediaCaption: "Replace",
+  TextAudioCaption: "Audio",
+  TextVideoCaption: "Video",
+  TextAudioToolbarTooltip: "Add Audio",
+  TextVideoToolbarTooltip: "Add Video",
+  TextChooseMediaFileDialogTitle: "Choose a Media File",
+  TextChooseVideoPreviewImageDialogTitle: "Choose a Video Preview Image",
+  TextEmbeddedMediaCaption: "Embedded Media",
+  TextMediaPlaybackErrorMessage: "The media resource could not be played.",
+  TextMediaSourceCaption: "Media Source",
+  TextMediaURLDialogTitle: "Media URL",
+  TextNoMediaSelectedCaption: "No Media Selected",
+  TextPreviewImageOpenErrorMessage: "That preview image could not be opened.",
+  TextRemovePreviewImageCaption: "Remove Preview Image",
+  TextVideoPreviewImageCaption: "Video Preview Image"
 };
 Strings.register(MediaStrings);
 var MediaNode = class extends Node {
@@ -47,7 +61,7 @@ var MediaNode = class extends Node {
         target.resourceData = "";
     });
     url.updatesLive = false;
-    return [InspectorDefaults.section("media", this.typeName, [file, url])].concat(InspectorDefaults.node(this));
+    return [InspectorDefaults.section("media", this.typeName, [file, url])].concat(InspectorDefaults.node(this, { appearance: false, backgroundImage: false }));
   }
   static exportStyles(sheet, editor) {
     sheet.addRule("audio, video", `display: block; max-width: 100%; border-radius: 8px; background: ${Editor.themeCSS(editor, ThemeColors.dark)}`);

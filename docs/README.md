@@ -26,9 +26,9 @@ see [Getting started](getting-started.md#requirements).
 | [The toolbar](toolbar.md) | The built-in tools, adding your own, and saving each user's arrangement |
 | [Undo, search, statistics and autosave](undo-search-statistics.md) | Undo and redo, find and replace, word counts, the status bar, and autosave |
 | [Comments and suggestions](comments-and-suggestions.md) | Comment threads, and suggestions such as @-mentions |
-| [Math and diagrams](math-and-diagrams.md) | Formulas in LaTeX, drawn with KaTeX, and diagrams in Mermaid |
+| [Math and diagrams](math-and-diagrams.md) | Formulas in LaTeX, drawn with KaTeX, as blocks or inside text, and diagrams in Mermaid |
 | [Writing node types](custom-node-types.md) | Adding your own node types and editor extensions |
 | [Server rendering](server-rendering.md) | Turning saved documents into HTML, Markdown or text on a server, with no browser |
 | [Import and export](import-export.md) | JSON, HTML, Markdown and plain text; uploading files; exporters, stylesheets and theme colors |
 | [Node settings](node-settings.md) | How node types describe their settings, and adding your own |
-| [Localization](localization.md) | Interface text, locale packs, and add-on strings |
+| [Localization](localization.md) | Interface text, the built-in languages, locale packs, and add-on strings |

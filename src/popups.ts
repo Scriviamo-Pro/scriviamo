@@ -412,6 +412,79 @@ export class ColorPalette extends Popup {
 }
 
 
+/**
+ * A grid for choosing a table's size: pointing at a cell, or moving with the arrow keys, picks
+ * that many rows and columns, and clicking or Enter chooses it.
+ */
+export class TableSizePicker extends Popup {
+  static maximumRows: number = 8
+  static maximumColumns: number = 10
+
+  rows: number = 1
+  columns: number = 1
+  #cells: Array<HTMLElement> = []
+  #label: HTMLElement
+  #strings: Strings
+  #onSelect: (rows: number, columns: number) => void
+
+  constructor(strings: Strings, onSelect: (rows: number, columns: number) => void) {
+    super("dropdown-menu show scv-table-size")
+    this.#strings = strings
+    this.#onSelect = onSelect
+    let grid = Utilities.element("div", "scv-table-size-grid", {role: "grid", "aria-label": strings.TextTableCaption})
+    grid.style.gridTemplateColumns = `repeat(${TableSizePicker.maximumColumns}, 1fr)`
+    for (let row = 1; row <= TableSizePicker.maximumRows; row++) {
+      for (let column = 1; column <= TableSizePicker.maximumColumns; column++) {
+        let cell = Utilities.element("button", "scv-table-size-cell", {type: "button", tabindex: "-1", "data-rows": String(row), "data-columns": String(column), "aria-label": this.#caption(row, column)})
+        cell.addEventListener("mouseover", () => this.select(row, column))
+        cell.addEventListener("click", () => this.choose())
+        this.#cells.push(cell)
+        grid.append(cell)
+      }
+    }
+    this.#label = Utilities.element("div", "scv-table-size-label", {"aria-live": "polite"})
+    this.element.append(grid, this.#label)
+    this.select(1, 1)
+  }
+
+  #caption(rows: number, columns: number): string {
+    return Utilities.format(this.#strings.TextTableSizeCaptionFormat, {rows, columns})
+  }
+
+  /** Picks a size, highlighting it in the grid. */
+  select(rows: number, columns: number) {
+    this.rows = Utilities.clamp(rows, 1, TableSizePicker.maximumRows)
+    this.columns = Utilities.clamp(columns, 1, TableSizePicker.maximumColumns)
+    this.#cells.forEach(cell => cell.classList.toggle("active", Number(cell.dataset.rows) <= this.rows && Number(cell.dataset.columns) <= this.columns))
+    this.#label.textContent = this.#caption(this.rows, this.columns)
+  }
+
+  /** Chooses the size picked, and closes. */
+  choose() {
+    let rows = this.rows
+    let columns = this.columns
+    this.close()
+    this.#onSelect(rows, columns)
+  }
+
+  protected handleKey(event: KeyboardEvent) {
+    let rightToLeft = getComputedStyle(this.element).direction == "rtl"
+    let moves: {[key: string]: [number, number]} = {ArrowUp: [-1, 0], ArrowDown: [1, 0], ArrowLeft: [0, rightToLeft ? 1 : -1], ArrowRight: [0, rightToLeft ? -1 : 1]}
+    let move = moves[event.key]
+    if (move) {
+      event.preventDefault()
+      event.stopPropagation()
+      this.select(this.rows + move[0], this.columns + move[1])
+    } else if (event.key == "Enter") {
+      event.preventDefault()
+      event.stopPropagation()
+      this.choose()
+    } else {
+      super.handleKey(event)
+    }
+  }
+}
+
 export interface DialogField {
   name: string
   label: string

@@ -1,0 +1,16 @@
+{
+  "language": "de",
+  "strings": {
+    "Editor": {
+      "TextMathCaption": "Formel",
+      "TextMathSourceCaption": "LaTeX",
+      "TextMathPlaceholder": "LaTeX, etwa E = mc^2",
+      "TextMathLoadingCaption": "Formeln werden geladen…",
+      "TextMathUnavailableMessage": "Der Formel-Renderer konnte nicht geladen werden.",
+      "TextInlineMathCaption": "Formel im Text",
+      "TextInsertInlineMathCaption": "Formel im Text einfügen",
+      "TextInlineMathPlaceholder": "LaTeX, etwa x^2",
+      "TextInlineMathHint": "Eingabetaste zum Abschließen. Leer lassen, um die Formel zu entfernen."
+    }
+  }
+}

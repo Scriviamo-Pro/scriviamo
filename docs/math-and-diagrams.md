@@ -54,7 +54,41 @@ are formulas.
 
 Without the add-on, a `$$` block stays a code block in the `math` language, so nothing is lost.
 
-Formulas inside a line of text aren't supported yet.
+### Formulas in a line of text
+
+Formulas can also sit inside a paragraph, such as $\pi r^2$. Type `$x^2$`, and the closing `$`
+turns it into a formula, as its own undo step, so Undo puts the dollar signs back. Prices stay
+text: the opening `$` must be followed by something other than a space, and the closing one
+must follow something other than a space and can't be followed by a digit, so `$5 and $10` is
+left alone. Markdown shortcuts turn this off with the rest (`markdownShortcuts: false`).
+
+The Insert Inline Math tool, or Ctrl+Shift+E (⌘⇧E on a Mac), starts a formula at the caret, or
+turns the selected text into one. Both show a box for the LaTeX source with a preview; Enter
+finishes, Escape cancels, and leaving it empty removes the formula. Clicking a formula opens the
+same box to edit it, as does the key with the caret beside one.
+
+In the text a formula is one character: the caret steps over it, and Backspace or Delete removes
+it whole. It is a tag in the text, marked with the `math` provider, whose text is its LaTeX
+source, so search, word counts and plain text see the source. Formulas read left to right, in
+right-to-left text too.
+
+```ts
+import {InlineMath} from "scriviamo/dist/addons/scriviamo.math.js"
+
+let host = editor.activeHost
+InlineMath.replace(editor, host, 4, 4, "a^2 + b^2")    // a formula at offset 4, as one undo step
+InlineMath.formulas(host)                              // [{start, end, id, latex, host}]
+```
+
+| Format | Inline formulas are |
+|---|---|
+| JSON | The tag, in the text's styles |
+| HTML | `<span class="math-inline" data-latex="…">` holding MathML, or the source between `\(` and `\)` before KaTeX has loaded |
+| Markdown | `$…$` |
+| Plain text | The source |
+
+Reading HTML, an inline formula comes from an element with class `math-inline` and `data-latex`,
+or `<math>` that isn't `display="block"` with a TeX annotation.
 
 ## Diagrams
 
@@ -68,9 +102,13 @@ import "scriviamo/dist/addons/scriviamo.diagrams.js"     // and scriviamo.diagra
 People insert one from the Insert menu or the "/" chooser, or by typing ```` ```mermaid ```` at the
 start of a paragraph. Like a formula, the block shows the diagram, and its source underneath
 while it is selected or being edited; the diagram redraws a moment after the source stops
-changing. Diagrams use Mermaid's dark theme inside an element with `data-bs-theme="dark"`;
-after switching themes, call `redraw()` on each diagram, or rebuild the document with
-`editor.renderDocument()`.
+changing.
+
+Diagrams follow the page's theme. Inside an element with `data-bs-theme="dark"` they use
+Mermaid's dark theme, and when `data-bs-theme` changes on the editor or anything around it, as
+when the page switches between light and dark, they're redrawn in the new theme.
+`DiagramRenderer.themes` names the Mermaid theme for each, `{light: "default", dark: "dark"}`;
+a `theme` in `DiagramRenderer.settings` takes precedence over both.
 
 ```ts
 import {DiagramNode} from "scriviamo/dist/addons/scriviamo.diagrams.js"

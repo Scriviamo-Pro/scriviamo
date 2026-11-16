@@ -1,0 +1,12 @@
+{
+  "language": "ru",
+  "strings": {
+    "Editor": {
+      "TextAlertInspectorCaption": "Уведомление",
+      "TextInfoCaption": "Информация",
+      "TextSuccessCaption": "Успех",
+      "TextWarningCaption": "Предупреждение",
+      "TextDangerCaption": "Опасность"
+    }
+  }
+}

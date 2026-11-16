@@ -1,0 +1,13 @@
+{
+  "language": "es",
+  "strings": {
+    "Editor": {
+      "TextEnterMediaURLPrompt": "Dirección del contenido multimedia",
+      "TextChoosePreviewImageCaption": "Elegir imagen de vista previa…",
+      "TextPreviewFromFrameCaption": "Usar el fotograma actual como vista previa",
+      "TextRemovePreviewCaption": "Quitar vista previa",
+      "TextMediaUnavailableCaption": "Este contenido no se puede reproducir aquí.",
+      "TextReplaceMediaCaption": "Reemplazar"
+    }
+  }
+}

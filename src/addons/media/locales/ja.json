@@ -1,0 +1,13 @@
+{
+  "language": "ja",
+  "strings": {
+    "Editor": {
+      "TextEnterMediaURLPrompt": "メディアのアドレス",
+      "TextChoosePreviewImageCaption": "プレビュー画像を選択…",
+      "TextPreviewFromFrameCaption": "現在のフレームをプレビューにする",
+      "TextRemovePreviewCaption": "プレビューを削除",
+      "TextMediaUnavailableCaption": "このメディアはここでは再生できません。",
+      "TextReplaceMediaCaption": "置き換え"
+    }
+  }
+}

@@ -2,6 +2,9 @@ import { CodeBlockNode, InspectorSection } from "scriviamo";
 /** This add-on's interface text. A locale pack applied to an editor replaces any of it. */
 declare const RawcontentStrings: {
     TextRawContentCaption: string;
+    TextDefaultRawContent: string;
+    TextCopyRawContentTooltip: string;
+    TextRawContentToolbarTooltip: string;
 };
 type RawcontentStringsTable = typeof RawcontentStrings;
 declare module "scriviamo" {

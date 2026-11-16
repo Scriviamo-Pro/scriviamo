@@ -1,0 +1,13 @@
+{
+  "language": "ru",
+  "strings": {
+    "Editor": {
+      "TextDiagramCaption": "Диаграмма",
+      "TextDiagramSourceCaption": "Mermaid",
+      "TextDiagramRedrawCaption": "Перерисовать",
+      "TextDiagramPlaceholder": "Диаграмма Mermaid, например: graph LR; A --> B",
+      "TextDiagramLoadingCaption": "Рисуем диаграмму…",
+      "TextDiagramUnavailableMessage": "Не удалось загрузить модуль отрисовки диаграмм."
+    }
+  }
+}

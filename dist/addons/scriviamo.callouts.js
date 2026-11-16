@@ -5,7 +5,9 @@ var CalloutsStrings = {
   TextInfoCaption: "Info",
   TextSuccessCaption: "Success",
   TextWarningCaption: "Warning",
-  TextDangerCaption: "Danger"
+  TextDangerCaption: "Danger",
+  TextAddAlertCaption: "Add Alert",
+  TextAlertTypeCaption: "Alert Type"
 };
 Strings.register(CalloutsStrings);
 var AlertTypes = /* @__PURE__ */ ((AlertTypes2) => {

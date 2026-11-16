@@ -39,13 +39,15 @@
     t.assert(inspectorHasItem(new PE.AlertNode(), "alerttype"), "The inspector omitted the alert type.")
   })
 
-  test(section, "the alert toolbar item inserts each type", t => {
+  test(section, "the alert's toolbar offers each type", t => {
     let editor = t.editor()
-    let item = editor.toolbarItems.items().find(entry => entry.identifier == "node:alert")
-    t.assert(item && item.kind == PE.ToolbarItemKinds.menu && item.menuItems.length == 4, "The Alert toolbar item did not provide all four types.")
+    let alert = new PE.AlertNode()
+    editor.addNode(alert)
+    let item = alert.actions().find(entry => entry.identifier == "alerttype")
+    t.assert(item && item.kind == PE.ToolbarItemKinds.menu && item.menuItems.length == 4, "The alert's type menu didn't offer all four types.")
     if (item && item.menuItems.length == 4) {
-      editor.activateToolbarItem("node:alert", item.menuItems[PE.AlertTypes.warning])
-      t.assert(editor.toHTML().indexOf("alert-warning") >= 0, "The Alert toolbar menu did not insert its type.")
+      alert.performAction(item, item.menuItems[PE.AlertTypes.warning])
+      t.assert(alert.alertType == PE.AlertTypes.warning && editor.toHTML().indexOf("alert-warning") >= 0, "Choosing Warning didn't make a warning.")
     }
   })
 }

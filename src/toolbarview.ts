@@ -49,6 +49,12 @@ export class ToolbarView {
           Popup.closeAll()
           return
         }
+        if (item.makePopup) {
+          let popup = item.makePopup(menuItem => activate(item, menuItem))
+          popup.element.dataset.owner = item.identifier
+          popup.show(button, popupContainer)
+          return
+        }
         prepareMenu(item)
         let menu = new PopupMenu(item.menuItems, menuItem => activate(item, menuItem))
         menu.element.dataset.owner = item.identifier

@@ -2,6 +2,8 @@
 //
 //   dist/scriviamo.js (.min.js, .css, .min.css)             the base package
 //   dist/addons/scriviamo.<name>.js (.min.js, .css, .min.css)  each add-on
+//   dist/locales/scriviamo.<language>.json                    the base package's locale packs
+//   dist/locales/scriviamo.<name>.<language>.json             each add-on's locale packs
 //   dist/examples/scriviamo.example.<name>.js                 each example node type, for the demo
 //   dist/types/                                                           declarations
 //
@@ -12,7 +14,7 @@
 //   node build.mjs base         the base package only
 //   node build.mjs forms media  only the named add-ons
 import {execFileSync} from "node:child_process"
-import {copyFileSync, existsSync, mkdirSync, readdirSync, rmSync, writeFileSync} from "node:fs"
+import {copyFileSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync} from "node:fs"
 import {join} from "node:path"
 import * as esbuild from "esbuild"
 
@@ -41,6 +43,17 @@ async function bundle(entry, outfile, external) {
   await esbuild.build({...options, outfile: outfile.replace(/\.js$/, ".min.js"), minify: true})
 }
 
+/** Copies a folder of locale packs, <language>.json, to dist/locales/<prefix>.<language>.json. */
+function copyLocales(folder, prefix) {
+  if (!existsSync(folder)) return
+  mkdirSync(join(dist, "locales"), {recursive: true})
+  for (let file of readdirSync(folder).filter(file => file.endsWith(".json"))) {
+    // Parsed and written again, so a pack that isn't JSON stops the build.
+    let pack = JSON.parse(readFileSync(join(folder, file), "utf8"))
+    writeFileSync(join(dist, "locales", `${prefix}.${file}`), `${JSON.stringify(pack, null, 2)}\n`)
+  }
+}
+
 async function stylesheet(source, outfile) {
   copyFileSync(source, outfile)
   await esbuild.build({entryPoints: [source], outfile: outfile.replace(/\.css$/, ".min.css"), minify: true, logLevel: "warning"})
@@ -57,6 +70,7 @@ writeFileSync(join(dist, "package.json"), `${JSON.stringify({type: "module"}, nu
 if (wanted("base")) {
   await bundle(join(root, "index.ts"), join(dist, "scriviamo.js"), [])
   await stylesheet(join(root, "scriviamo.css"), join(dist, "scriviamo.css"))
+  copyLocales(join(root, "locales"), "scriviamo")
   console.log("Built base")
 }
 
@@ -66,6 +80,7 @@ for (let addon of addons()) {
   let output = join(dist, "addons", `scriviamo.${addon.name}`)
   await bundle(addon.entry, `${output}.js`, [PackageName])
   if (existsSync(addon.css)) await stylesheet(addon.css, `${output}.css`)
+  copyLocales(join(root, "addons", addon.name, "locales"), `scriviamo.${addon.name}`)
   console.log(`Built ${addon.name}`)
 }
 

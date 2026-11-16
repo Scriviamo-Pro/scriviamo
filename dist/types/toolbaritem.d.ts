@@ -1,3 +1,4 @@
+import { Popup } from "./internal";
 export declare enum ToolbarItemKinds {
     button = 0,
     toggle = 1,
@@ -44,6 +45,11 @@ export declare class ToolbarItem extends EventTarget {
     alwaysShowCaption: boolean;
     /** Arbitrary application data. */
     tag: any;
+    /**
+     * For a menu that picks its value from a popup of its own, such as the table size grid: makes
+     * the popup, which calls choose with a menu item carrying the value when the user picks one.
+     */
+    makePopup: ((choose: (menuItem: ToolbarMenuItem) => void) => Popup) | null;
     constructor(identifier: string, caption: string, icon?: string, kind?: ToolbarItemKinds, tooltip?: string);
     static separator(): ToolbarItem;
     static flexibleSpace(): ToolbarItem;

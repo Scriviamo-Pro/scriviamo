@@ -39,7 +39,8 @@ export class DividerNode extends Node {
     thickness.setDefaultValue(1)
     let color = new InspectorItem("linecolor", strings.TextLineColorCaption, "lineColor", InspectorEditors.color)
     color.setDefaultValue(Colors.empty)
-    return [InspectorDefaults.section("divider", strings.TextDividerCaption, [thickness, color])].concat(InspectorDefaults.node(this))
+    // A divider has no text, so no line height or spacing.
+    return [InspectorDefaults.section("divider", strings.TextDividerCaption, [thickness, color])].concat(InspectorDefaults.node(this, {appearance: false}))
   }
 
   lineThickness: number = 1

@@ -61,7 +61,8 @@ inspectorSections() {
 | Method | Sections |
 |---|---|
 | `InspectorDefaults.text(node)` | A text node's: content, typography, appearance and the common sections |
-| `InspectorDefaults.node(node)` | The sections every node has: content (alignment and direction), appearance, dimensions for resizable nodes, borders, corners and background image |
+| `InspectorDefaults.node(node, options)` | The sections every node has: content (alignment and direction), appearance, dimensions for resizable nodes, borders, corners and background image. `{appearance: false}` leaves out line height and spacing, for a block with no text; `{backgroundImage: false}` leaves out the background image, for one its content covers |
+| `InspectorDefaults.lineItems(strings)` | The line height and line spacing items, for a block that shows them in a section of its own |
 | `InspectorDefaults.cellSections(table, caption)` | A table's active cell and cell borders |
 | `InspectorDefaults.document(editor)` | The document's |
 

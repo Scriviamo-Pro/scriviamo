@@ -1,0 +1,16 @@
+{
+  "language": "es",
+  "strings": {
+    "Editor": {
+      "TextMathCaption": "Fórmula",
+      "TextMathSourceCaption": "LaTeX",
+      "TextMathPlaceholder": "LaTeX, por ejemplo E = mc^2",
+      "TextMathLoadingCaption": "Cargando fórmulas…",
+      "TextMathUnavailableMessage": "No se pudo cargar el motor de fórmulas.",
+      "TextInlineMathCaption": "Fórmula en línea",
+      "TextInsertInlineMathCaption": "Insertar fórmula en línea",
+      "TextInlineMathPlaceholder": "LaTeX, por ejemplo x^2",
+      "TextInlineMathHint": "Intro para terminar. Déjalo vacío para quitar la fórmula."
+    }
+  }
+}

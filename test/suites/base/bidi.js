@@ -102,6 +102,10 @@
     let editor = t.editor()
     let image = new PE.ImageNode()
     image.caption = hebrewText
+    // A caption is typed under the picture, so the image needs one.
+    image.imageData = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="
+    image.displayWidth = 400
+    image.displayHeight = 40
     editor.addNode(image)
     await t.tick()
     let captionHost = image.hosts().findIndex(host => host.rich === image.captionText)
@@ -197,10 +201,13 @@
     t.equal(parseFloat(getComputedStyle(heading.primaryHost.element).fontSize), 32, "A heading lost its own size")
   })
 
-  test(section, "font display names use the Default caption", t => {
-    let editor = t.editor()
-    t.assert(typeof editor.fontDisplayName == "function" && editor.fontDisplayName("System") == editor.strings.TextDefault && editor.fontDisplayName("") == editor.strings.TextDefault && editor.fontDisplayName("Georgia") == "Georgia", "There is no font display name lookup using the Default caption.")
-    t.assert(typeof editor.fontSizeDisplayName == "function" && editor.fontSizeDisplayName(0) == editor.strings.TextDefault && editor.fontSizeDisplayName(18) == "18", "There is no font size display name lookup using the Default caption.")
+  test(section, "the font and size menus show the Default caption", t => {
+    let editor = t.editor({strings: {TextDefault: "Standard"}})
+    editor.addNode(new PE.TextNode("Plain"))
+    editor.beginEditing(editor.nodeAt(0), 0)
+    editor.updateToolbarState()
+    t.equal(editor.toolbarItems.item("font").caption, "Standard", "The font menu didn't show the Default caption for the document font")
+    t.equal(editor.toolbarItems.item("size").caption, "Standard", "The size menu didn't show the Default caption for the document size")
   })
 
   test(section, "small text keeps a proportionally small node", async t => {

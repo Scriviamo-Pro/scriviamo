@@ -59,10 +59,13 @@ async function typeKeys(t, editor, node, offset, text) {
   test(section, "registry lists share one shape", t => {
     let editor = t.editor()
     let html = editor.exporters.item("HTML")
-    t.assert(editor.exporters.lastIndex == 3 && html && editor.exporters.indexOf(html) == 0, `Exporters did not hold the four built-in exporters with HTML first (${editor.exporters.items().map(item => item.identifier)}).`)
+    let builtIn = ["html", "json", "markdown", "text"]
+    // Add-ons, such as PDF export, add exporters after the built-in ones.
+    t.assert(html && editor.exporters.indexOf(html) == 0 && builtIn.every((name, index) => editor.exporters.itemAt(index) && editor.exporters.itemAt(index).identifier == name), `Exporters did not hold the four built-in exporters first, with HTML first (${editor.exporters.items().map(item => item.identifier)}).`)
     if (html) {
+      let count = editor.exporters.lastIndex
       editor.exporters.remove(html)
-      t.assert(editor.exporters.item("html") == null && editor.exporters.lastIndex == 2, "Exporters.Remove did not remove an exporter instance.")
+      t.assert(editor.exporters.item("html") == null && editor.exporters.lastIndex == count - 1, "Exporters.Remove did not remove an exporter instance.")
       editor.exporters.addAt(0, html)
       t.assert(editor.exporters.itemAt(0) === html, "Exporters.AddAt did not insert at the position.")
     }
@@ -77,9 +80,11 @@ async function typeKeys(t, editor, node, offset, text) {
     t.equal(editor.suggestionProviders.lastIndex, -1, "SuggestionProviders.Remove did not remove by instance and identifier")
     let heading = editor.nodeTypes.item("heading")
     t.assert(heading === PE.HeadingNode && editor.nodeTypes.item("node:heading") === heading, "NodeTypes did not look up a built-in type by name and by toolbar identifier.")
-    t.equal(editor.nodeTypes.lastIndex, 1, "A new editor did not register only the text and heading types")
+    // Every registered type: the base package's, and those of the add-ons loaded.
+    t.equal(editor.nodeTypes.items().map(type => type.identifier), PE.Editor.registeredNodeTypes().map(type => type.identifier), "A new editor didn't have every registered type")
+    let count = editor.nodeTypes.lastIndex
     editor.nodeTypes.remove(heading)
-    t.assert(editor.nodeTypes.item("heading") == null, "NodeTypes.Remove did not unregister a type.")
+    t.assert(editor.nodeTypes.item("heading") == null && editor.nodeTypes.lastIndex == count - 1, "NodeTypes.Remove did not unregister a type.")
     let item = new PE.ToolbarItem("app:list", "List")
     editor.toolbarItems.add(item)
     t.assert(editor.toolbarItems.item("app:list") === item, "ToolbarItems.Add did not keep the item.")

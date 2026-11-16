@@ -29,6 +29,11 @@ export declare class DiagramRenderer {
     static settings: {
         [name: string]: unknown;
     };
+    /** The Mermaid themes for light and dark pages. A theme in settings takes precedence over both. */
+    static themes: {
+        light: string;
+        dark: string;
+    };
     /** Uses a Mermaid the application loaded itself, instead of loading it from moduleURL. */
     static use(mermaid: any): void;
     /** Mermaid, once it has loaded; null before then. */
@@ -42,7 +47,8 @@ export declare class DiagramRenderer {
  * A diagram written in Mermaid's language and drawn with Mermaid: flowcharts, sequence diagrams,
  * Gantt charts and more. The source is edited like a code block; while the block isn't selected
  * only the diagram shows. HTML exports hold the drawn SVG; Markdown exports use ```mermaid
- * fences, which GitHub and many other sites draw.
+ * fences, which GitHub and many other sites draw. Inside an element with data-bs-theme="dark" the
+ * diagram uses a dark theme, and it's redrawn when that changes.
  */
 export declare class DiagramNode extends CodeBlockNode {
     #private;
@@ -55,6 +61,10 @@ export declare class DiagramNode extends CodeBlockNode {
     static markdownShortcuts: Array<BlockShortcut>;
     static create(_editor: Editor): Node;
     static importElement(element: HTMLElement, importer: HTMLImporter): Node | undefined;
+    /** Whether the diagram is on the page. */
+    get isShown(): boolean;
+    /** Whether the diagram, as drawn, uses the other theme from the one around it now. */
+    get drawnForOtherTheme(): boolean;
     /** The diagram's Mermaid source. */
     get source(): string;
     set source(value: string);

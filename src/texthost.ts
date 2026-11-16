@@ -27,6 +27,9 @@ interface TextSegment {
  * Binds a RichText to a contenteditable element. The element shows the text,
  * the browser edits it, and sync reads the edited DOM back into the RichText.
  */
+/** Draws one tag in the editor: its elements, in order, and the text host they're in. */
+export type TagRenderer = (elements: Array<HTMLElement>, host: TextHost) => void
+
 export class TextHost {
   node: Node
   rich: RichText
@@ -37,6 +40,45 @@ export class TextHost {
   index: number = 0
 
   #renderedStyles: Array<TextStyle> = []
+
+  /** How an add-on draws one provider's tags in the editor; see registerTagRenderer. */
+  static #tagRenderers: {[provider: string]: TagRenderer} = {}
+
+  /**
+   * Draws one provider's tags differently from text, such as a formula drawn from its source. The
+   * renderer receives each tag's elements after the text is drawn: usually one span, or several
+   * when formatting splits the tag. It may add elements with the class "scv-widget", which aren't
+   * part of the text. A tag made contenteditable="false" is one unit for the caret.
+   */
+  static registerTagRenderer(provider: string, renderer: TagRenderer | null) {
+    if (renderer) TextHost.#tagRenderers[provider] = renderer
+    else delete TextHost.#tagRenderers[provider]
+  }
+
+  #renderTags() {
+    let providers = Object.keys(TextHost.#tagRenderers)
+    if (providers.length == 0) return
+    let spans = Array.from(this.element.querySelectorAll("span[data-scv-tag]")) as Array<HTMLElement>
+    let groups: Array<Array<HTMLElement>> = []
+    spans.forEach(span => {
+      let provider = span.dataset.scvTag || ""
+      if (!TextHost.#tagRenderers[provider]) return
+      let group = groups[groups.length - 1]
+      let last = group ? group[group.length - 1] : null
+      // Spans of one tag are next to each other, or inside links next to each other.
+      let outer = (element: HTMLElement) => element.parentElement && element.parentElement.tagName == "A" ? element.parentElement : element
+      if (last && last.dataset.scvTag == provider && (last.dataset.scvTagId || "") == (span.dataset.scvTagId || "") && outer(last).nextSibling === outer(span)) group.push(span)
+      else groups.push([span])
+    })
+    groups.forEach(group => {
+      let renderer = TextHost.#tagRenderers[group[0].dataset.scvTag || ""]
+      try {
+        renderer(group, this)
+      } catch (error) {
+        console.error(error)
+      }
+    })
+  }
 
   constructor(node: Node, rich: RichText, element: HTMLElement, mode: TextHostModes = TextHostModes.inline) {
     this.node = node
@@ -97,6 +139,7 @@ export class TextHost {
       this.#appendRuns(element, 0, this.rich.text.length)
     }
 
+    this.#renderTags()
     this.updateEmptyState()
   }
 
@@ -498,7 +541,16 @@ export class TextHost {
       let segment = segments[index]
       let length = segment.text.length
       if (!segment.isBreak && segment.node.nodeType == 3) {
-        if (offset <= position + length) return {node: segment.node, offset: offset - position}
+        if (offset <= position + length) {
+          // Text in an element that is one unit for the caret, such as a drawn tag: before or after it.
+          let unit = this.#unitOf(segment.node)
+          if (unit) {
+            let parent = unit.parentNode!
+            let childIndex = Array.prototype.indexOf.call(parent.childNodes, unit)
+            return {node: parent, offset: offset == position ? childIndex : childIndex + 1}
+          }
+          return {node: segment.node, offset: offset - position}
+        }
       } else if (segment.node instanceof HTMLElement && segment.node.tagName == "LI") {
         // The separator before an item: offset just after it is the item's start.
         if (offset == position + length) return this.#startOf(segment.node)
@@ -526,7 +578,11 @@ export class TextHost {
   #startOf(element: HTMLElement): {node: globalThis.Node, offset: number} {
     let walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT)
     let first = walker.nextNode()
-    if (first && !(first.parentElement && first.parentElement.closest(".scv-widget"))) return {node: first, offset: 0}
+    if (first && !(first.parentElement && first.parentElement.closest(".scv-widget"))) {
+      let unit = this.#unitOf(first)
+      if (unit) return {node: unit.parentNode!, offset: Array.prototype.indexOf.call(unit.parentNode!.childNodes, unit)}
+      return {node: first, offset: 0}
+    }
     let widgets = element.querySelectorAll(":scope > .scv-widget").length
     return {node: element, offset: widgets}
   }
@@ -544,8 +600,18 @@ export class TextHost {
     if (lastChild instanceof HTMLElement && lastChild.tagName == "BR") {
       return {node: element, offset: element.childNodes.length - 1}
     }
-    if (last) return {node: last, offset: (last.nodeValue || "").length}
+    if (last) {
+      let unit = this.#unitOf(last)
+      if (unit) return {node: unit.parentNode!, offset: Array.prototype.indexOf.call(unit.parentNode!.childNodes, unit) + 1}
+      return {node: last, offset: (last.nodeValue || "").length}
+    }
     return {node: element, offset: element.childNodes.length}
+  }
+
+  /** The element around a text node that is one unit for the caret, such as a drawn tag, or null. */
+  #unitOf(node: globalThis.Node): HTMLElement | null {
+    let unit = node.parentElement ? node.parentElement.closest("[contenteditable=\"false\"]") as HTMLElement | null : null
+    return unit && unit !== this.element && this.element.contains(unit) ? unit : null
   }
 
   select(start: number, end: number = start) {

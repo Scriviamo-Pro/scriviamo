@@ -240,7 +240,11 @@ export class ImageNode extends Node {
       if (target.caption != value) target.captionText = new RichText(String(value || "").replace(/\n/g, LineBreak), style)
     })
     caption.setDefaultValue(undefined)
-    return [InspectorDefaults.section("image", strings.TextImageCaption, [file, url, fill, width]), InspectorDefaults.section("caption", strings.TextCaptionCaption, [caption])].concat(InspectorDefaults.node(this))
+    // The image covers the block, so it has no background image; line height and spacing are the caption's.
+    return [
+      InspectorDefaults.section("image", strings.TextImageCaption, [file, url, fill, width]),
+      InspectorDefaults.section("caption", strings.TextCaptionCaption, [caption, ...InspectorDefaults.lineItems(strings)])
+    ].concat(InspectorDefaults.node(this, {appearance: false, backgroundImage: false}))
   }
 
   chooseFile() {

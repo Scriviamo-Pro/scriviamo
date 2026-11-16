@@ -79,4 +79,28 @@
     }
     t.equal(t.editor().strings.TextBoldCaption, "Bold", "Clearing the application locale did not restore the built-in text")
   })
+
+  test(section, "a list of locale packs applies in order, and a bad one rejects the list", t => {
+    let editor = t.editor()
+    let first = {language: "fr", strings: {Editor: {TextBoldCaption: "Gras", TextItalicCaption: "Italique"}}}
+    let second = {language: "fr", strings: {Editor: {TextItalicCaption: "En italique"}}}
+    t.equal(editor.localize([first, second]), 2, "The packs' two names weren't applied")
+    t.equal(editor.strings.TextBoldCaption, "Gras", "The first pack wasn't applied")
+    t.equal(editor.strings.TextItalicCaption, "En italique", "The later pack didn't win")
+    t.equal(editor.localize([first, {language: "not a locale!", strings: {}}]), 0, "A list with a bad pack was applied")
+    t.equal(t.editor({strings: JSON.stringify([first])}).strings.TextBoldCaption, "Gras", "A list as JSON text wasn't applied")
+  })
+
+  test(section, "the built-in locale packs translate the editor", async t => {
+    let response = await fetch("../dist/locales/scriviamo.de.json")
+    t.assert(response.ok, "The German pack wasn't found")
+    let pack = await response.json()
+    let names = Object.keys(pack.strings.Editor)
+    let editor = t.editor({strings: pack})
+    t.equal(editor.strings.TextBoldCaption, "Fett", "The German pack wasn't used")
+    // The toolbar is built in the editor's language too.
+    t.equal(editor.toolbarItems.item("bold").tooltip, "Fett", "The toolbar wasn't translated by the strings option")
+    t.equal(names.filter(name => editor.strings[name] !== pack.strings.Editor[name]), [], "Some text in the pack wasn't used")
+    t.assert(names.length > 200, `The pack has only ${names.length} strings`)
+  })
 }

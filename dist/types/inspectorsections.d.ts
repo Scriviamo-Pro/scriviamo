@@ -103,7 +103,17 @@ export declare class InspectorDefaults {
         color: DocumentColor;
     }) => void) => void): void;
     /** Sections every node has: content, appearance, borders, corners, dimensions and background image. */
-    static node(node: Node): Array<InspectorSection>;
+    /**
+     * The sections every block shares: content, appearance, borders, corners, dimensions and
+     * background image. A block leaves out the ones that can't show on it: appearance for one with
+     * no text, the background image for one its content covers.
+     */
+    static node(node: Node, options?: {
+        appearance?: boolean;
+        backgroundImage?: boolean;
+    }): Array<InspectorSection>;
+    /** Line height and line spacing, for a block's text. */
+    static lineItems(strings: Strings): Array<InspectorItem>;
     /** Replaces a text block's text, keeping the style of its first character. */
     static setPlainText(node: TextNode, value: string): void;
     static text(node: TextNode): Array<InspectorSection>;

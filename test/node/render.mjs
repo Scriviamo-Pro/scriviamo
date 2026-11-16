@@ -1,9 +1,12 @@
 // Renders documents in Node, with no browser: node test/node/render.mjs [folder]
 // The folder holds dist/ (this repository by default). Exits 1 on a failure.
+import {realpathSync} from "node:fs"
 import {resolve} from "node:path"
 import {pathToFileURL} from "node:url"
 
-const root = resolve(process.argv[2] || new URL("../..", import.meta.url).pathname)
+// The real path, as Node loads modules by theirs: through a symlink, such as macOS's temporary
+// folder, the base package would otherwise load twice, and add-ons register with the other copy.
+const root = realpathSync(resolve(process.argv[2] || new URL("../..", import.meta.url).pathname))
 const dist = pathToFileURL(`${root}/dist/`).href
 const failures = []
 const check = (condition, message) => { if (!condition) failures.push(message) }

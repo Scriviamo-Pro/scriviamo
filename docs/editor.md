@@ -78,6 +78,7 @@ editor.addNode(table)
 | `duplicateNodes(nodes)` | Copies nodes, each after its original, and selects the copies |
 | `cloneNode(node)` | A copy of a node, with new IDs, not yet in the document |
 | `insertNodeOfType(type, replace)` | Inserts a node of a registered type where the user is working, as the Insert menu does |
+| `insertNewNode(node, replace)` | Inserts a node you made, such as `TableNode.withSize(editor, 2, 4)`, in the same place |
 | `setBlockType(kind, value)` | Turns the text blocks being worked on into another kind: `"text"`, `"heading"`, `"quote"`, `"codeblock"`, `"list"`, and `"alert"` with the callouts add-on |
 
 Each of these is one undo step and raises `contentChanged`.

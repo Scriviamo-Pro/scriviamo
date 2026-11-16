@@ -1,0 +1,12 @@
+{
+  "language": "ko",
+  "strings": {
+    "Editor": {
+      "TextAlertInspectorCaption": "알림",
+      "TextInfoCaption": "정보",
+      "TextSuccessCaption": "성공",
+      "TextWarningCaption": "경고",
+      "TextDangerCaption": "위험"
+    }
+  }
+}

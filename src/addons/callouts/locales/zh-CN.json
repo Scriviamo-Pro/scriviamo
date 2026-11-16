@@ -1,0 +1,12 @@
+{
+  "language": "zh-CN",
+  "strings": {
+    "Editor": {
+      "TextAlertInspectorCaption": "提示",
+      "TextInfoCaption": "信息",
+      "TextSuccessCaption": "成功",
+      "TextWarningCaption": "警告",
+      "TextDangerCaption": "危险"
+    }
+  }
+}

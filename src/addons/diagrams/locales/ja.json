@@ -1,0 +1,13 @@
+{
+  "language": "ja",
+  "strings": {
+    "Editor": {
+      "TextDiagramCaption": "図",
+      "TextDiagramSourceCaption": "Mermaid",
+      "TextDiagramRedrawCaption": "再描画",
+      "TextDiagramPlaceholder": "Mermaid の図 (例: graph LR; A --> B)",
+      "TextDiagramLoadingCaption": "図を描画中…",
+      "TextDiagramUnavailableMessage": "図の描画エンジンを読み込めませんでした。"
+    }
+  }
+}

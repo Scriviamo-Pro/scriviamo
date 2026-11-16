@@ -1212,6 +1212,47 @@ var TextHost = class _TextHost {
   /** Position of this host among its node's hosts. Used to restore selections. */
   index = 0;
   #renderedStyles = [];
+  /** How an add-on draws one provider's tags in the editor; see registerTagRenderer. */
+  static #tagRenderers = {};
+  /**
+   * Draws one provider's tags differently from text, such as a formula drawn from its source. The
+   * renderer receives each tag's elements after the text is drawn: usually one span, or several
+   * when formatting splits the tag. It may add elements with the class "scv-widget", which aren't
+   * part of the text. A tag made contenteditable="false" is one unit for the caret.
+   */
+  static registerTagRenderer(provider, renderer) {
+    if (renderer)
+      _TextHost.#tagRenderers[provider] = renderer;
+    else
+      delete _TextHost.#tagRenderers[provider];
+  }
+  #renderTags() {
+    let providers = Object.keys(_TextHost.#tagRenderers);
+    if (providers.length == 0)
+      return;
+    let spans = Array.from(this.element.querySelectorAll("span[data-scv-tag]"));
+    let groups = [];
+    spans.forEach((span) => {
+      let provider = span.dataset.scvTag || "";
+      if (!_TextHost.#tagRenderers[provider])
+        return;
+      let group = groups[groups.length - 1];
+      let last = group ? group[group.length - 1] : null;
+      let outer = (element) => element.parentElement && element.parentElement.tagName == "A" ? element.parentElement : element;
+      if (last && last.dataset.scvTag == provider && (last.dataset.scvTagId || "") == (span.dataset.scvTagId || "") && outer(last).nextSibling === outer(span))
+        group.push(span);
+      else
+        groups.push([span]);
+    });
+    groups.forEach((group) => {
+      let renderer = _TextHost.#tagRenderers[group[0].dataset.scvTag || ""];
+      try {
+        renderer(group, this);
+      } catch (error) {
+        console.error(error);
+      }
+    });
+  }
   constructor(node, rich, element, mode = 0 /* inline */) {
     this.node = node;
     this.rich = rich;
@@ -1266,6 +1307,7 @@ var TextHost = class _TextHost {
     } else {
       this.#appendRuns(element, 0, this.rich.text.length);
     }
+    this.#renderTags();
     this.updateEmptyState();
   }
   #appendRuns(target, start, end) {
@@ -1736,8 +1778,15 @@ var TextHost = class _TextHost {
       let segment = segments[index];
       let length = segment.text.length;
       if (!segment.isBreak && segment.node.nodeType == 3) {
-        if (offset <= position + length)
+        if (offset <= position + length) {
+          let unit = this.#unitOf(segment.node);
+          if (unit) {
+            let parent = unit.parentNode;
+            let childIndex = Array.prototype.indexOf.call(parent.childNodes, unit);
+            return { node: parent, offset: offset == position ? childIndex : childIndex + 1 };
+          }
           return { node: segment.node, offset: offset - position };
+        }
       } else if (segment.node instanceof HTMLElement && segment.node.tagName == "LI") {
         if (offset == position + length)
           return this.#startOf(segment.node);
@@ -1765,8 +1814,12 @@ var TextHost = class _TextHost {
   #startOf(element) {
     let walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
     let first = walker.nextNode();
-    if (first && !(first.parentElement && first.parentElement.closest(".scv-widget")))
+    if (first && !(first.parentElement && first.parentElement.closest(".scv-widget"))) {
+      let unit = this.#unitOf(first);
+      if (unit)
+        return { node: unit.parentNode, offset: Array.prototype.indexOf.call(unit.parentNode.childNodes, unit) };
       return { node: first, offset: 0 };
+    }
     let widgets = element.querySelectorAll(":scope > .scv-widget").length;
     return { node: element, offset: widgets };
   }
@@ -1783,9 +1836,18 @@ var TextHost = class _TextHost {
     if (lastChild instanceof HTMLElement && lastChild.tagName == "BR") {
       return { node: element, offset: element.childNodes.length - 1 };
     }
-    if (last)
+    if (last) {
+      let unit = this.#unitOf(last);
+      if (unit)
+        return { node: unit.parentNode, offset: Array.prototype.indexOf.call(unit.parentNode.childNodes, unit) + 1 };
       return { node: last, offset: (last.nodeValue || "").length };
+    }
     return { node: element, offset: element.childNodes.length };
+  }
+  /** The element around a text node that is one unit for the caret, such as a drawn tag, or null. */
+  #unitOf(node) {
+    let unit = node.parentElement ? node.parentElement.closest('[contenteditable="false"]') : null;
+    return unit && unit !== this.element && this.element.contains(unit) ? unit : null;
   }
   select(start, end = start) {
     start = Utilities.clamp(start, 0, this.rich.text.length);
@@ -2471,7 +2533,6 @@ var Strings = class _Strings {
   TextCodeInspectorCaption = "Code";
   TextLanguageCaption = "Language";
   TextCopyCodeTooltip = "Copy";
-  TextDefaultRawContent = "";
   TextImageCaption = "Image";
   TextImageURLDialogTitle = "Image";
   TextImageURLDialogPrompt = "Image address";
@@ -2501,7 +2562,6 @@ var Strings = class _Strings {
   TextSplitCellCaption = "Split Cell";
   TextHeaderCaption = "Header Row";
   TextFooterCaption = "Footer Row";
-  TextDefaultColumnText = "";
   TextUnsupportedContentFormat = "Unsupported content: %type%";
   TextMoveUpCaption = "Move Up";
   TextMoveDownCaption = "Move Down";
@@ -2545,15 +2605,9 @@ var Strings = class _Strings {
   TextSaveFailedCaption = "Couldn't save";
   TextTryAgainCaption = "Try again";
   TextStatusBarCaption = "Document status";
-  TextAudioCaption = "Audio";
-  TextVideoCaption = "Video";
-  TextBookmarkCaption = "Bookmark";
-  TextEmbedCaption = "Embed";
   TextAddCaption = "Add";
-  TextTextFieldCaption = "Text Field";
   TextPropertiesCaption = "Properties\u2026";
   TextResetCaption = "Reset";
-  TextDefaultTextFieldPlaceholder = "Text field";
   TextPropertiesTabCaption = "Properties";
   TextDocumentInspectorCaption = "Document";
   TextContentInspectorCaption = "Content";
@@ -2705,7 +2759,8 @@ var Strings = class _Strings {
     return Array.from(_Strings.#registered);
   }
   /**
-   * Sets the application's locale: a locale pack or an object of strings, used by every
+   * Sets the application's locale: a locale pack, an object of strings, or a list of either, such
+   * as the base package's pack and its add-ons' for one language, used by every
    * Strings object created afterwards, including each new editor's. An editor's own locale
    * pack still wins. Pass null to go back to the built-in text. Returns the number of values
    * that apply to text known now, or 0 for a pack that is rejected.
@@ -2730,208 +2785,83 @@ var Strings = class _Strings {
       _Strings.#shared = new _Strings();
     return _Strings.#shared;
   }
-  // Accepted from locale packs so a pack written for any edition applies in full.
-  TextAcceptedCharacterSetsCaption = "Accepted Character Sets";
-  TextAcceptedCharacterSetsDialogPrompt = "Enter space-separated character encodings:";
+  // Accepted from locale packs so a pack written for any edition applies in full. Text that
+  // belongs to an add-on's blocks, such as the form fields', is registered by that add-on.
   TextAccessibilityHintInspectorCaption = "Hint";
   TextAccessibilityInspectorCaption = "Accessibility";
   TextAccessibilityRoleInspectorCaption = "Role";
-  TextActionCaption = "Action";
-  TextAddAlertCaption = "Add Alert";
   TextAddHeadingCaption = "Add Heading";
-  TextAddOptionDialogPrompt = "Enter the option caption:";
-  TextAddRadioOptionDialogTitle = "Add Radio Option";
   TextAddTableCaption = "Add Table";
-  TextAlertTypeCaption = "Alert Type";
   TextAlignmentInspectorDescription = "Positions the node within its container. Visible only when the node is narrower than the container. Automatic follows the container, then the document.";
-  TextAllowMultipleSelectionsCaption = "Allow Multiple Selections";
-  TextAssociatedFormDialogPrompt = "Enter the owning form's ID, or leave empty:";
-  TextAssociatedFormDialogTitle = "Associated Form";
-  TextAssociatedFormIDCaption = "Associated Form ID";
-  TextAudioToolbarTooltip = "Add Audio";
-  TextAutocompleteDialogPrompt = "Enter the autocomplete token or leave empty:";
   TextBackgroundColorTooltip = "Text Background Color";
   TextBackgroundImageDialogPrompt = "Enter an image URL, data URI, or BASE64 value:";
-  TextBookmarkToolbarTooltip = "Add Bookmark";
-  TextButtonCommandDialogPrompt = "Enter the command keyword:";
-  TextButtonCommandDialogTitle = "Button Command";
-  TextButtonFormActionDialogPrompt = "Enter the submission URL override:";
-  TextButtonPropertiesCaption = "Button Properties";
-  TextButtonToolbarTooltip = "Add Button";
-  TextButtonValueDialogTitle = "Button Value";
   TextCellBackgroundColorCaption = "Cell Background Color";
   TextCellBackgroundImageCaption = "Cell Background Image";
   TextChangeImageCaption = "Change Image";
   TextCheckSpellingMenuCaption = "Check Spelling";
-  TextCheckboxPropertiesCaption = "Checkbox Properties";
-  TextCheckboxToolbarTooltip = "Add Checkbox";
-  TextCheckboxValueDialogTitle = "Checkbox Value";
   TextChooseBackgroundImageDialogTitle = "Choose a Background Image";
   TextChooseCellBackgroundColorDialogTitle = "Choose Cell Background Color";
   TextChooseCellBackgroundImageDialogTitle = "Choose a Cell Background Image";
   TextChooseColorCaption = "Choose Color\u2026";
-  TextChooseColumnBackgroundColorDialogTitle = "Choose Column Background Color";
-  TextChooseColumnBackgroundImageDialogTitle = "Choose a Column Background Image";
   TextChooseImageDialogTitle = "Choose an Image";
-  TextChooseMediaFileDialogTitle = "Choose a Media File";
   TextChooseTextBackgroundColorDialogTitle = "Choose Text Background Color";
   TextChooseTextColorDialogTitle = "Choose Text Color";
-  TextChooseVideoPreviewImageDialogTitle = "Choose a Video Preview Image";
   TextCodeToolbarTooltip = "Add Code Block";
-  TextColorTypeCaption = "Color";
-  TextColumnBackgroundColorCaption = "Column Background Color";
-  TextColumnBackgroundImageCaption = "Column Background Image";
-  TextColumnsToolbarTooltip = "Add Columns";
-  TextControlIDDialogPrompt = "Enter the HTML element ID:";
-  TextControlIDDialogTitle = "Control ID";
-  TextControlNameDialogPrompt = "Enter the form submission name:";
-  TextControlNameDialogTitle = "Control Name";
-  TextCopyRawContentTooltip = "Copy Raw Content";
   TextCorrectSpellingAutomaticallyMenuCaption = "Correct Spelling Automatically";
-  TextDatalistDialogPrompt = "Enter the associated datalist ID:";
-  TextDatalistIDDialogPrompt = "Enter the ID referenced by text fields:";
-  TextDatalistIDDialogTitle = "Datalist ID";
-  TextDatalistOptionDialogPrompt = "Enter the option value:";
-  TextDatalistPropertiesCaption = "Datalist Properties";
-  TextDatalistToolbarTooltip = "Add Datalist";
-  TextDateTimeTypeCaption = "Date and Time";
-  TextDateTypeCaption = "Date";
   TextDefaultImageCaption = "Image Caption";
-  TextDetailsToolbarTooltip = "Add Collapsible Section";
-  TextDialogCaption = "Dialog";
   TextDividerToolbarTooltip = "Add Divider";
-  TextDropdownPropertiesCaption = "Dropdown Properties";
-  TextDropdownToolbarTooltip = "Add Dropdown";
   TextDuplicateNodeTooltip = "Duplicate Node";
-  TextEmailTypeCaption = "Email";
-  TextEmbedToolbarTooltip = "Add Embed";
-  TextEmbeddedMediaCaption = "Embedded Media";
   TextEmojiAndSymbolsMenuCaption = "Emoji & Symbols\u2026";
-  TextEncodingTypeCaption = "Encoding Type";
   TextExternalIDCaption = "External ID";
-  TextFileTypeCaption = "File";
   TextFontFamilyMenuCaption = "Font Family";
   TextFontSearchHint = "Search fonts";
   TextFontSearchTooltip = "Search available fonts";
-  TextFormActionDialogPrompt = "Enter the form submission URL:";
-  TextFormEncodingCaption = "Form Encoding";
-  TextFormIDDialogPrompt = "Enter the form element ID:";
-  TextFormIDDialogTitle = "Form ID";
-  TextFormNameDialogPrompt = "Enter the form name:";
-  TextFormNameDialogTitle = "Form Name";
-  TextFormPropertiesCaption = "Form Properties";
-  TextFormRelationshipDialogPrompt = "Enter the relationship tokens:";
-  TextFormRelationshipDialogTitle = "Form Relationship";
-  TextFormTargetDialogPrompt = "Enter the browsing-context target:";
-  TextFormToolbarTooltip = "Add Form";
-  TextGetCaption = "GET";
-  TextGroupCaption = "Group";
-  TextGroupLegendDialogPrompt = "Enter the group legend:";
-  TextHiddenTypeCaption = "Hidden";
   TextIgnoreSpellingMenuCaption = "Ignore Spelling";
   TextImageDownloadErrorMessage = "The image could not be downloaded.";
   TextImageFillModeCaption = "Image Fill Mode";
   TextImageRequestErrorMessage = "The image request could not be started.";
   TextImageToolbarTooltip = "Add Image";
-  TextInputModeDialogPrompt = "Enter the inputmode value:";
   TextInsertNodeSearchTooltip = "Search registered node types";
-  TextInvalidPatternCaption = "Invalid pattern";
-  TextLabelPropertiesCaption = "Label Properties";
-  TextLabelTargetDialogPrompt = "Enter the ID of the labeled control:";
-  TextLabelTargetDialogTitle = "Label Target";
-  TextLabelToolbarTooltip = "Add Label";
   TextLanguageInspectorCaption = "Language";
   TextLearnSpellingMenuCaption = "Learn Spelling";
   TextLineHeightInspectorDescription = "Text line-height multiplier.";
   TextLineSpacingInspectorDescription = "Additional spacing between text lines.";
-  TextLinkCardEmptyCaption = "Set a URL in the Inspector";
-  TextLinkCardLoadingCaption = "Loading preview\u2026";
   TextLinkTitleHint = "Optional link title";
   TextListToolbarTooltip = "Add List";
   TextListTypeCaption = "List Type";
   TextMatchCaseTooltip = "Match Case";
-  TextMaximumLengthCaption = "Maximum Length";
-  TextMediaPlaybackErrorMessage = "The media resource could not be played.";
-  TextMediaSourceCaption = "Media Source";
-  TextMediaURLDialogTitle = "Media URL";
-  TextMethodCaption = "Method";
-  TextMinimumLengthCaption = "Minimum Length";
-  TextMonthTypeCaption = "Month";
-  TextMultipartFormDataCaption = "Multipart Form Data";
-  TextNewOptionCaption = "New Option";
   TextNoHighlightCaption = "No Highlight";
-  TextNoIDCaption = "(no ID)";
   TextNoMatchingFontsCaption = "No matching fonts";
   TextNoMatchingNodeTypesCaption = "No matching node types";
-  TextNoMediaSelectedCaption = "No Media Selected";
   TextNodeHeightFieldTooltip = "Enter a height from 1 to 10000";
   TextNodeWidthFieldTooltip = "Enter a width from 1 to 10000";
-  TextNumberTypeCaption = "Number";
   TextOneMatchCaption = "1 match";
-  TextOptionCaptionDialogPrompt = "Enter the visible option caption:";
-  TextOptionCaptionDialogTitle = "Option Caption";
-  TextOptionValueDialogPrompt = "Enter the submitted option value:";
-  TextOptionValueDialogTitle = "Option Value";
   TextOrderedCaption = "Ordered";
-  TextPOSTCaption = "POST";
-  TextPageBreakToolbarTooltip = "Add Page Break";
-  TextPasswordTypeCaption = "Password";
-  TextPlaceholderDialogPrompt = "Enter the placeholder text:";
   TextPlainTextCaption = "Plain Text";
   TextPreviewCaption = "Preview";
-  TextPreviewImageOpenErrorMessage = "That preview image could not be opened.";
   TextQuoteToolbarTooltip = "Add Quote";
-  TextRadioGroupLegendDialogTitle = "Radio Group Legend";
-  TextRadioGroupPropertiesCaption = "Radio Group Properties";
-  TextRadioGroupToolbarTooltip = "Add Radio Group";
-  TextRadioLabelDialogPrompt = "Enter the accompanying label:";
-  TextRadioLabelDialogTitle = "Radio Label";
-  TextRadioValueDialogTitle = "Radio Value";
-  TextRangeTypeCaption = "Range";
-  TextRawContentToolbarTooltip = "Add Raw Content";
-  TextRefreshPreviewCaption = "Refresh";
   TextRegExTooltip = "Regular Expression";
   TextRemoveColorCaption = "Remove Color";
   TextRemoveFormattingTooltip = "Remove Formatting";
-  TextRemovePreviewImageCaption = "Remove Preview Image";
   TextRemoveSelectedNodeTooltip = "Remove Selected Node";
   TextRemoveSourceCaption = "Remove Source";
-  TextSearchTypeCaption = "Search";
   TextSelectCaption = "Select\u2026";
-  TextSkipValidationCaption = "Skip Validation";
   TextSourceCaption = "Source";
   TextSpellingMenuCaption = "Spelling";
   TextStrikethroughTooltip = "Strikethrough";
-  TextSubmissionValueCaption = "Submission Value";
-  TextSubmittedValueDialogPrompt = "Enter the submitted value:";
-  TextSuggestionLabelDialogPrompt = "Enter the optional display label:";
-  TextSuggestionLabelDialogTitle = "Suggestion Label";
-  TextSuggestionValueDialogPrompt = "Enter the suggested value:";
-  TextSuggestionValueDialogTitle = "Suggestion Value";
   TextTableCellCaption = "Table Cell";
-  TextTableOfContentsToolbarTooltip = "Add Table of Contents";
   TextTargetCaption = "Target";
-  TextTelephoneTypeCaption = "Telephone";
   TextTextAlignmentInspectorDescription = "Aligns the text inside this node. Automatic is left-aligned and does not follow the node or document alignment.";
-  TextTextAreaToolbarTooltip = "Add Text Area";
-  TextTextFieldToolbarTooltip = "Add Text Field";
   TextTextToolbarTooltip = "Add Text";
-  TextTimeTypeCaption = "Time";
   TextToggleFooterRowCaption = "Toggle Footer Row";
   TextToggleHeaderRowCaption = "Toggle Header Row";
-  TextURLEncodedCaption = "URL Encoded";
   TextUnmergeCellsCaption = "Unmerge Cells";
   TextUnorderedCaption = "Unordered";
   TextUnsupportedDownloadedImageMessage = "The downloaded resource is not a supported image.";
-  TextValidationPatternCaption = "Validation Pattern";
-  TextValidationPatternDialogPrompt = "Enter the regular-expression pattern:";
-  TextVideoPreviewImageCaption = "Video Preview Image";
-  TextVideoToolbarTooltip = "Add Video";
-  TextWeekTypeCaption = "Week";
   TextWholeWordTooltip = "Whole Word";
   /**
-   * Applies a locale pack. Accepts the locale pack format, an object of
-   * strings, or JSON text of either. Returns the number of values applied.
+   * Applies a locale pack. Accepts the locale pack format, an object of strings, a list of
+   * either, or JSON text of any of these. Returns the number of values applied.
    */
   apply(pack) {
     let values = _Strings.#values(pack);
@@ -2962,7 +2892,17 @@ var Strings = class _Strings {
         return null;
       }
     }
-    if (!data || typeof data != "object" || Array.isArray(data))
+    if (Array.isArray(data)) {
+      let merged = {};
+      for (let item of data) {
+        let values2 = item && typeof item == "object" ? _Strings.#values(item) : null;
+        if (!values2)
+          return null;
+        Object.assign(merged, values2);
+      }
+      return merged;
+    }
+    if (!data || typeof data != "object")
       return null;
     let values = {};
     if ("strings" in data || "language" in data) {
@@ -3063,6 +3003,11 @@ var ToolbarItem = class _ToolbarItem extends EventTarget {
   alwaysShowCaption = false;
   /** Arbitrary application data. */
   tag = null;
+  /**
+   * For a menu that picks its value from a popup of its own, such as the table size grid: makes
+   * the popup, which calls choose with a menu item carrying the value when the user picks one.
+   */
+  makePopup = null;
   #enabled = true;
   #active = false;
   #visible = true;
@@ -4846,7 +4791,7 @@ var DividerNode = class _DividerNode extends Node3 {
     thickness.setDefaultValue(1);
     let color = new InspectorItem2("linecolor", strings.TextLineColorCaption, "lineColor", 6 /* color */);
     color.setDefaultValue(Colors.empty);
-    return [InspectorDefaults.section("divider", strings.TextDividerCaption, [thickness, color])].concat(InspectorDefaults.node(this));
+    return [InspectorDefaults.section("divider", strings.TextDividerCaption, [thickness, color])].concat(InspectorDefaults.node(this, { appearance: false }));
   }
   lineThickness = 1;
   /** The line color. The empty color uses the theme's border color. */
@@ -4932,13 +4877,20 @@ var TableNode = class _TableNode extends Node3 {
   static icon = "bi bi-table";
   static keywords = "grid spreadsheet rows columns cells";
   static create(editor) {
-    let result = new _TableNode(3, 3);
+    return _TableNode.withSize(editor, 3, 3);
+  }
+  /** A new table with a header row, as the Insert menu and the table tool make them. */
+  static withSize(editor, rows, columns) {
+    rows = Math.max(1, Math.floor(rows));
+    columns = Math.max(1, Math.floor(columns));
+    let result = new _TableNode(rows, columns);
     result.editor = editor;
-    result.hasHeader = true;
-    for (let column = 0; column < 3; column++) {
-      result.cell(0, column).insert(0, Utilities.format(editor.strings.TextDefaultTableHeadingFormat, { number: column + 1 }), _TableNode.headerStyle());
+    result.hasHeader = rows > 1;
+    for (let column = 0; column < columns; column++) {
+      let heading = result.hasHeader;
+      result.cell(0, column).insert(0, heading ? Utilities.format(editor.strings.TextDefaultTableHeadingFormat, { number: column + 1 }) : editor.strings.TextDefaultTableCellText, heading ? _TableNode.headerStyle() : new TextStyle());
     }
-    for (let index = 3; index < result.cells.length; index++)
+    for (let index = columns; index < result.cells.length; index++)
       result.cells[index].insert(0, editor.strings.TextDefaultTableCellText, new TextStyle());
     return result;
   }
@@ -5837,7 +5789,10 @@ var ImageNode = class _ImageNode extends Node3 {
         target.captionText = new RichText(String(value || "").replace(/\n/g, LineBreak), style);
     });
     caption.setDefaultValue(void 0);
-    return [InspectorDefaults.section("image", strings.TextImageCaption, [file, url, fill, width]), InspectorDefaults.section("caption", strings.TextCaptionCaption, [caption])].concat(InspectorDefaults.node(this));
+    return [
+      InspectorDefaults.section("image", strings.TextImageCaption, [file, url, fill, width]),
+      InspectorDefaults.section("caption", strings.TextCaptionCaption, [caption, ...InspectorDefaults.lineItems(strings)])
+    ].concat(InspectorDefaults.node(this, { appearance: false, backgroundImage: false }));
   }
   chooseFile() {
     let input = Utilities.element("input", "", { type: "file", accept: "image/*" });
@@ -6806,6 +6761,16 @@ var StatusBar = class {
 // importers.ts
 var HTMLImporter7 = class _HTMLImporter {
   #editor;
+  /** Readers for inline elements that become text of their own; see registerInlineElement. */
+  static #inlineReaders = [];
+  /**
+   * Reads inline elements an add-on exports, such as formulas, into text with a style, instead of
+   * reading their contents. The reader returns null for elements it doesn't know.
+   */
+  static registerInlineElement(reader) {
+    if (_HTMLImporter.#inlineReaders.indexOf(reader) < 0)
+      _HTMLImporter.#inlineReaders.push(reader);
+  }
   constructor(editor) {
     this.#editor = editor;
   }
@@ -7226,6 +7191,16 @@ var HTMLImporter7 = class _HTMLImporter {
           result.insert(result.length, value, style);
         return;
       }
+      if (node instanceof Element) {
+        for (let reader of _HTMLImporter.#inlineReaders) {
+          let read = reader(node, style);
+          if (read) {
+            if (read.text.length > 0)
+              result.insert(result.length, read.text, read.style);
+            return;
+          }
+        }
+      }
       if (!(node instanceof HTMLElement))
         return;
       if (node.tagName == "BR") {
@@ -7265,6 +7240,12 @@ var HTMLImporter7 = class _HTMLImporter {
   }
 };
 var MarkdownConverter = class _MarkdownConverter {
+  static #inlineRules = [];
+  /** Adds an inline syntax; see MarkdownInlineRule. */
+  static registerInlineRule(rule) {
+    if (_MarkdownConverter.#inlineRules.indexOf(rule) < 0)
+      _MarkdownConverter.#inlineRules.push(rule);
+  }
   static toHTML(markdown) {
     let lines = markdown.replace(/\r\n?/g, "\n").replace(/\t/g, "    ").split("\n");
     let notes = _MarkdownConverter.#footnotes(lines);
@@ -7525,7 +7506,9 @@ var MarkdownConverter = class _MarkdownConverter {
     let text = value;
     text = text.replace(/(`+)([\s\S]*?[^`])\1(?!`)/g, (_match, _fence, code) => stash(`<code>${Utilities.escapeText(code.trim().length > 0 ? code.replace(/^ (.*) $/, "$1") : code)}</code>`));
     text = text.replace(/<(\/?)(kbd|sup|sub|mark|u|br|span|a)([^>]*)>/gi, (match) => stash(match));
-    text = text.replace(/\\([\\`*_{}\[\]()#+\-.!|~<>])/g, (_match, character) => stash(Utilities.escapeText(character)));
+    text = text.replace(/\\([\\`*_{}\[\]()#+\-.!|~<>$])/g, (_match, character) => stash(Utilities.escapeText(character)));
+    for (let rule of _MarkdownConverter.#inlineRules)
+      text = rule(text, stash);
     text = text.replace(/\[\^([^\]\s]+)\]/g, (_match, label) => stash(`<sup data-scriviamo-suggestion-provider="footnote" data-scriviamo-suggestion-id="${Utilities.escapeAttribute(label)}">${Utilities.escapeText(label)}</sup>`));
     text = text.replace(/!\[([^\]]*)\]\(\s*<?([^)\s>]+)>?(?:\s+"([^"]*)")?\s*\)/g, (_match, alt, source) => stash(`<img src="${Utilities.escapeAttribute(source)}" alt="${Utilities.escapeAttribute(alt)}">`));
     text = text.replace(/\[([^\]]+)\]\(\s*<?([^)\s>]+)>?(?:\s+"([^"]*)")?\s*\)/g, (_match, label, href, title) => stash(`<a href="${Utilities.escapeAttribute(href)}"${title ? ` title="${Utilities.escapeAttribute(title)}"` : ""}>`) + label + stash("</a>"));
@@ -7543,7 +7526,7 @@ var MarkdownConverter = class _MarkdownConverter {
 };
 
 // popups.ts
-var Popup = class _Popup {
+var Popup2 = class _Popup {
   static #current = null;
   element;
   onClose = null;
@@ -7803,7 +7786,7 @@ var MenuList = class _MenuList {
     element.style.top = `${top}px`;
   }
 };
-var PopupMenu = class extends Popup {
+var PopupMenu = class extends Popup2 {
   #root;
   #onSelect;
   /** The list the arrow keys move in: the root or the deepest submenu being navigated. */
@@ -7887,7 +7870,7 @@ var PopupMenu = class extends Popup {
     super.handleKey(event);
   }
 };
-var ColorPalette = class _ColorPalette extends Popup {
+var ColorPalette = class _ColorPalette extends Popup2 {
   static colors = [
     "#000000",
     "#434343",
@@ -7969,6 +7952,68 @@ var ColorPalette = class _ColorPalette extends Popup {
     this.element.append(footer);
   }
 };
+var TableSizePicker = class _TableSizePicker extends Popup2 {
+  static maximumRows = 8;
+  static maximumColumns = 10;
+  rows = 1;
+  columns = 1;
+  #cells = [];
+  #label;
+  #strings;
+  #onSelect;
+  constructor(strings, onSelect) {
+    super("dropdown-menu show scv-table-size");
+    this.#strings = strings;
+    this.#onSelect = onSelect;
+    let grid = Utilities.element("div", "scv-table-size-grid", { role: "grid", "aria-label": strings.TextTableCaption });
+    grid.style.gridTemplateColumns = `repeat(${_TableSizePicker.maximumColumns}, 1fr)`;
+    for (let row = 1; row <= _TableSizePicker.maximumRows; row++) {
+      for (let column = 1; column <= _TableSizePicker.maximumColumns; column++) {
+        let cell = Utilities.element("button", "scv-table-size-cell", { type: "button", tabindex: "-1", "data-rows": String(row), "data-columns": String(column), "aria-label": this.#caption(row, column) });
+        cell.addEventListener("mouseover", () => this.select(row, column));
+        cell.addEventListener("click", () => this.choose());
+        this.#cells.push(cell);
+        grid.append(cell);
+      }
+    }
+    this.#label = Utilities.element("div", "scv-table-size-label", { "aria-live": "polite" });
+    this.element.append(grid, this.#label);
+    this.select(1, 1);
+  }
+  #caption(rows, columns) {
+    return Utilities.format(this.#strings.TextTableSizeCaptionFormat, { rows, columns });
+  }
+  /** Picks a size, highlighting it in the grid. */
+  select(rows, columns) {
+    this.rows = Utilities.clamp(rows, 1, _TableSizePicker.maximumRows);
+    this.columns = Utilities.clamp(columns, 1, _TableSizePicker.maximumColumns);
+    this.#cells.forEach((cell) => cell.classList.toggle("active", Number(cell.dataset.rows) <= this.rows && Number(cell.dataset.columns) <= this.columns));
+    this.#label.textContent = this.#caption(this.rows, this.columns);
+  }
+  /** Chooses the size picked, and closes. */
+  choose() {
+    let rows = this.rows;
+    let columns = this.columns;
+    this.close();
+    this.#onSelect(rows, columns);
+  }
+  handleKey(event) {
+    let rightToLeft = getComputedStyle(this.element).direction == "rtl";
+    let moves = { ArrowUp: [-1, 0], ArrowDown: [1, 0], ArrowLeft: [0, rightToLeft ? 1 : -1], ArrowRight: [0, rightToLeft ? -1 : 1] };
+    let move = moves[event.key];
+    if (move) {
+      event.preventDefault();
+      event.stopPropagation();
+      this.select(this.rows + move[0], this.columns + move[1]);
+    } else if (event.key == "Enter") {
+      event.preventDefault();
+      event.stopPropagation();
+      this.choose();
+    } else {
+      super.handleKey(event);
+    }
+  }
+};
 var Dialog = class {
   static prompt(container, strings, title, fields) {
     return new Promise((resolve) => {
@@ -8045,7 +8090,7 @@ var Dialog = class {
         });
         finish(result);
       });
-      Popup.closeAll();
+      Popup2.closeAll();
       container.append(backdrop);
       let first = dialog.querySelector("input, select, textarea");
       if (first) {
@@ -8056,7 +8101,7 @@ var Dialog = class {
     });
   }
 };
-var InsertionChooser = class extends Popup {
+var InsertionChooser = class extends Popup2 {
   #entries;
   #list;
   #search;
@@ -8121,7 +8166,7 @@ var InsertionChooser = class extends Popup {
     super.handleKey(event);
   }
 };
-var ChoicePopup = class extends Popup {
+var ChoicePopup = class extends Popup2 {
   #list;
   #search = null;
   #items = [];
@@ -8831,7 +8876,7 @@ var Annotations = class {
       this.#popover.refresh();
   }
 };
-var AnnotationPopover = class extends Popup {
+var AnnotationPopover = class extends Popup2 {
   #annotations;
   #strings;
   #threads;
@@ -9743,8 +9788,14 @@ var ToolbarView = class {
       if (button.disabled)
         return;
       if (item.kind == 2 /* menu */) {
-        if (Popup.current && Popup.current.element.dataset.owner == item.identifier) {
-          Popup.closeAll();
+        if (Popup2.current && Popup2.current.element.dataset.owner == item.identifier) {
+          Popup2.closeAll();
+          return;
+        }
+        if (item.makePopup) {
+          let popup = item.makePopup((menuItem) => activate(item, menuItem));
+          popup.element.dataset.owner = item.identifier;
+          popup.show(button, popupContainer);
           return;
         }
         prepareMenu(item);
@@ -10200,11 +10251,13 @@ var Editor2 = class _Editor extends EventTarget {
     this.exporters.add(new Exporter("markdown", 3 /* markdown */));
     this.exporters.add(new Exporter("text", 4 /* plainText */));
     _Editor.registeredNodeTypes().forEach((type) => this.nodeTypes.add(type));
+    if (options && options.strings)
+      this.strings.apply(options.strings);
     this.#buildDefaultToolbar();
     this.toolbarItems.addEventListener("changed", () => this.#renderToolbar());
     this.nodeTypes.addEventListener("changed", () => this.#renderToolbar());
     this.history.addEventListener("changed", () => this.updateToolbarState());
-    this.updateOptions(options);
+    this.#applyOptions(options, true);
     _Editor.#extensions.forEach((extension) => extension.install?.(this));
   }
   /**
@@ -10264,6 +10317,9 @@ var Editor2 = class _Editor extends EventTarget {
     }
   }
   updateOptions(options) {
+    this.#applyOptions(options, false);
+  }
+  #applyOptions(options, constructing) {
     let defaults = {
       readOnly: false,
       toolbarVisible: true,
@@ -10276,8 +10332,8 @@ var Editor2 = class _Editor extends EventTarget {
       class: ""
     };
     let instanceOptions = { ...defaults, ...options };
-    if (instanceOptions.strings)
-      this.strings.apply(instanceOptions.strings);
+    if (instanceOptions.strings && !constructing)
+      this.localize(instanceOptions.strings);
     if (instanceOptions.fontName)
       this.#fontName = instanceOptions.fontName;
     if (instanceOptions.fontSize)
@@ -10532,7 +10588,7 @@ var Editor2 = class _Editor extends EventTarget {
   }
   /** Removes the editor from the page and releases its listeners. */
   destroy() {
-    Popup.closeAll();
+    Popup2.closeAll();
     this.statusBar.detach();
     this.autosave.dispose();
     this.#heightObserver?.disconnect();
@@ -10971,7 +11027,15 @@ var Editor2 = class _Editor extends EventTarget {
     let nodeClass = typeof type == "string" ? this.nodeTypes.item(type) : type;
     if (!nodeClass || this.#readOnly)
       return null;
-    let node = nodeClass.create(this);
+    return this.insertNewNode(nodeClass.create(this), replace);
+  }
+  /**
+   * Inserts a node made for this editor where the user is working, as insertNodeOfType does:
+   * at the caret, in place of an empty paragraph, or after the selected node. One undo step.
+   */
+  insertNewNode(node, replace = null) {
+    if (this.#readOnly)
+      return null;
     node.editor = this;
     let host = this.#activeHost;
     let point = host ? host.node.insertionPoint(host) : null;
@@ -12172,7 +12236,7 @@ var Editor2 = class _Editor extends EventTarget {
     if (/^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName) && !TextHost.from(target, this.#documentElement))
       return;
     event.preventDefault();
-    Popup.closeAll();
+    Popup2.closeAll();
     let host = TextHost.from(target, this.#documentElement);
     let selection = window.getSelection();
     let insideTextSelection = !!host && host === this.#activeHost && !!selection && selection.rangeCount > 0 && !selection.isCollapsed && Array.from(selection.getRangeAt(0).getClientRects()).some((rect) => event.clientX >= rect.left && event.clientX <= rect.right && event.clientY >= rect.top && event.clientY <= rect.bottom);
@@ -12926,7 +12990,7 @@ var Editor2 = class _Editor extends EventTarget {
       event.preventDefault();
       return;
     }
-    Popup.closeAll();
+    Popup2.closeAll();
     this.#dragNode = node;
     this.#dragNodes = this.#selected.length > 1 && this.#selected.indexOf(node) >= 0 ? this.inDocumentOrder(this.#selected).filter((item) => !item.locked) : [node];
     event.dataTransfer.effectAllowed = "move";
@@ -13364,6 +13428,7 @@ var Editor2 = class _Editor extends EventTarget {
       return item;
     };
     add("insert", strings.TextInsertCaption, "bi bi-plus-lg", 2 /* menu */, true).tooltip = strings.TextInsertTooltip;
+    items.add(this.#catalogItem("table"));
     items.add(ToolbarItem.separator());
     add("undo", strings.TextUndoCaption, "bi bi-arrow-counterclockwise");
     add("redo", strings.TextRedoCaption, "bi bi-arrow-clockwise");
@@ -13423,6 +13488,15 @@ var Editor2 = class _Editor extends EventTarget {
     switch (identifier) {
       case "insert":
         return make(strings.TextInsertCaption, "bi bi-plus-lg", 2 /* menu */, strings.TextInsertTooltip);
+      case "table": {
+        let item = make(strings.TextTableCaption, "bi bi-table", 2 /* menu */);
+        item.makePopup = (choose) => new TableSizePicker(strings, (rows, columns) => {
+          let menuItem = new ToolbarMenuItem(`${rows}x${columns}`, Utilities.format(strings.TextTableSizeCaptionFormat, { rows, columns }));
+          menuItem.value = { rows, columns };
+          choose(menuItem);
+        });
+        return item;
+      }
       case "undo":
         return make(strings.TextUndoCaption, "bi bi-arrow-counterclockwise");
       case "redo":
@@ -13494,6 +13568,7 @@ var Editor2 = class _Editor extends EventTarget {
   static get catalogIdentifiers() {
     let result = [
       "insert",
+      "table",
       "undo",
       "redo",
       "blocktype",
@@ -13540,7 +13615,7 @@ var Editor2 = class _Editor extends EventTarget {
   showCommandSearch(anchor) {
     if (this.#readOnly || !this.#element)
       return;
-    Popup.closeAll();
+    Popup2.closeAll();
     this.#closeSuggestions();
     this.#applyToolbarState();
     let strings = this.strings;
@@ -13682,8 +13757,9 @@ var Editor2 = class _Editor extends EventTarget {
     let identifiers = [];
     if (Array.isArray(data.items)) {
       identifiers = data.items.map((item) => String(item));
-    } else if (Array.isArray(data.classic)) {
-      data.classic.forEach((section, index) => {
+    } else if (Array.isArray(data.classic) || Array.isArray(data.contextual)) {
+      ;
+      (Array.isArray(data.classic) ? data.classic : data.contextual).forEach((section, index) => {
         if (index > 0)
           identifiers.push("separator");
         if (section && Array.isArray(section.items))
@@ -13738,7 +13814,7 @@ var Editor2 = class _Editor extends EventTarget {
   showToolbarCustomizer() {
     if (this.#customizer || this.#readOnly || !this.#toolbarElement || !this.#toolbarVisible)
       return;
-    Popup.closeAll();
+    Popup2.closeAll();
     let strings = this.strings;
     this.toolbarItems.items().forEach((item) => {
       if (_Editor.catalogIdentifiers.indexOf(item.identifier) < 0 && item.kind != 3 /* separator */ && item.kind != 4 /* flexibleSpace */)
@@ -14236,6 +14312,12 @@ var Editor2 = class _Editor extends EventTarget {
         if (menuItem)
           this.insertNodeOfType(menuItem.identifier);
         break;
+      case "table": {
+        let size = menuItem && menuItem.value ? menuItem.value : { rows: 3, columns: 3 };
+        if (this.nodeTypes.item("table"))
+          this.insertNewNode(TableNode.withSize(this, size.rows, size.columns));
+        break;
+      }
       default:
         if (!_Editor.#extensions.some((extension) => extension.activateToolbarItem && extension.activateToolbarItem(this, identifier, menuItem))) {
           this.dispatchEvent(new CustomEvent("toolbarItemPressed", { detail: { item, menuItem } }));
@@ -14283,6 +14365,7 @@ var Editor2 = class _Editor extends EventTarget {
     _Editor.#extensions.forEach((extension) => extension.updateToolbarState?.(this, set));
     set("insert", !this.#readOnly);
     set("search", !this.#readOnly);
+    set("table", !this.#readOnly && !!this.nodeTypes.item("table"));
     set("find", true, this.search.visible);
     set("replace", !this.#readOnly);
     set("print", true);
@@ -15022,7 +15105,7 @@ var Editor2 = class _Editor extends EventTarget {
   /** @internal The server removed this user's access: the shared content and its undo history leave the editor. */
   clearCollaborationDocument() {
     this.endEditing();
-    Popup.closeAll();
+    Popup2.closeAll();
     this.annotations.load([]);
     this.#nodes.splice(0, this.#nodes.length, new TextNode2());
     this.#selected = [];
@@ -15178,7 +15261,7 @@ var Editor2 = class _Editor extends EventTarget {
     this.#schedulePresence();
   }
   #load(source) {
-    Popup.closeAll();
+    Popup2.closeAll();
     let documentID = Utilities.string(source.documentId).trim();
     if (documentID.length > 0)
       this.documentID = documentID;
@@ -15753,7 +15836,12 @@ var InspectorDefaults = class _InspectorDefaults {
     });
   }
   /** Sections every node has: content, appearance, borders, corners, dimensions and background image. */
-  static node(node) {
+  /**
+   * The sections every block shares: content, appearance, borders, corners, dimensions and
+   * background image. A block leaves out the ones that can't show on it: appearance for one with
+   * no text, the background image for one its content covers.
+   */
+  static node(node, options = {}) {
     let strings = node.strings;
     let result = [];
     let content = new InspectorSection11("content", strings.TextContentInspectorCaption);
@@ -15766,12 +15854,11 @@ var InspectorDefaults = class _InspectorDefaults {
     direction.setDefaultValue(0 /* automatic */);
     content.add(direction);
     result.push(content);
-    let appearance = new InspectorSection11("appearance", strings.TextAppearanceInspectorCaption);
-    let lineHeight = appearance.add(InspectorItem2.number("lineheight", strings.TextLineHeightInspectorCaption, (target) => target.lineHeight, (target, value) => target.lineHeight = value, 0.1, 10, 0.1));
-    lineHeight.setDefaultValue(1);
-    let lineSpacing = appearance.add(InspectorItem2.number("linespacing", strings.TextLineSpacingInspectorCaption, (target) => target.lineSpacing, (target, value) => target.lineSpacing = value, 0, 100, 1));
-    lineSpacing.setDefaultValue(0);
-    result.push(appearance);
+    if (options.appearance !== false) {
+      let appearance = new InspectorSection11("appearance", strings.TextAppearanceInspectorCaption);
+      _InspectorDefaults.lineItems(strings).forEach((item) => appearance.add(item));
+      result.push(appearance);
+    }
     let borders = new InspectorSection11("borders", strings.TextBordersInspectorCaption);
     _InspectorDefaults.borderItems(borders, strings, "border", (target, side) => target[`border${side}`], (target, side, change) => {
       let border = { ...target[`border${side}`], color: Colors.clone(target[`border${side}`].color) };
@@ -15798,8 +15885,17 @@ var InspectorDefaults = class _InspectorDefaults {
         dimensions.remove("height");
       result.push(dimensions);
     }
-    result.push(_InspectorDefaults.backgroundImageSection(strings, (target) => target.backgroundImage, (target, value) => target.backgroundImage = value));
+    if (options.backgroundImage !== false)
+      result.push(_InspectorDefaults.backgroundImageSection(strings, (target) => target.backgroundImage, (target, value) => target.backgroundImage = value));
     return result;
+  }
+  /** Line height and line spacing, for a block's text. */
+  static lineItems(strings) {
+    let lineHeight = InspectorItem2.number("lineheight", strings.TextLineHeightInspectorCaption, (target) => target.lineHeight, (target, value) => target.lineHeight = value, 0.1, 10, 0.1);
+    lineHeight.setDefaultValue(1);
+    let lineSpacing = InspectorItem2.number("linespacing", strings.TextLineSpacingInspectorCaption, (target) => target.lineSpacing, (target, value) => target.lineSpacing = value, 0, 100, 1);
+    lineSpacing.setDefaultValue(0);
+    return [lineHeight, lineSpacing];
   }
   /** Replaces a text block's text, keeping the style of its first character. */
   static setPlainText(node, value) {
@@ -15980,7 +16076,7 @@ export {
   Notification,
   NotificationTypes,
   ParagraphBreak,
-  Popup,
+  Popup2 as Popup,
   PopupMenu,
   QuoteNode,
   RichText,
@@ -15992,6 +16088,7 @@ export {
   SuggestionProviders,
   Suggestions,
   TableNode,
+  TableSizePicker,
   TextHost,
   TextHostModes,
   TextNode2 as TextNode,

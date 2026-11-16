@@ -2,7 +2,10 @@ import {CodeBlockNode, Editor, InspectorDefaults, InspectorEditors, InspectorIte
 
 /** This add-on's interface text. A locale pack applied to an editor replaces any of it. */
 const RawcontentStrings = {
-  TextRawContentCaption: "Raw HTML"
+  TextRawContentCaption: "Raw HTML",
+  TextDefaultRawContent: "",
+  TextCopyRawContentTooltip: "Copy Raw Content",
+  TextRawContentToolbarTooltip: "Add Raw Content"
 }
 
 type RawcontentStringsTable = typeof RawcontentStrings

@@ -1,0 +1,16 @@
+{
+  "language": "ko",
+  "strings": {
+    "Editor": {
+      "TextMathCaption": "수식",
+      "TextMathSourceCaption": "LaTeX",
+      "TextMathPlaceholder": "LaTeX(예: E = mc^2)",
+      "TextMathLoadingCaption": "수식을 불러오는 중…",
+      "TextMathUnavailableMessage": "수식 렌더러를 불러올 수 없습니다.",
+      "TextInlineMathCaption": "인라인 수식",
+      "TextInsertInlineMathCaption": "인라인 수식 삽입",
+      "TextInlineMathPlaceholder": "LaTeX(예: x^2)",
+      "TextInlineMathHint": "Enter로 완료합니다. 비워 두면 수식이 삭제됩니다."
+    }
+  }
+}

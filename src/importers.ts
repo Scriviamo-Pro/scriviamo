@@ -13,6 +13,17 @@ export interface DocumentStyle {
 export class HTMLImporter {
   #editor: Editor
 
+  /** Readers for inline elements that become text of their own; see registerInlineElement. */
+  static #inlineReaders: Array<InlineElementReader> = []
+
+  /**
+   * Reads inline elements an add-on exports, such as formulas, into text with a style, instead of
+   * reading their contents. The reader returns null for elements it doesn't know.
+   */
+  static registerInlineElement(reader: InlineElementReader) {
+    if (HTMLImporter.#inlineReaders.indexOf(reader) < 0) HTMLImporter.#inlineReaders.push(reader)
+  }
+
   constructor(editor: Editor) {
     this.#editor = editor
   }
@@ -403,6 +414,16 @@ export class HTMLImporter {
         if (value.length > 0) result.insert(result.length, value, style)
         return
       }
+      // MathML and SVG elements aren't HTML elements, but readers may know them.
+      if (node instanceof Element) {
+        for (let reader of HTMLImporter.#inlineReaders) {
+          let read = reader(node, style)
+          if (read) {
+            if (read.text.length > 0) result.insert(result.length, read.text, read.style)
+            return
+          }
+        }
+      }
       if (!(node instanceof HTMLElement)) return
       if (node.tagName == "BR") {
         result.insert(result.length, LineBreak, style)
@@ -437,8 +458,28 @@ export class HTMLImporter {
   }
 }
 
+/**
+ * Reads one inline element into text: the text and its style, given the style around the element.
+ * Returns null for elements it doesn't read.
+ */
+export type InlineElementReader = (element: Element, style: TextStyle) => {text: string, style: TextStyle} | null
+
+/**
+ * An inline Markdown syntax an add-on adds, such as $formulas$. It receives the text with code
+ * spans and escapes already set aside, and returns it with its syntax replaced by HTML, each piece
+ * of HTML passed through stash so later rules leave it alone.
+ */
+export type MarkdownInlineRule = (text: string, stash: (html: string) => string) => string
+
 /** Converts Markdown into HTML for the HTML importer. Covers CommonMark blocks, GitHub tables, task lists and alerts. */
 export class MarkdownConverter {
+  static #inlineRules: Array<MarkdownInlineRule> = []
+
+  /** Adds an inline syntax; see MarkdownInlineRule. */
+  static registerInlineRule(rule: MarkdownInlineRule) {
+    if (MarkdownConverter.#inlineRules.indexOf(rule) < 0) MarkdownConverter.#inlineRules.push(rule)
+  }
+
   static toHTML(markdown: string): string {
     let lines = markdown.replace(/\r\n?/g, "\n").replace(/\t/g, "    ").split("\n")
     let notes = MarkdownConverter.#footnotes(lines)
@@ -712,7 +753,9 @@ export class MarkdownConverter {
     // Inline HTML elements that Markdown export writes
     text = text.replace(/<(\/?)(kbd|sup|sub|mark|u|br|span|a)([^>]*)>/gi, match => stash(match))
     // Escapes
-    text = text.replace(/\\([\\`*_{}\[\]()#+\-.!|~<>])/g, (_match, character) => stash(Utilities.escapeText(character)))
+    text = text.replace(/\\([\\`*_{}\[\]()#+\-.!|~<>$])/g, (_match, character) => stash(Utilities.escapeText(character)))
+    // Syntax add-ons add
+    for (let rule of MarkdownConverter.#inlineRules) text = rule(text, stash)
     // Footnote references
     text = text.replace(/\[\^([^\]\s]+)\]/g, (_match, label) => stash(`<sup data-scriviamo-suggestion-provider="footnote" data-scriviamo-suggestion-id="${Utilities.escapeAttribute(label)}">${Utilities.escapeText(label)}</sup>`))
     // Images and links

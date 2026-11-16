@@ -6,6 +6,34 @@ starts with `Text`, such as `TextBoldCaption`.
 
 Each editor has its own `strings`, and the inspector uses its editor's.
 
+## Built-in languages
+
+Scriviamo comes in English, with locale packs for Arabic (`ar`), German (`de`), Spanish (`es`),
+French (`fr`), Italian (`it`), Japanese (`ja`), Korean (`ko`), Brazilian Portuguese (`pt-BR`),
+Russian (`ru`) and Simplified Chinese (`zh-CN`). Each language has a pack for the base package,
+`dist/locales/scriviamo.<language>.json`, and one for each add-on,
+`dist/locales/scriviamo.<add-on>.<language>.json`. Apply the base package's pack and those of
+the add-ons you use, together:
+
+```ts
+import {Strings} from "scriviamo"
+import base from "scriviamo/dist/locales/scriviamo.fr.json"
+import math from "scriviamo/dist/locales/scriviamo.math.fr.json"
+
+Strings.useLocale([base, math])
+```
+
+Without a bundler that imports JSON, fetch them:
+
+```ts
+const files = ["scriviamo.fr.json", "scriviamo.math.fr.json"]
+const packs = await Promise.all(files.map(file => fetch(`/scriviamo/dist/locales/${file}`).then(response => response.json())))
+Strings.useLocale(packs)
+```
+
+A language's packs cover all the text the editor shows. The interface follows the page's
+direction, so for Arabic set `dir="rtl"` on the page or on the editor's element.
+
 ## Locale packs
 
 A locale pack is JSON with a language tag and the text by name:
@@ -39,7 +67,9 @@ editor.localize({TextBoldCaption: "Gras", TextItalicCaption: "Italique"})
 | `editor.localize(pack)` | One editor, rebuilding its toolbar and nodes with the new text; returns how many values applied |
 | `Strings.useLocale(pack)` | Every editor created afterwards; `Strings.useLocale(null)` goes back to the built-in text |
 
-Each accepts a locale pack, an object of strings, or JSON text of either.
+Each accepts a locale pack, an object of strings, a list of either, or JSON text of any of
+these. In a list, a later pack wins over an earlier one, and a list holding a pack that would be
+rejected is rejected whole.
 
 When the same text is set in more than one place, the most specific wins:
 

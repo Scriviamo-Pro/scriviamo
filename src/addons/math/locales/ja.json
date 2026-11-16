@@ -1,0 +1,16 @@
+{
+  "language": "ja",
+  "strings": {
+    "Editor": {
+      "TextMathCaption": "数式",
+      "TextMathSourceCaption": "LaTeX",
+      "TextMathPlaceholder": "LaTeX (例: E = mc^2)",
+      "TextMathLoadingCaption": "数式を読み込み中…",
+      "TextMathUnavailableMessage": "数式の描画エンジンを読み込めませんでした。",
+      "TextInlineMathCaption": "インライン数式",
+      "TextInsertInlineMathCaption": "インライン数式を挿入",
+      "TextInlineMathPlaceholder": "LaTeX (例: x^2)",
+      "TextInlineMathHint": "Enter で完了。空にすると数式を削除します。"
+    }
+  }
+}

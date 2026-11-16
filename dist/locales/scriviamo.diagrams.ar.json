@@ -1,0 +1,13 @@
+{
+  "language": "ar",
+  "strings": {
+    "Editor": {
+      "TextDiagramCaption": "مخطط",
+      "TextDiagramSourceCaption": "Mermaid",
+      "TextDiagramRedrawCaption": "إعادة الرسم",
+      "TextDiagramPlaceholder": "مخطط Mermaid، مثل: graph LR; A --> B",
+      "TextDiagramLoadingCaption": "جارٍ رسم المخطط…",
+      "TextDiagramUnavailableMessage": "تعذّر تحميل أداة رسم المخططات."
+    }
+  }
+}

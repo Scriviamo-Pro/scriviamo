@@ -10,6 +10,7 @@ Each tool has an identifier, which `activateToolbarItem` runs and saved toolbar 
 | Identifier | Tool |
 |---|---|
 | `insert` | Insert a block |
+| `table` | Insert a table, choosing its size in a grid: point at a size, or move with the arrow keys, then click or press Enter. Without a size, as from `activateToolbarItem("table")`, the table is 3 × 3. |
 | `undo`, `redo` | |
 | `blocktype` | Block type: paragraph, heading levels, quote, code and so on |
 | `font`, `size` | Font and size menus |
@@ -79,6 +80,7 @@ removes them; add them again after calling it.
 | `alwaysShowCaption` | Shows the caption even when the toolbar shows icons only |
 | `setDisplayCaption(value)` | Changes the caption a menu button shows, such as the current choice |
 | `tag` | Data of your own |
+| `makePopup` | For a menu that picks its value in a popup of its own, such as the table size grid: `choose => popup`, where the popup calls `choose` with a `ToolbarMenuItem` carrying the value |
 
 A `color` item opens a color palette, and its value arrives as a `DocumentColor`, or null for
 Default.
@@ -124,6 +126,9 @@ The state is JSON with a version, the display mode, and the item identifiers in 
 
 `loadToolbarState` skips identifiers the editor doesn't know, and returns false for state it
 can't read. To restore your own items, add them before loading the state.
+
+`resetToolbar()` puts back the default tools, removing your own items and any customization.
+It keeps the display mode, which is the user's choice.
 
 ## Editor extensions
 

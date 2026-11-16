@@ -1,0 +1,16 @@
+{
+  "language": "ar",
+  "strings": {
+    "Editor": {
+      "TextMathCaption": "معادلة",
+      "TextMathSourceCaption": "LaTeX",
+      "TextMathPlaceholder": "LaTeX، مثل E = mc^2",
+      "TextMathLoadingCaption": "جارٍ تحميل المعادلات…",
+      "TextMathUnavailableMessage": "تعذّر تحميل أداة عرض المعادلات.",
+      "TextInlineMathCaption": "معادلة ضمن السطر",
+      "TextInsertInlineMathCaption": "إدراج معادلة ضمن السطر",
+      "TextInlineMathPlaceholder": "LaTeX، مثل x^2",
+      "TextInlineMathHint": "اضغط Enter للإنهاء. اتركها فارغة لإزالة المعادلة."
+    }
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "language": "it",
+  "strings": {
+    "Editor": {
+      "TextDiagramCaption": "Diagramma",
+      "TextDiagramSourceCaption": "Mermaid",
+      "TextDiagramRedrawCaption": "Ridisegna",
+      "TextDiagramPlaceholder": "Un diagramma Mermaid, per esempio: graph LR; A --> B",
+      "TextDiagramLoadingCaption": "Disegno del diagramma…",
+      "TextDiagramUnavailableMessage": "Impossibile caricare il motore dei diagrammi."
+    }
+  }
+}

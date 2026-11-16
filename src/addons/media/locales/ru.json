@@ -1,0 +1,13 @@
+{
+  "language": "ru",
+  "strings": {
+    "Editor": {
+      "TextEnterMediaURLPrompt": "Адрес медиафайла",
+      "TextChoosePreviewImageCaption": "Выбрать обложку…",
+      "TextPreviewFromFrameCaption": "Сделать текущий кадр обложкой",
+      "TextRemovePreviewCaption": "Убрать обложку",
+      "TextMediaUnavailableCaption": "Этот медиафайл нельзя воспроизвести здесь.",
+      "TextReplaceMediaCaption": "Заменить"
+    }
+  }
+}

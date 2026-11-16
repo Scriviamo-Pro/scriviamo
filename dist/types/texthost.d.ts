@@ -17,6 +17,8 @@ export interface TextSelectionRange {
  * Binds a RichText to a contenteditable element. The element shows the text,
  * the browser edits it, and sync reads the edited DOM back into the RichText.
  */
+/** Draws one tag in the editor: its elements, in order, and the text host they're in. */
+export type TagRenderer = (elements: Array<HTMLElement>, host: TextHost) => void;
 export declare class TextHost {
     #private;
     node: Node;
@@ -26,6 +28,13 @@ export declare class TextHost {
     placeholder: string;
     /** Position of this host among its node's hosts. Used to restore selections. */
     index: number;
+    /**
+     * Draws one provider's tags differently from text, such as a formula drawn from its source. The
+     * renderer receives each tag's elements after the text is drawn: usually one span, or several
+     * when formatting splits the tag. It may add elements with the class "scv-widget", which aren't
+     * part of the text. A tag made contenteditable="false" is one unit for the caret.
+     */
+    static registerTagRenderer(provider: string, renderer: TagRenderer | null): void;
     constructor(node: Node, rich: RichText, element: HTMLElement, mode?: TextHostModes);
     static from(target: globalThis.Node | null, root?: HTMLElement): TextHost | null;
     set editable(value: boolean);

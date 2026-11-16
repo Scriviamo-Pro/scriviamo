@@ -24,13 +24,21 @@ export class TableNode extends Node {
   static keywords: string = "grid spreadsheet rows columns cells"
 
   static create(editor: Editor): Node {
-    let result = new TableNode(3, 3)
+    return TableNode.withSize(editor, 3, 3)
+  }
+
+  /** A new table with a header row, as the Insert menu and the table tool make them. */
+  static withSize(editor: Editor, rows: number, columns: number): TableNode {
+    rows = Math.max(1, Math.floor(rows))
+    columns = Math.max(1, Math.floor(columns))
+    let result = new TableNode(rows, columns)
     result.editor = editor
-    result.hasHeader = true
-    for (let column = 0; column < 3; column++) {
-      result.cell(0, column).insert(0, Utilities.format(editor.strings.TextDefaultTableHeadingFormat, {number: column + 1}), TableNode.headerStyle())
+    result.hasHeader = rows > 1
+    for (let column = 0; column < columns; column++) {
+      let heading = result.hasHeader
+      result.cell(0, column).insert(0, heading ? Utilities.format(editor.strings.TextDefaultTableHeadingFormat, {number: column + 1}) : editor.strings.TextDefaultTableCellText, heading ? TableNode.headerStyle() : new TextStyle())
     }
-    for (let index = 3; index < result.cells.length; index++) result.cells[index].insert(0, editor.strings.TextDefaultTableCellText, new TextStyle())
+    for (let index = columns; index < result.cells.length; index++) result.cells[index].insert(0, editor.strings.TextDefaultTableCellText, new TextStyle())
     return result
   }
 

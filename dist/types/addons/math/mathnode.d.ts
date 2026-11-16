@@ -1,4 +1,4 @@
-import { BlockShortcut, CodeBlockNode, Editor, HTMLImporter, InspectorSection, Node, Stylesheet, TextHost } from "scriviamo";
+import { BlockShortcut, CodeBlockNode, Editor, EditorExtension, HTMLImporter, InspectorSection, Node, Stylesheet, TextHost, TextStyle } from "scriviamo";
 /** This add-on's interface text. A locale pack applied to an editor replaces any of it. */
 declare const MathStrings: {
     TextMathCaption: string;
@@ -6,6 +6,10 @@ declare const MathStrings: {
     TextMathPlaceholder: string;
     TextMathLoadingCaption: string;
     TextMathUnavailableMessage: string;
+    TextInlineMathCaption: string;
+    TextInsertInlineMathCaption: string;
+    TextInlineMathPlaceholder: string;
+    TextInlineMathHint: string;
 };
 type MathStringsTable = typeof MathStrings;
 declare module "scriviamo" {
@@ -32,8 +36,11 @@ export declare class MathRenderer {
     static get katex(): any;
     /** Resolves with KaTeX, loading it and its stylesheet the first time. */
     static load(): Promise<any>;
-    /** The formula as HTML; MathML for exports, which browsers draw without KaTeX's stylesheet. */
-    static render(latex: string, output?: "html" | "mathml" | "htmlAndMathml"): string;
+    /**
+     * The formula as HTML; MathML for exports, which browsers draw without KaTeX's stylesheet. A
+     * displayed formula stands on its own line; an inline one sits in the text.
+     */
+    static render(latex: string, output?: "html" | "mathml" | "htmlAndMathml", displayMode?: boolean): string;
 }
 /**
  * A displayed formula, written in LaTeX and drawn with KaTeX. The source is edited like a code
@@ -65,4 +72,48 @@ export declare class MathNode extends CodeBlockNode {
     toMarkdown(): string;
     toPlainText(): string;
 }
+/** The suggestion provider identifier that marks inline formulas in text. */
+export declare const InlineMathTag = "math";
+/** An inline formula found in text: where it is, and its LaTeX source. */
+export interface InlineFormula {
+    host: TextHost;
+    start: number;
+    end: number;
+    id: string;
+    latex: string;
+}
+/**
+ * Formulas inside text, such as $x^2$. A formula is a tag in the text, marked with the "math"
+ * provider, whose text is its LaTeX source. The editor draws it with KaTeX and treats it as one
+ * character: clicking it, or pressing Ctrl+Shift+E (Command-Shift-E on a Mac) beside it, edits its
+ * source. Typing $x^2$ makes one, unless Markdown shortcuts are off.
+ */
+export declare class InlineMath {
+    /** The style of a formula: the text's style, marked as a formula, with the tag's colors left out. */
+    static style(base: TextStyle, id?: string): TextStyle;
+    /** The text style without the formula's marking, for text typed after one. */
+    static untagged(style: TextStyle): TextStyle;
+    /** The formulas in one text, in order. */
+    static formulas(host: TextHost): Array<InlineFormula>;
+    /** The formula the caret is beside or the selection covers, or null. */
+    static at(host: TextHost, start: number, end?: number): InlineFormula | null;
+    /** Whether formulas can go in a text: rich text that isn't code. */
+    static allowedIn(host: TextHost | null): boolean;
+    /**
+     * Puts a formula in place of start through end, or removes the range when latex is empty. One
+     * undo step. The caret goes after it, and text typed there isn't part of it.
+     */
+    static replace(editor: Editor, host: TextHost, start: number, end: number, latex: string, id?: string): boolean;
+    /**
+     * Edits the formula beside the caret, or covering the selection; or else starts a new one at the
+     * caret, from the selected text if there is any. Shows the formula's source in a popover.
+     */
+    static insert(editor: Editor): boolean;
+    /** Shows the popover that edits a formula's source, with a preview. Enter finishes; Escape cancels. */
+    static edit(editor: Editor, formula: InlineFormula): void;
+    /** Draws a formula's elements: its source stays as hidden text, and KaTeX draws it beside. */
+    static render(elements: Array<HTMLElement>, _host: TextHost): void;
+}
+/** The Inline Math tool, its key, clicking formulas, Backspace and Delete over them, and typing $…$. */
+export declare const InlineMathExtension: EditorExtension;
 export {};

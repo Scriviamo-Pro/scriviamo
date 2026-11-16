@@ -1,0 +1,16 @@
+{
+  "language": "ru",
+  "strings": {
+    "Editor": {
+      "TextMathCaption": "Формула",
+      "TextMathSourceCaption": "LaTeX",
+      "TextMathPlaceholder": "LaTeX, например E = mc^2",
+      "TextMathLoadingCaption": "Загрузка формул…",
+      "TextMathUnavailableMessage": "Не удалось загрузить модуль отрисовки формул.",
+      "TextInlineMathCaption": "Формула в строке",
+      "TextInsertInlineMathCaption": "Вставить формулу в строку",
+      "TextInlineMathPlaceholder": "LaTeX, например x^2",
+      "TextInlineMathHint": "Enter — готово. Оставьте пустым, чтобы удалить формулу."
+    }
+  }
+}

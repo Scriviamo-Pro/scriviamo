@@ -10,6 +10,11 @@ export interface DocumentStyle {
 }
 export declare class HTMLImporter {
     #private;
+    /**
+     * Reads inline elements an add-on exports, such as formulas, into text with a style, instead of
+     * reading their contents. The reader returns null for elements it doesn't know.
+     */
+    static registerInlineElement(reader: InlineElementReader): void;
     constructor(editor: Editor);
     /** Parses HTML into nodes. The nodes belong to no list until they are inserted. */
     import(html: string): Array<Node>;
@@ -50,9 +55,25 @@ export declare class HTMLImporter {
     /** The text without leading and trailing white space. */
     trimmed(rich: RichText): RichText;
 }
+/**
+ * Reads one inline element into text: the text and its style, given the style around the element.
+ * Returns null for elements it doesn't read.
+ */
+export type InlineElementReader = (element: Element, style: TextStyle) => {
+    text: string;
+    style: TextStyle;
+} | null;
+/**
+ * An inline Markdown syntax an add-on adds, such as $formulas$. It receives the text with code
+ * spans and escapes already set aside, and returns it with its syntax replaced by HTML, each piece
+ * of HTML passed through stash so later rules leave it alone.
+ */
+export type MarkdownInlineRule = (text: string, stash: (html: string) => string) => string;
 /** Converts Markdown into HTML for the HTML importer. Covers CommonMark blocks, GitHub tables, task lists and alerts. */
 export declare class MarkdownConverter {
     #private;
+    /** Adds an inline syntax; see MarkdownInlineRule. */
+    static registerInlineRule(rule: MarkdownInlineRule): void;
     static toHTML(markdown: string): string;
     /** Converts inline Markdown into HTML. */
     static inline(value: string): string;

@@ -57,4 +57,29 @@
     t.assert(copy.nodeAt(0) instanceof PE.DiagramNode && copy.nodeAt(0).source == "graph TD; X-->Y", "The diagram didn't survive JSON")
     t.equal(JSON.parse(editor.toJSON()).nodes[0].language, undefined, "The JSON kept a code language")
   })
+
+  test(section, "diagrams are redrawn when the page switches between light and dark", async t => {
+    let editor = t.editor()
+    let node = new PE.DiagramNode()
+    node.source = "graph LR; L-->D"
+    editor.addNode(node)
+    await node.redraw()
+    t.equal(FakeMermaid.themes[FakeMermaid.themes.length - 1], "default", "The light theme wasn't used")
+    let holder = editor.element.parentElement
+    holder.setAttribute("data-bs-theme", "dark")
+    await t.tick(50)
+    t.equal(FakeMermaid.themes[FakeMermaid.themes.length - 1], "dark", "Switching to dark didn't redraw with the dark theme")
+    t.assert(node.element.querySelector(".scv-diagram-output svg"), "The redrawn diagram wasn't shown")
+    holder.setAttribute("data-bs-theme", "light")
+    await t.tick(50)
+    t.equal(FakeMermaid.themes[FakeMermaid.themes.length - 1], "default", "Switching back to light didn't redraw")
+    PE.DiagramRenderer.themes.dark = "forest"
+    try {
+      holder.setAttribute("data-bs-theme", "dark")
+      await t.tick(50)
+      t.equal(FakeMermaid.themes[FakeMermaid.themes.length - 1], "forest", "The chosen dark theme wasn't used")
+    } finally {
+      PE.DiagramRenderer.themes.dark = "dark"
+    }
+  })
 }

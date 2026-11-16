@@ -1,0 +1,16 @@
+{
+  "language": "it",
+  "strings": {
+    "Editor": {
+      "TextMathCaption": "Formula",
+      "TextMathSourceCaption": "LaTeX",
+      "TextMathPlaceholder": "LaTeX, per esempio E = mc^2",
+      "TextMathLoadingCaption": "Caricamento delle formule…",
+      "TextMathUnavailableMessage": "Impossibile caricare il motore delle formule.",
+      "TextInlineMathCaption": "Formula in linea",
+      "TextInsertInlineMathCaption": "Inserisci formula in linea",
+      "TextInlineMathPlaceholder": "LaTeX, per esempio x^2",
+      "TextInlineMathHint": "Invio per terminare. Lascia vuoto per rimuovere la formula."
+    }
+  }
+}

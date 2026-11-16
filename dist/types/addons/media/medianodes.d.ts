@@ -7,6 +7,20 @@ declare const MediaStrings: {
     TextRemovePreviewCaption: string;
     TextMediaUnavailableCaption: string;
     TextReplaceMediaCaption: string;
+    TextAudioCaption: string;
+    TextVideoCaption: string;
+    TextAudioToolbarTooltip: string;
+    TextVideoToolbarTooltip: string;
+    TextChooseMediaFileDialogTitle: string;
+    TextChooseVideoPreviewImageDialogTitle: string;
+    TextEmbeddedMediaCaption: string;
+    TextMediaPlaybackErrorMessage: string;
+    TextMediaSourceCaption: string;
+    TextMediaURLDialogTitle: string;
+    TextNoMediaSelectedCaption: string;
+    TextPreviewImageOpenErrorMessage: string;
+    TextRemovePreviewImageCaption: string;
+    TextVideoPreviewImageCaption: string;
 };
 type MediaStringsTable = typeof MediaStrings;
 declare module "scriviamo" {
