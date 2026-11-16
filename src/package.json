@@ -14,5 +14,5 @@
     "build:base": "node build.mjs base"
   },
   "type": "module",
-  "version": "1.0.1-beta.7"
+  "version": "1.0.1-beta.8"
 }

@@ -1,6 +1,6 @@
 {
   "name": "scriviamo-vue",
-  "version": "1.0.1-beta.7",
+  "version": "1.0.1-beta.8",
   "description": "Vue 3 components for the Scriviamo editor",
   "type": "module",
   "main": "dist/index.js",
