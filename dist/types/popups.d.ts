@@ -11,13 +11,23 @@ export declare class Popup {
     chosenValue: any;
     /** Keeps focus where it is when pressing the popup. Off for popups with fields. */
     keepsFocus: boolean;
+    /**
+     * Whether pressing outside closes it, and opening another popup does. Off for panels that hold
+     * work, such as an answer being written: they stay open until closed, and Escape closes them
+     * while focus is inside.
+     */
+    dismissible: boolean;
     /** Supplies the anchor's current rectangle; the popup then follows it when the page scrolls instead of closing. */
     anchorProvider: (() => DOMRect | null) | null;
     constructor(classes?: string);
     static get current(): Popup | null;
     static closeAll(): void;
     get isOpen(): boolean;
-    /** Shows the popup below the anchor, inside container so it shares the editor's theme. */
+    /**
+     * Shows the popup below the anchor, inside container so it shares the editor's theme. It opens
+     * in the browser's top layer where it can, so the editor's bounds, overflow and stacking don't
+     * clip or cover it.
+     */
     show(anchor: HTMLElement | DOMRect, container: HTMLElement): void;
     position(): void;
     close(): void;
@@ -95,7 +105,10 @@ export interface DialogField {
     }>;
     placeholder?: string;
 }
-/** A small modal form. */
+/**
+ * A small modal form. It opens in the browser's top layer, so the editor's bounds and overflow
+ * don't clip it: it fits the window, and its fields scroll when they don't.
+ */
 export declare class Dialog {
     static prompt(container: HTMLElement, strings: Strings, title: string, fields: Array<DialogField>): Promise<{
         [name: string]: any;
@@ -113,13 +126,6 @@ export interface InsertionChoice {
     keywords?: string;
     /** Inserts it. replace is an empty paragraph the chooser was opened from, which the choice may replace, or null. */
     choose(replace: Node | null): void;
-}
-/** A searchable list of the node types the editor can insert, and any other insertion choices. */
-export declare class InsertionChooser extends Popup {
-    #private;
-    constructor(strings: Strings, types: Array<NodeClass>, onSelect: (type: NodeClass) => void, choices?: Array<InsertionChoice>, onChoice?: (choice: InsertionChoice) => void);
-    show(anchor: HTMLElement | DOMRect, container: HTMLElement): void;
-    protected handleKey(event: KeyboardEvent): void;
 }
 /** One row of a ChoicePopup. */
 export interface ChoiceItem {
@@ -152,8 +158,21 @@ export declare class ChoicePopup extends Popup {
     } | null);
     get items(): Array<ChoiceItem>;
     get activeIndex(): number;
+    /**
+     * Whether the search field shows, for a list made with a search filter. Without it, the list
+     * shows every item and the text keeps focus; the arrow keys and Enter still choose.
+     */
+    get hasSearchField(): boolean;
+    set hasSearchField(value: boolean);
     show(anchor: HTMLElement | DOMRect, container: HTMLElement): void;
     setItems(items: Array<ChoiceItem>, active?: number): void;
     protected handleKey(event: KeyboardEvent): void;
+}
+/**
+ * A searchable list of the node types the editor can insert, and any other insertion choices.
+ * It's a ChoicePopup, so it searches, points and answers keys like every other list of choices.
+ */
+export declare class InsertionChooser extends ChoicePopup {
+    constructor(strings: Strings, types: Array<NodeClass>, onSelect: (type: NodeClass) => void, choices?: Array<InsertionChoice>, onChoice?: (choice: InsertionChoice) => void);
 }
 export {};

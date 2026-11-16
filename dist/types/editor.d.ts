@@ -32,6 +32,8 @@ export interface EditorOptions {
     class?: string;
     /** Shows the status bar under the document: word and character counts, reading time, and the autosave state. */
     statusBar?: boolean;
+    /** How many block types the toolbar's Insert menu offers before it shows a search field; see insertMenuSearchThreshold. */
+    insertMenuSearchThreshold?: number;
     /** Uploads files the user adds, such as pictures, and returns their addresses; see FileUploader. */
     fileUploader?: FileUploader | null;
     /** Saves the document a moment after each change: a save function, or one with settings. See Autosave. */
@@ -163,6 +165,11 @@ export declare class Editor extends EventTarget {
     autosave: Autosave;
     /** The bar under the document; shown while statusBarVisible is true. */
     statusBar: StatusBar;
+    /**
+     * The toolbar's Insert menu shows a search field once it offers at least this many block
+     * types. 0 always shows it; Infinity never does.
+     */
+    insertMenuSearchThreshold: number;
     /**
      * Uploads files the user adds (pictures, audio, video and backgrounds) and returns the address
      * each is shown from. Without one, files are embedded in the document as data.

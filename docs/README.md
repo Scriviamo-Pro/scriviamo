@@ -27,6 +27,7 @@ see [Getting started](getting-started.md#requirements).
 | [Undo, search, statistics and autosave](undo-search-statistics.md) | Undo and redo, find and replace, word counts, the status bar, and autosave |
 | [Comments and suggestions](comments-and-suggestions.md) | Comment threads, and suggestions such as @-mentions |
 | [Math and diagrams](math-and-diagrams.md) | Formulas in LaTeX, drawn with KaTeX, as blocks or inside text, and diagrams in Mermaid |
+| [Pickers, menus and dialogs](pickers.md) | Popups that open from the toolbar or a node, the ready-made pickers, and dialogs |
 | [Writing node types](custom-node-types.md) | Adding your own node types and editor extensions |
 | [Server rendering](server-rendering.md) | Turning saved documents into HTML, Markdown or text on a server, with no browser |
 | [Import and export](import-export.md) | JSON, HTML, Markdown and plain text; uploading files; exporters, stylesheets and theme colors |

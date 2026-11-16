@@ -31,6 +31,7 @@ its options.
 | `adaptiveHeight` | Makes the editor as tall as its content, raising `heightChanged` |
 | `statusBarVisible` | The bar under the document, with word and character counts, reading time and the autosave state; `editor.statusBar` sets what it shows |
 | `fontNames`, `fontSizes` | The choices in the Font and Size menus |
+| `insertMenuSearchThreshold` | The toolbar's Insert menu shows a search field once it offers at least this many block types. 5 by default; 0 always shows it, and `Infinity` never does |
 | `strings` | The interface text; see [Localization](localization.md) |
 | `fileUploader` | Uploads the files people add and returns their addresses; see [Files and uploads](import-export.md#files-and-uploads) |
 

@@ -228,6 +228,10 @@ performAction(item: ToolbarItem, _menuItem: ToolbarMenuItem | null): boolean {
 }
 ```
 
+For a command that needs a choice or a few values, such as a size or a color, open one of the
+ready-made pickers, or `editor.prompt` for a small form, rather than building your own; see
+[Pickers, menus and dialogs](pickers.md).
+
 ## Markdown shortcuts
 
 `markdownShortcuts` lists patterns that, typed at the start of a paragraph, turn it into this

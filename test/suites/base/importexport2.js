@@ -472,6 +472,36 @@
     t.assert(!picker.isOpen, "The size grid stayed open")
   })
 
+  test(section, "the Insert menu is the insertion chooser, with a search field once it offers enough block types", t => {
+    let editor = t.editor()
+    let paragraph = new PE.TextNode("")
+    editor.addNode(paragraph)
+    editor.beginEditing(paragraph, 0)
+    let item = editor.toolbarItems.item("insert")
+    t.equal(editor.insertMenuSearchThreshold, 5, "The default threshold wasn't 5")
+    item.element.dispatchEvent(new MouseEvent("click", {bubbles: true, cancelable: true}))
+    let popup = PE.Popup.current
+    t.assert(popup instanceof PE.InsertionChooser && popup.hasSearchField, "A long Insert menu had no search field")
+    let search = popup.element.querySelector(".scv-chooser-search")
+    search.value = "quote"
+    search.dispatchEvent(new Event("input"))
+    t.equal(popup.items.map(entry => entry.caption), ["Quote"], "The search didn't filter the block types")
+    window.dispatchEvent(new KeyboardEvent("keydown", {key: "Enter", bubbles: true, cancelable: true}))
+    t.assert(editor.nodes().some(node => node instanceof PE.QuoteNode), "Choosing from the search didn't insert the block")
+    t.assert(!popup.isOpen, "The searchable menu stayed open")
+
+    editor.insertMenuSearchThreshold = Infinity
+    item.element.dispatchEvent(new MouseEvent("click", {bubbles: true, cancelable: true}))
+    popup = PE.Popup.current
+    t.assert(popup instanceof PE.InsertionChooser && !popup.hasSearchField && popup.element.querySelector(".scv-chooser-search").hidden, "Under the threshold, the Insert menu still had a search field")
+    t.assert(popup.items.length >= 5 && popup.keepsFocus, "Under the threshold, the Insert menu didn't list every block type and keep the text's focus")
+    window.dispatchEvent(new KeyboardEvent("keydown", {key: "ArrowDown", bubbles: true, cancelable: true}))
+    t.equal(popup.activeIndex, 1, "The arrow keys didn't move in the list without a search field")
+    PE.Popup.closeAll()
+    let small = t.editor({insertMenuSearchThreshold: 0})
+    t.equal(small.insertMenuSearchThreshold, 0, "The option didn't set the threshold")
+  })
+
   test(section, "toolbar state saves, loads and resets", t => {
     let editor = t.editor()
     let identifiers = () => editor.toolbarItems.items().filter(item => item.kind != PE.ToolbarItemKinds.separator && item.kind != PE.ToolbarItemKinds.flexibleSpace).map(item => item.identifier)

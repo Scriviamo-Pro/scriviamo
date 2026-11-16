@@ -13,11 +13,18 @@ export class Popup {
   chosenValue: any = null
   /** Keeps focus where it is when pressing the popup. Off for popups with fields. */
   keepsFocus: boolean = true
+  /**
+   * Whether pressing outside closes it, and opening another popup does. Off for panels that hold
+   * work, such as an answer being written: they stay open until closed, and Escape closes them
+   * while focus is inside.
+   */
+  dismissible: boolean = true
 
   #outsideHandler = (event: Event) => {
     if (!this.element.contains(event.target as globalThis.Node) && !(this.#anchor instanceof HTMLElement && this.#anchor.contains(event.target as globalThis.Node))) this.close()
   }
   #keyHandler = (event: KeyboardEvent) => this.handleKey(event)
+  #open = false
   #scrollHandler = (event: Event) => {
     if (this.element.contains(event.target as globalThis.Node)) return
     if (this.anchorProvider) {
@@ -47,23 +54,41 @@ export class Popup {
   }
 
   get isOpen(): boolean {
-    return Popup.#current === this
+    return this.#open
   }
 
-  /** Shows the popup below the anchor, inside container so it shares the editor's theme. */
+  /**
+   * Shows the popup below the anchor, inside container so it shares the editor's theme. It opens
+   * in the browser's top layer where it can, so the editor's bounds, overflow and stacking don't
+   * clip or cover it.
+   */
   show(anchor: HTMLElement | DOMRect, container: HTMLElement) {
-    if (Popup.#current && Popup.#current !== this) Popup.#current.close()
-    Popup.#current = this
+    if (this.dismissible) {
+      if (Popup.#current && Popup.#current !== this) Popup.#current.close()
+      Popup.#current = this
+    }
+    this.#open = true
     this.#anchor = anchor
     container.append(this.element)
+    if (typeof this.element.showPopover == "function") {
+      this.element.setAttribute("popover", "manual")
+      try {
+        this.element.showPopover()
+      } catch (error) {}
+    }
     this.position()
     // Lets the editor that owns the container report pickerOpened.
     container.dispatchEvent(new CustomEvent("scv-popup-opened", {detail: {popup: this}, bubbles: true}))
     setTimeout(() => {
-      document.addEventListener("mousedown", this.#outsideHandler, true)
+      if (!this.#open) return
+      if (this.dismissible) document.addEventListener("mousedown", this.#outsideHandler, true)
       window.addEventListener("scroll", this.#scrollHandler, true)
     }, 0)
-    window.addEventListener("keydown", this.#keyHandler, true)
+    if (this.dismissible) {
+      window.addEventListener("keydown", this.#keyHandler, true)
+    } else {
+      this.element.addEventListener("keydown", this.#keyHandler)
+    }
   }
 
   position() {
@@ -88,11 +113,18 @@ export class Popup {
 
   close() {
     if (Popup.#current === this) Popup.#current = null
+    this.#open = false
     document.removeEventListener("mousedown", this.#outsideHandler, true)
     window.removeEventListener("keydown", this.#keyHandler, true)
+    this.element.removeEventListener("keydown", this.#keyHandler)
     window.removeEventListener("scroll", this.#scrollHandler, true)
     if (this.element.isConnected) {
       let container = this.element.parentElement
+      if (this.element.hasAttribute("popover")) {
+        try {
+          this.element.hidePopover()
+        } catch (error) {}
+      }
       this.element.remove()
       if (this.onClose) this.onClose()
       if (container) container.dispatchEvent(new CustomEvent("scv-popup-closed", {detail: {popup: this}, bubbles: true}))
@@ -494,11 +526,15 @@ export interface DialogField {
   placeholder?: string
 }
 
-/** A small modal form. */
+/**
+ * A small modal form. It opens in the browser's top layer, so the editor's bounds and overflow
+ * don't clip it: it fits the window, and its fields scroll when they don't.
+ */
 export class Dialog {
   static prompt(container: HTMLElement, strings: Strings, title: string, fields: Array<DialogField>): Promise<{[name: string]: any} | null> {
     return new Promise(resolve => {
-      let backdrop = Utilities.element("div", "scv-dialog-backdrop")
+      // The <dialog> stays inside the editor, so it inherits the editor's theme and variables.
+      let backdrop = Utilities.element("dialog", "scv-dialog-backdrop") as HTMLDialogElement
       let dialog = Utilities.element("form", "scv-dialog modal-content shadow", {role: "dialog", "aria-modal": "true"})
       backdrop.append(dialog)
       let header = Utilities.element("div", "modal-header py-2")
@@ -546,10 +582,19 @@ export class Dialog {
       footer.append(cancel, ok)
       dialog.append(footer)
 
+      let finished = false
       let finish = (result: {[name: string]: any} | null) => {
+        if (finished) return
+        finished = true
+        if (backdrop.open) backdrop.close()
         backdrop.remove()
         resolve(result)
       }
+      // Escape on a modal <dialog> cancels it.
+      backdrop.addEventListener("cancel", event => {
+        event.preventDefault()
+        finish(null)
+      })
       cancel.addEventListener("click", () => finish(null))
       backdrop.addEventListener("mousedown", event => { if (event.target === backdrop) finish(null) })
       dialog.addEventListener("keydown", event => {
@@ -571,6 +616,11 @@ export class Dialog {
 
       Popup.closeAll()
       container.append(backdrop)
+      if (typeof backdrop.showModal == "function") {
+        backdrop.showModal()
+      } else {
+        backdrop.setAttribute("open", "")
+      }
       let first = dialog.querySelector("input, select, textarea") as HTMLElement
       if (first) {
         first.focus()
@@ -592,83 +642,6 @@ export interface InsertionChoice {
   keywords?: string
   /** Inserts it. replace is an empty paragraph the chooser was opened from, which the choice may replace, or null. */
   choose(replace: Node | null): void
-}
-
-interface ChooserEntry {
-  caption: string
-  icon: string
-  search: string
-  choose: () => void
-}
-
-/** A searchable list of the node types the editor can insert, and any other insertion choices. */
-export class InsertionChooser extends Popup {
-  #entries: Array<ChooserEntry>
-  #list: HTMLElement
-  #search: HTMLInputElement
-  #visible: Array<ChooserEntry> = []
-  #active: number = 0
-
-  constructor(strings: Strings, types: Array<NodeClass>, onSelect: (type: NodeClass) => void, choices: Array<InsertionChoice> = [], onChoice: (choice: InsertionChoice) => void = choice => choice.choose(null)) {
-    super("dropdown-menu show scv-chooser")
-    this.keepsFocus = false
-    this.#entries = types.filter(type => type.insertable).map(type => ({caption: type.caption, icon: type.icon, search: `${type.caption} ${type.keywords} ${type.identifier}`.toLowerCase(), choose: () => onSelect(type)}))
-      .concat(choices.map(choice => ({caption: choice.caption, icon: choice.icon, search: `${choice.caption} ${choice.keywords || ""}`.toLowerCase(), choose: () => onChoice(choice)})))
-    this.#search = Utilities.element("input", "form-control form-control-sm scv-chooser-search", {type: "search", placeholder: strings.TextInsertNodeSearchHint, "aria-label": strings.TextInsertNodeSearchHint})
-    this.#search.addEventListener("input", () => this.#filter())
-    this.element.append(this.#search)
-    this.#list = Utilities.element("div", "scv-chooser-list", {role: "listbox"})
-    this.element.append(this.#list)
-    this.#filter()
-  }
-
-  show(anchor: HTMLElement | DOMRect, container: HTMLElement) {
-    super.show(anchor, container)
-    this.#search.focus()
-  }
-
-  #filter() {
-    let query = this.#search.value.trim().toLowerCase()
-    this.#visible = this.#entries.filter(entry => query.length == 0 || entry.search.indexOf(query) >= 0)
-    this.#active = 0
-    this.#list.textContent = ""
-    this.#visible.forEach((entry, index) => {
-      let button = Utilities.element("button", "dropdown-item scv-menu-item", {type: "button", role: "option"})
-      let icon = Utilities.element("i", `scv-menu-icon ${entry.icon}`)
-      let label = Utilities.element("span", "scv-menu-label")
-      label.textContent = entry.caption
-      button.append(icon, label)
-      button.addEventListener("mousedown", event => event.preventDefault())
-      button.addEventListener("click", () => this.#choose(entry))
-      button.classList.toggle("scv-menu-focus", index == this.#active)
-      this.#list.append(button)
-    })
-    if (this.isOpen) this.position()
-  }
-
-  #choose(entry: ChooserEntry) {
-    this.close()
-    entry.choose()
-  }
-
-  protected handleKey(event: KeyboardEvent) {
-    if (event.key == "ArrowDown" || event.key == "ArrowUp") {
-      event.preventDefault()
-      event.stopPropagation()
-      if (this.#visible.length == 0) return
-      this.#active = event.key == "ArrowDown" ? (this.#active + 1) % this.#visible.length : (this.#active <= 0 ? this.#visible.length - 1 : this.#active - 1)
-      Array.from(this.#list.children).forEach((child, index) => child.classList.toggle("scv-menu-focus", index == this.#active))
-      ;(this.#list.children[this.#active] as HTMLElement).scrollIntoView({block: "nearest"})
-      return
-    }
-    if (event.key == "Enter") {
-      event.preventDefault()
-      event.stopPropagation()
-      if (this.#visible[this.#active]) this.#choose(this.#visible[this.#active])
-      return
-    }
-    super.handleKey(event)
-  }
 }
 
 /** One row of a ChoicePopup. */
@@ -724,9 +697,30 @@ export class ChoicePopup extends Popup {
     return this.#active
   }
 
+  /**
+   * Whether the search field shows, for a list made with a search filter. Without it, the list
+   * shows every item and the text keeps focus; the arrow keys and Enter still choose.
+   */
+  get hasSearchField(): boolean {
+    return !!this.#search && !this.#search.hidden
+  }
+
+  set hasSearchField(value: boolean) {
+    let search = this.#search
+    if (!search || value == !search.hidden) return
+    search.hidden = !value
+    this.keepsFocus = !value
+    if (!value && search.value.length > 0) {
+      search.value = ""
+      search.dispatchEvent(new Event("input"))
+    }
+    if (value && this.isOpen) search.focus()
+    if (this.isOpen) this.position()
+  }
+
   show(anchor: HTMLElement | DOMRect, container: HTMLElement) {
     super.show(anchor, container)
-    if (this.#search) this.#search.focus()
+    if (this.hasSearchField) this.#search!.focus()
   }
 
   setItems(items: Array<ChoiceItem>, active: number = 0) {
@@ -819,3 +813,24 @@ export class ChoicePopup extends Popup {
     super.handleKey(event)
   }
 }
+
+/**
+ * A searchable list of the node types the editor can insert, and any other insertion choices.
+ * It's a ChoicePopup, so it searches, points and answers keys like every other list of choices.
+ */
+export class InsertionChooser extends ChoicePopup {
+  constructor(strings: Strings, types: Array<NodeClass>, onSelect: (type: NodeClass) => void, choices: Array<InsertionChoice> = [], onChoice: (choice: InsertionChoice) => void = choice => choice.choose(null)) {
+    let entries: Array<{item: ChoiceItem, search: string}> = types.filter(type => type.insertable)
+      .map(type => ({item: {caption: type.caption, icon: type.icon, value: () => onSelect(type)}, search: `${type.caption} ${type.keywords} ${type.identifier}`.toLowerCase()}))
+      .concat(choices.map(choice => ({item: {caption: choice.caption, icon: choice.icon, value: () => onChoice(choice)}, search: `${choice.caption} ${choice.keywords || ""}`.toLowerCase()})))
+    super("", item => item.value(), {
+      placeholder: strings.TextInsertNodeSearchHint,
+      emptyCaption: "",
+      filter: query => {
+        let words = query.trim().toLowerCase()
+        return entries.filter(entry => words.length == 0 || entry.search.indexOf(words) >= 0).map(entry => entry.item)
+      }
+    })
+  }
+}
+

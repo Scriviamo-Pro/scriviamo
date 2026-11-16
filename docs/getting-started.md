@@ -111,6 +111,7 @@ The second argument is optional. It can include:
 | `strings` | A locale pack or an object of localized strings; see [Localization](localization.md) |
 | `class` | Extra classes for the editor element |
 | `statusBar` | Shows the status bar under the document: counts, reading time and the autosave state |
+| `insertMenuSearchThreshold` | How many block types the toolbar's Insert menu offers before it shows a search field. 5 by default |
 | `fileUploader` | Uploads pictures and other files people add, instead of embedding them; see [Files and uploads](import-export.md#files-and-uploads) |
 | `autosave` | Saves the document a moment after each change; see [Autosave](undo-search-statistics.md#autosave) |
 

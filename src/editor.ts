@@ -39,6 +39,8 @@ export interface EditorOptions {
   class?: string
   /** Shows the status bar under the document: word and character counts, reading time, and the autosave state. */
   statusBar?: boolean
+  /** How many block types the toolbar's Insert menu offers before it shows a search field; see insertMenuSearchThreshold. */
+  insertMenuSearchThreshold?: number
   /** Uploads files the user adds, such as pictures, and returns their addresses; see FileUploader. */
   fileUploader?: FileUploader | null
   /** Saves the document a moment after each change: a save function, or one with settings. See Autosave. */
@@ -194,6 +196,11 @@ export class Editor extends EventTarget {
   autosave: Autosave
   /** The bar under the document; shown while statusBarVisible is true. */
   statusBar: StatusBar
+  /**
+   * The toolbar's Insert menu shows a search field once it offers at least this many block
+   * types. 0 always shows it; Infinity never does.
+   */
+  insertMenuSearchThreshold: number = 5
   /**
    * Uploads files the user adds (pictures, audio, video and backgrounds) and returns the address
    * each is shown from. Without one, files are embedded in the document as data.
@@ -423,6 +430,7 @@ export class Editor extends EventTarget {
     this.#adaptiveHeight = instanceOptions.adaptiveHeight
     this.#class = instanceOptions.class
     if (instanceOptions.statusBar !== undefined) this.#statusBarVisible = !!instanceOptions.statusBar
+    if (typeof instanceOptions.insertMenuSearchThreshold == "number") this.insertMenuSearchThreshold = instanceOptions.insertMenuSearchThreshold
     if (instanceOptions.autosave) this.updateAutosave(instanceOptions.autosave)
     if (instanceOptions.fileUploader !== undefined) this.fileUploader = typeof instanceOptions.fileUploader == "function" ? instanceOptions.fileUploader : null
 
@@ -4123,9 +4131,17 @@ export class Editor extends EventTarget {
         })
         break
       }
-      case "insert":
-        item.menuItems = this.nodeTypes.items().filter(type => type.insertable).map(type => new ToolbarMenuItem(type.identifier, type.caption, type.icon))
+      case "insert": {
+        let types = this.nodeTypes.items().filter(type => type.insertable)
+        item.menuItems = types.map(type => new ToolbarMenuItem(type.identifier, type.caption, type.icon))
+        // The same chooser as "/", with its search field once the list is long enough.
+        item.makePopup = choose => {
+          let chooser = new InsertionChooser(strings, types, type => choose(new ToolbarMenuItem(type.identifier, type.caption, type.icon)))
+          chooser.hasSearchField = types.length >= this.insertMenuSearchThreshold
+          return chooser
+        }
         break
+      }
       case "lineheight":
       case "linespacing": {
         let nodes = this.#lineMetricNodes()

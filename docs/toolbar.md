@@ -9,7 +9,7 @@ Each tool has an identifier, which `activateToolbarItem` runs and saved toolbar 
 
 | Identifier | Tool |
 |---|---|
-| `insert` | Insert a block |
+| `insert` | Insert a block, from the same list as the "/" chooser. With at least `editor.insertMenuSearchThreshold` block types to offer (5 by default), it has a search field that filters it by name and keywords. The arrow keys and Enter choose either way |
 | `table` | Insert a table, choosing its size in a grid: point at a size, or move with the arrow keys, then click or press Enter. Without a size, as from `activateToolbarItem("table")`, the table is 3 × 3. |
 | `undo`, `redo` | |
 | `blocktype` | Block type: paragraph, heading levels, quote, code and so on |

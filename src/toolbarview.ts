@@ -49,13 +49,14 @@ export class ToolbarView {
           Popup.closeAll()
           return
         }
+        // Preparing the menu may give it a popup of its own, such as a searchable list.
+        prepareMenu(item)
         if (item.makePopup) {
           let popup = item.makePopup(menuItem => activate(item, menuItem))
           popup.element.dataset.owner = item.identifier
           popup.show(button, popupContainer)
           return
         }
-        prepareMenu(item)
         let menu = new PopupMenu(item.menuItems, menuItem => activate(item, menuItem))
         menu.element.dataset.owner = item.identifier
         menu.show(button, popupContainer)

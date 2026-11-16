@@ -7534,11 +7534,18 @@ var Popup2 = class _Popup {
   chosenValue = null;
   /** Keeps focus where it is when pressing the popup. Off for popups with fields. */
   keepsFocus = true;
+  /**
+   * Whether pressing outside closes it, and opening another popup does. Off for panels that hold
+   * work, such as an answer being written: they stay open until closed, and Escape closes them
+   * while focus is inside.
+   */
+  dismissible = true;
   #outsideHandler = (event) => {
     if (!this.element.contains(event.target) && !(this.#anchor instanceof HTMLElement && this.#anchor.contains(event.target)))
       this.close();
   };
   #keyHandler = (event) => this.handleKey(event);
+  #open = false;
   #scrollHandler = (event) => {
     if (this.element.contains(event.target))
       return;
@@ -7567,22 +7574,43 @@ var Popup2 = class _Popup {
       _Popup.#current.close();
   }
   get isOpen() {
-    return _Popup.#current === this;
+    return this.#open;
   }
-  /** Shows the popup below the anchor, inside container so it shares the editor's theme. */
+  /**
+   * Shows the popup below the anchor, inside container so it shares the editor's theme. It opens
+   * in the browser's top layer where it can, so the editor's bounds, overflow and stacking don't
+   * clip or cover it.
+   */
   show(anchor, container) {
-    if (_Popup.#current && _Popup.#current !== this)
-      _Popup.#current.close();
-    _Popup.#current = this;
+    if (this.dismissible) {
+      if (_Popup.#current && _Popup.#current !== this)
+        _Popup.#current.close();
+      _Popup.#current = this;
+    }
+    this.#open = true;
     this.#anchor = anchor;
     container.append(this.element);
+    if (typeof this.element.showPopover == "function") {
+      this.element.setAttribute("popover", "manual");
+      try {
+        this.element.showPopover();
+      } catch (error) {
+      }
+    }
     this.position();
     container.dispatchEvent(new CustomEvent("scv-popup-opened", { detail: { popup: this }, bubbles: true }));
     setTimeout(() => {
-      document.addEventListener("mousedown", this.#outsideHandler, true);
+      if (!this.#open)
+        return;
+      if (this.dismissible)
+        document.addEventListener("mousedown", this.#outsideHandler, true);
       window.addEventListener("scroll", this.#scrollHandler, true);
     }, 0);
-    window.addEventListener("keydown", this.#keyHandler, true);
+    if (this.dismissible) {
+      window.addEventListener("keydown", this.#keyHandler, true);
+    } else {
+      this.element.addEventListener("keydown", this.#keyHandler);
+    }
   }
   position() {
     let anchor = this.anchorProvider ? this.anchorProvider() || this.#anchor : this.#anchor;
@@ -7608,11 +7636,19 @@ var Popup2 = class _Popup {
   close() {
     if (_Popup.#current === this)
       _Popup.#current = null;
+    this.#open = false;
     document.removeEventListener("mousedown", this.#outsideHandler, true);
     window.removeEventListener("keydown", this.#keyHandler, true);
+    this.element.removeEventListener("keydown", this.#keyHandler);
     window.removeEventListener("scroll", this.#scrollHandler, true);
     if (this.element.isConnected) {
       let container = this.element.parentElement;
+      if (this.element.hasAttribute("popover")) {
+        try {
+          this.element.hidePopover();
+        } catch (error) {
+        }
+      }
       this.element.remove();
       if (this.onClose)
         this.onClose();
@@ -8017,7 +8053,7 @@ var TableSizePicker = class _TableSizePicker extends Popup2 {
 var Dialog = class {
   static prompt(container, strings, title, fields) {
     return new Promise((resolve) => {
-      let backdrop = Utilities.element("div", "scv-dialog-backdrop");
+      let backdrop = Utilities.element("dialog", "scv-dialog-backdrop");
       let dialog = Utilities.element("form", "scv-dialog modal-content shadow", { role: "dialog", "aria-modal": "true" });
       backdrop.append(dialog);
       let header = Utilities.element("div", "modal-header py-2");
@@ -8065,10 +8101,20 @@ var Dialog = class {
       ok.textContent = strings.TextOKCaption;
       footer.append(cancel, ok);
       dialog.append(footer);
+      let finished = false;
       let finish = (result) => {
+        if (finished)
+          return;
+        finished = true;
+        if (backdrop.open)
+          backdrop.close();
         backdrop.remove();
         resolve(result);
       };
+      backdrop.addEventListener("cancel", (event) => {
+        event.preventDefault();
+        finish(null);
+      });
       cancel.addEventListener("click", () => finish(null));
       backdrop.addEventListener("mousedown", (event) => {
         if (event.target === backdrop)
@@ -8092,6 +8138,11 @@ var Dialog = class {
       });
       Popup2.closeAll();
       container.append(backdrop);
+      if (typeof backdrop.showModal == "function") {
+        backdrop.showModal();
+      } else {
+        backdrop.setAttribute("open", "");
+      }
       let first = dialog.querySelector("input, select, textarea");
       if (first) {
         first.focus();
@@ -8099,71 +8150,6 @@ var Dialog = class {
           first.select();
       }
     });
-  }
-};
-var InsertionChooser = class extends Popup2 {
-  #entries;
-  #list;
-  #search;
-  #visible = [];
-  #active = 0;
-  constructor(strings, types, onSelect, choices = [], onChoice = (choice) => choice.choose(null)) {
-    super("dropdown-menu show scv-chooser");
-    this.keepsFocus = false;
-    this.#entries = types.filter((type) => type.insertable).map((type) => ({ caption: type.caption, icon: type.icon, search: `${type.caption} ${type.keywords} ${type.identifier}`.toLowerCase(), choose: () => onSelect(type) })).concat(choices.map((choice) => ({ caption: choice.caption, icon: choice.icon, search: `${choice.caption} ${choice.keywords || ""}`.toLowerCase(), choose: () => onChoice(choice) })));
-    this.#search = Utilities.element("input", "form-control form-control-sm scv-chooser-search", { type: "search", placeholder: strings.TextInsertNodeSearchHint, "aria-label": strings.TextInsertNodeSearchHint });
-    this.#search.addEventListener("input", () => this.#filter());
-    this.element.append(this.#search);
-    this.#list = Utilities.element("div", "scv-chooser-list", { role: "listbox" });
-    this.element.append(this.#list);
-    this.#filter();
-  }
-  show(anchor, container) {
-    super.show(anchor, container);
-    this.#search.focus();
-  }
-  #filter() {
-    let query = this.#search.value.trim().toLowerCase();
-    this.#visible = this.#entries.filter((entry) => query.length == 0 || entry.search.indexOf(query) >= 0);
-    this.#active = 0;
-    this.#list.textContent = "";
-    this.#visible.forEach((entry, index) => {
-      let button = Utilities.element("button", "dropdown-item scv-menu-item", { type: "button", role: "option" });
-      let icon = Utilities.element("i", `scv-menu-icon ${entry.icon}`);
-      let label = Utilities.element("span", "scv-menu-label");
-      label.textContent = entry.caption;
-      button.append(icon, label);
-      button.addEventListener("mousedown", (event) => event.preventDefault());
-      button.addEventListener("click", () => this.#choose(entry));
-      button.classList.toggle("scv-menu-focus", index == this.#active);
-      this.#list.append(button);
-    });
-    if (this.isOpen)
-      this.position();
-  }
-  #choose(entry) {
-    this.close();
-    entry.choose();
-  }
-  handleKey(event) {
-    if (event.key == "ArrowDown" || event.key == "ArrowUp") {
-      event.preventDefault();
-      event.stopPropagation();
-      if (this.#visible.length == 0)
-        return;
-      this.#active = event.key == "ArrowDown" ? (this.#active + 1) % this.#visible.length : this.#active <= 0 ? this.#visible.length - 1 : this.#active - 1;
-      Array.from(this.#list.children).forEach((child, index) => child.classList.toggle("scv-menu-focus", index == this.#active));
-      this.#list.children[this.#active].scrollIntoView({ block: "nearest" });
-      return;
-    }
-    if (event.key == "Enter") {
-      event.preventDefault();
-      event.stopPropagation();
-      if (this.#visible[this.#active])
-        this.#choose(this.#visible[this.#active]);
-      return;
-    }
-    super.handleKey(event);
   }
 };
 var ChoicePopup = class extends Popup2 {
@@ -8197,9 +8183,31 @@ var ChoicePopup = class extends Popup2 {
   get activeIndex() {
     return this.#active;
   }
+  /**
+   * Whether the search field shows, for a list made with a search filter. Without it, the list
+   * shows every item and the text keeps focus; the arrow keys and Enter still choose.
+   */
+  get hasSearchField() {
+    return !!this.#search && !this.#search.hidden;
+  }
+  set hasSearchField(value) {
+    let search = this.#search;
+    if (!search || value == !search.hidden)
+      return;
+    search.hidden = !value;
+    this.keepsFocus = !value;
+    if (!value && search.value.length > 0) {
+      search.value = "";
+      search.dispatchEvent(new Event("input"));
+    }
+    if (value && this.isOpen)
+      search.focus();
+    if (this.isOpen)
+      this.position();
+  }
   show(anchor, container) {
     super.show(anchor, container);
-    if (this.#search)
+    if (this.hasSearchField)
       this.#search.focus();
   }
   setItems(items, active = 0) {
@@ -8292,6 +8300,19 @@ var ChoicePopup = class extends Popup2 {
       return;
     }
     super.handleKey(event);
+  }
+};
+var InsertionChooser = class extends ChoicePopup {
+  constructor(strings, types, onSelect, choices = [], onChoice = (choice) => choice.choose(null)) {
+    let entries = types.filter((type) => type.insertable).map((type) => ({ item: { caption: type.caption, icon: type.icon, value: () => onSelect(type) }, search: `${type.caption} ${type.keywords} ${type.identifier}`.toLowerCase() })).concat(choices.map((choice) => ({ item: { caption: choice.caption, icon: choice.icon, value: () => onChoice(choice) }, search: `${choice.caption} ${choice.keywords || ""}`.toLowerCase() })));
+    super("", (item) => item.value(), {
+      placeholder: strings.TextInsertNodeSearchHint,
+      emptyCaption: "",
+      filter: (query) => {
+        let words = query.trim().toLowerCase();
+        return entries.filter((entry) => words.length == 0 || entry.search.indexOf(words) >= 0).map((entry) => entry.item);
+      }
+    });
   }
 };
 
@@ -9792,13 +9813,13 @@ var ToolbarView = class {
           Popup2.closeAll();
           return;
         }
+        prepareMenu(item);
         if (item.makePopup) {
           let popup = item.makePopup((menuItem) => activate(item, menuItem));
           popup.element.dataset.owner = item.identifier;
           popup.show(button, popupContainer);
           return;
         }
-        prepareMenu(item);
         let menu = new PopupMenu(item.menuItems, (menuItem) => activate(item, menuItem));
         menu.element.dataset.owner = item.identifier;
         menu.show(button, popupContainer);
@@ -10133,6 +10154,11 @@ var Editor2 = class _Editor extends EventTarget {
   /** The bar under the document; shown while statusBarVisible is true. */
   statusBar;
   /**
+   * The toolbar's Insert menu shows a search field once it offers at least this many block
+   * types. 0 always shows it; Infinity never does.
+   */
+  insertMenuSearchThreshold = 5;
+  /**
    * Uploads files the user adds (pictures, audio, video and backgrounds) and returns the address
    * each is shown from. Without one, files are embedded in the document as data.
    */
@@ -10349,6 +10375,8 @@ var Editor2 = class _Editor extends EventTarget {
     this.#class = instanceOptions.class;
     if (instanceOptions.statusBar !== void 0)
       this.#statusBarVisible = !!instanceOptions.statusBar;
+    if (typeof instanceOptions.insertMenuSearchThreshold == "number")
+      this.insertMenuSearchThreshold = instanceOptions.insertMenuSearchThreshold;
     if (instanceOptions.autosave)
       this.updateAutosave(instanceOptions.autosave);
     if (instanceOptions.fileUploader !== void 0)
@@ -14148,9 +14176,16 @@ var Editor2 = class _Editor extends EventTarget {
         });
         break;
       }
-      case "insert":
-        item.menuItems = this.nodeTypes.items().filter((type) => type.insertable).map((type) => new ToolbarMenuItem(type.identifier, type.caption, type.icon));
+      case "insert": {
+        let types = this.nodeTypes.items().filter((type) => type.insertable);
+        item.menuItems = types.map((type) => new ToolbarMenuItem(type.identifier, type.caption, type.icon));
+        item.makePopup = (choose) => {
+          let chooser = new InsertionChooser(strings, types, (type) => choose(new ToolbarMenuItem(type.identifier, type.caption, type.icon)));
+          chooser.hasSearchField = types.length >= this.insertMenuSearchThreshold;
+          return chooser;
+        };
         break;
+      }
       case "lineheight":
       case "linespacing": {
         let nodes = this.#lineMetricNodes();

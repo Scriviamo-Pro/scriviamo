@@ -701,6 +701,19 @@
   z-index: 1080;
 }
 
+/* In the top layer: undo the browser's popover styles, without outranking the popup's own classes. */
+:where(.scv-popup[popover]) {
+  inset: auto;
+  width: auto;
+  height: auto;
+  margin: 0;
+  padding: 0;
+  overflow: visible;
+  color: inherit;
+  background: none;
+  border: 0;
+}
+
 .scv-menu {
   min-width: 12rem;
   max-height: min(70vh, 420px);
@@ -772,21 +785,53 @@
   padding: 6px;
 }
 
+.scv-chooser-search[hidden] {
+  display: none;
+}
+
 .scv-chooser-list {
   max-height: 320px;
   overflow-y: auto;
   margin-top: 6px;
 }
 
+/* A modal <dialog> covering the window, in the top layer, so the editor's bounds don't clip it. */
 .scv-dialog-backdrop {
-  position: absolute;
+  position: fixed;
   inset: 0;
   z-index: 1090;
+  width: 100%;
+  max-width: none;
+  height: 100%;
+  max-height: none;
+  margin: 0;
+  padding: 16px;
+  border: 0;
+  overflow: hidden;
+  color: inherit;
+  background: rgba(0, 0, 0, 0.35);
+}
+
+.scv-dialog-backdrop[open] {
   display: flex;
   align-items: flex-start;
   justify-content: center;
-  padding-top: 10vh;
-  background-color: rgba(0, 0, 0, 0.35);
+}
+
+.scv-dialog-backdrop::backdrop {
+  background: transparent;
+}
+
+.scv-dialog-backdrop > .scv-dialog {
+  margin-top: min(10vh, 4rem);
+  max-height: calc(100% - min(10vh, 4rem));
+  display: flex;
+  flex-direction: column;
+}
+
+.scv-dialog .modal-body {
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .scv-dialog {
@@ -804,7 +849,7 @@
   --bs-modal-footer-gap: 0.5rem;
   --bs-modal-footer-border-color: var(--bs-border-color);
   --bs-modal-footer-border-width: var(--bs-border-width);
-  width: min(26rem, calc(100% - 32px));
+  width: min(26rem, 100%);
   color: var(--bs-body-color);
   background-color: var(--bs-body-bg);
   border: var(--bs-border-width) solid var(--bs-border-color-translucent);

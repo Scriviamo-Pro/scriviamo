@@ -1,6 +1,6 @@
 {
   "name": "scriviamo-react",
-  "version": "1.0.1-beta.6",
+  "version": "1.0.1-beta.7",
   "description": "React components for the Scriviamo editor",
   "type": "module",
   "main": "dist/index.js",

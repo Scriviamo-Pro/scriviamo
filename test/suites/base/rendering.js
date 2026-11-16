@@ -84,4 +84,42 @@
     t.equal(markdown.toHTML(), source.toHTML(), "The Markdown round trip changed the document")
   })
 
+
+  test(section, "dialogs fit the window, not the editor", async t => {
+    let editor = t.editor()
+    let host = editor.element.parentElement || editor.element
+    host.style.cssText = "height: 60px; overflow: hidden; transform: translateZ(0)"
+    let fields = Array.from({length: 30}, (_, index) => ({name: `f${index}`, label: `Field ${index}`}))
+    let answer = editor.prompt("Many fields", fields)
+    await t.tick(50)
+    let backdrop = document.querySelector("dialog.scv-dialog-backdrop")
+    t.assert(backdrop && backdrop.matches(":modal"), "The dialog didn't open as a modal in the top layer")
+    let form = backdrop && backdrop.querySelector(".scv-dialog")
+    if (form) {
+      let box = form.getBoundingClientRect()
+      t.assert(box.top >= 0 && box.bottom <= window.innerHeight && box.height > 100, `The dialog didn't fit the window (${Math.round(box.top)} to ${Math.round(box.bottom)} of ${window.innerHeight})`)
+      let body = form.querySelector(".modal-body")
+      t.assert(body.scrollHeight > body.clientHeight, "A dialog taller than the window didn't scroll its fields")
+      backdrop.dispatchEvent(new Event("cancel", {cancelable: true}))
+    }
+    t.equal(await answer, null, "Cancelling the dialog didn't answer null")
+    t.assert(!document.querySelector("dialog.scv-dialog-backdrop"), "The dialog stayed open after cancelling")
+  })
+
+  test(section, "pickers aren't clipped by the editor", async t => {
+    let editor = t.editor()
+    let host = editor.element.parentElement || editor.element
+    host.style.cssText = "height: 60px; overflow: hidden; transform: translateZ(0)"
+    let picker = new PE.TableSizePicker(editor.strings, () => {})
+    picker.show(editor.element, editor.element)
+    await t.tick(20)
+    let box = picker.element.getBoundingClientRect()
+    let hostBox = host.getBoundingClientRect()
+    t.assert(typeof picker.element.showPopover != "function" || picker.element.matches(":popover-open"), "The picker didn't open in the top layer")
+    t.assert(box.bottom > hostBox.bottom, "The picker didn't extend past the editor")
+    let hit = document.elementFromPoint(box.left + box.width / 2, box.bottom - 6)
+    t.assert(picker.element.contains(hit), "The part of the picker past the editor was clipped or covered")
+    picker.close()
+    t.assert(!picker.element.isConnected, "The picker stayed open after closing")
+  })
 }
