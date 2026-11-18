@@ -1,0 +1,12 @@
+{
+  "language": "ja",
+  "strings": {
+    "Editor": {
+      "TextInsertDateCaption": "日付を挿入",
+      "TextDateChipCaption": "日付",
+      "TextDateTodayCaption": "今日",
+      "TextDateTomorrowCaption": "明日",
+      "TextDateRemoveCaption": "削除"
+    }
+  }
+}

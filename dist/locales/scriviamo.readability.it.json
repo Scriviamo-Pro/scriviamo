@@ -1,0 +1,13 @@
+{
+  "language": "it",
+  "strings": {
+    "Editor": {
+      "TextReadabilityGradeFormat": "Livello %grade%",
+      "TextReadabilitySentenceFormat": "%count% parole per frase",
+      "TextReadabilityLongSentencesFormat": "%count% frasi lunghe",
+      "TextReadabilityOneLongSentenceCaption": "1 frase lunga",
+      "TextReadabilityGradeTooltip": "L’anno scolastico che serve per seguire questo testo senza fatica (Flesch–Kincaid).",
+      "TextReadabilityLongSentenceTooltip": "Frasi di più di %count% parole. Fai clic per andare alla successiva."
+    }
+  }
+}

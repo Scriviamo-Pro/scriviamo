@@ -1,0 +1,10 @@
+{
+  "language": "pt-BR",
+  "strings": {
+    "Editor": {
+      "TextFocusModeCaption": "Modo foco",
+      "TextFocusModeOnCaption": "Destacar o bloco atual",
+      "TextTypewriterScrollingCaption": "Rolagem de máquina de escrever"
+    }
+  }
+}

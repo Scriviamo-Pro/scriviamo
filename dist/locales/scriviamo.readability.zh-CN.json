@@ -1,0 +1,13 @@
+{
+  "language": "zh-CN",
+  "strings": {
+    "Editor": {
+      "TextReadabilityGradeFormat": "%grade% 年级水平",
+      "TextReadabilitySentenceFormat": "每句 %count% 个词",
+      "TextReadabilityLongSentencesFormat": "%count% 个长句",
+      "TextReadabilityOneLongSentenceCaption": "1 个长句",
+      "TextReadabilityGradeTooltip": "轻松读懂这段文字所需的年级（Flesch–Kincaid）。",
+      "TextReadabilityLongSentenceTooltip": "超过 %count% 个词的句子。点击转到下一个。"
+    }
+  }
+}

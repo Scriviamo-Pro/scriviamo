@@ -1,0 +1,20 @@
+{
+  "language": "fr",
+  "strings": {
+    "Editor": {
+      "TextMapCaption": "Carte",
+      "TextFindPlaceCaption": "Trouver un lieu…",
+      "TextFindPlacePrompt": "Adresse, lieu ou coordonnées",
+      "TextPlaceNotFoundMessage": "Ce lieu est introuvable.",
+      "TextMapLabelCaption": "Libellé du repère",
+      "TextMapLatitudeCaption": "Latitude",
+      "TextMapLongitudeCaption": "Longitude",
+      "TextMapZoomCaption": "Zoom",
+      "TextMapHeightCaption": "Hauteur",
+      "TextZoomInCaption": "Zoom avant",
+      "TextZoomOutCaption": "Zoom arrière",
+      "TextOpenMapCaption": "Ouvrir dans OpenStreetMap",
+      "TextShowPinCaption": "Afficher le repère"
+    }
+  }
+}

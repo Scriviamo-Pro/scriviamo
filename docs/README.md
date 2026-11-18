@@ -27,6 +27,11 @@ see [Getting started](getting-started.md#requirements).
 | [Undo, search, statistics and autosave](undo-search-statistics.md) | Undo and redo, find and replace, word counts, the status bar, and autosave |
 | [Comments and suggestions](comments-and-suggestions.md) | Comment threads, and suggestions such as @-mentions |
 | [Math and diagrams](math-and-diagrams.md) | Formulas in LaTeX, drawn with KaTeX, as blocks or inside text, and diagrams in Mermaid |
+| [Steps, timelines and tabs](steps-and-tabs.md) | Numbered steps, timelines and tabbed panels that hold blocks |
+| [Files, galleries, maps and embeds](media-and-embeds.md) | File attachments, image galleries, maps, and the sites embeds play from |
+| [Dates and statuses in text](dates-and-statuses.md) | Date chips in the reader's language, and status pills from your own set |
+| [Outline, focus mode, readability and dictation](writing-aids.md) | Aids for writing: a heading tree, focus mode, readability in the status bar, and voice typing |
+| [Accessibility](accessibility.md) | How the editor and its documents meet WCAG 2.2, the audit, and the accessibility checker |
 | [Pickers, menus and dialogs](pickers.md) | Popups that open from the toolbar or a node, the ready-made pickers, and dialogs |
 | [Writing node types](custom-node-types.md) | Adding your own node types and editor extensions |
 | [Server rendering](server-rendering.md) | Turning saved documents into HTML, Markdown or text on a server, with no browser |

@@ -1,0 +1,16 @@
+{
+  "language": "zh-CN",
+  "strings": {
+    "Editor": {
+      "TextStepsCaption": "步骤",
+      "TextTimelineCaption": "时间线",
+      "TextStepsStyleCaption": "样式",
+      "TextAddStepCaption": "添加步骤",
+      "TextRemoveStepCaption": "删除步骤",
+      "TextMoveStepUpCaption": "上移步骤",
+      "TextMoveStepDownCaption": "下移步骤",
+      "TextStepLabelPlaceholder": "日期或标签",
+      "TextStepCaption": "步骤"
+    }
+  }
+}

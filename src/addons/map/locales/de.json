@@ -1,0 +1,20 @@
+{
+  "language": "de",
+  "strings": {
+    "Editor": {
+      "TextMapCaption": "Karte",
+      "TextFindPlaceCaption": "Ort suchen …",
+      "TextFindPlacePrompt": "Adresse, Ort oder Koordinaten",
+      "TextPlaceNotFoundMessage": "Dieser Ort wurde nicht gefunden.",
+      "TextMapLabelCaption": "Beschriftung der Markierung",
+      "TextMapLatitudeCaption": "Breitengrad",
+      "TextMapLongitudeCaption": "Längengrad",
+      "TextMapZoomCaption": "Zoom",
+      "TextMapHeightCaption": "Höhe",
+      "TextZoomInCaption": "Vergrößern",
+      "TextZoomOutCaption": "Verkleinern",
+      "TextOpenMapCaption": "In OpenStreetMap öffnen",
+      "TextShowPinCaption": "Markierung anzeigen"
+    }
+  }
+}

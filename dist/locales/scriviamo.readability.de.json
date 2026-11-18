@@ -1,0 +1,13 @@
+{
+  "language": "de",
+  "strings": {
+    "Editor": {
+      "TextReadabilityGradeFormat": "Klasse %grade%",
+      "TextReadabilitySentenceFormat": "%count% Wörter pro Satz",
+      "TextReadabilityLongSentencesFormat": "%count% lange Sätze",
+      "TextReadabilityOneLongSentenceCaption": "1 langer Satz",
+      "TextReadabilityGradeTooltip": "Die Schulklasse, ab der sich dieser Text leicht lesen lässt (Flesch–Kincaid).",
+      "TextReadabilityLongSentenceTooltip": "Sätze mit mehr als %count% Wörtern. Klicken Sie, um zum nächsten zu gehen."
+    }
+  }
+}

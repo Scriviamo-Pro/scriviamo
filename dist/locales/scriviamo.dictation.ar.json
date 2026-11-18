@@ -1,0 +1,13 @@
+{
+  "language": "ar",
+  "strings": {
+    "Editor": {
+      "TextDictationCaption": "إملاء",
+      "TextDictationListeningCaption": "جارٍ الاستماع…",
+      "TextDictationUnavailableCaption": "لا يدعم هذا المتصفح الإملاء.",
+      "TextDictationNoTextMessage": "انقر في النص حيث يجب أن تُكتب الكلمات، ثم أملِ.",
+      "TextDictationDeniedMessage": "الميكروفون غير متاح. اسمح لهذه الصفحة باستخدامه ثم حاول مرة أخرى.",
+      "TextDictationErrorMessage": "توقف الإملاء: %error%"
+    }
+  }
+}

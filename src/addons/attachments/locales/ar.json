@@ -1,0 +1,14 @@
+{
+  "language": "ar",
+  "strings": {
+    "Editor": {
+      "TextAttachmentCaption": "ملف",
+      "TextAttachmentNameCaption": "اسم الملف",
+      "TextDownloadAttachmentCaption": "تنزيل",
+      "TextReplaceAttachmentCaption": "استبدال",
+      "TextAttachmentAddressPrompt": "عنوان الملف",
+      "TextAttachmentUploadingCaption": "جارٍ الرفع…",
+      "TextAttachmentUnavailableCaption": "تعذّر إرفاق هذا الملف."
+    }
+  }
+}

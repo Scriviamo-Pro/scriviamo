@@ -1,0 +1,26 @@
+{
+  "language": "ja",
+  "strings": {
+    "Editor": {
+      "TextGalleryCaption": "ギャラリー",
+      "TextGalleryLayoutCaption": "レイアウト",
+      "TextGalleryGridCaption": "グリッド",
+      "TextGalleryCarouselCaption": "カルーセル",
+      "TextGalleryColumnsCaption": "列数",
+      "TextAddImagesCaption": "画像を追加…",
+      "TextAddImageAddressCaption": "アドレスから画像を追加…",
+      "TextRemoveImageCaption": "画像を削除",
+      "TextMoveImageBackCaption": "画像を前へ移動",
+      "TextMoveImageForwardCaption": "画像を後ろへ移動",
+      "TextImageCaptionPlaceholder": "キャプション",
+      "TextImageDescriptionCaption": "説明（代替テキスト）",
+      "TextSelectedImageCaption": "選択中の画像",
+      "TextViewImageCaption": "原寸で表示",
+      "TextPreviousImageCaption": "前の画像",
+      "TextNextImageCaption": "次の画像",
+      "TextCloseViewerCaption": "閉じる",
+      "TextImageAddressPrompt": "画像のアドレス",
+      "TextGalleryEmptyCaption": "ギャラリーに画像を追加"
+    }
+  }
+}

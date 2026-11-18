@@ -19,7 +19,7 @@ const base = await import(`${dist}scriviamo.js`)
 const {Editor, HeadingNode, TextNode, ListNode, ListTypes, TableNode} = base
 const {existsSync} = await import("node:fs")
 const addons = {}
-for (const name of ["callouts", "math", "diagrams", "footnotes", "columns", "blocks", "forms", "media", "linkcards", "datatable", "rawcontent", "templates", "pdf", "assistant", "inspector", "collaboration"]) {
+for (const name of ["callouts", "math", "diagrams", "footnotes", "columns", "blocks", "forms", "media", "linkcards", "datatable", "rawcontent", "templates", "pdf", "assistant", "inspector", "collaboration", "steps", "tabs", "attachments", "gallery", "map", "charts", "signature", "dates", "status", "outline", "readability", "focus", "dictation", "word", "epub", "odt", "wikiimport", "accessibility", "versions", "trackchanges"]) {
   if (!existsSync(`${root}/dist/addons/scriviamo.${name}.js`)) continue
   try {
     addons[name] = await import(`${dist}addons/scriviamo.${name}.js`)
@@ -46,12 +46,30 @@ if (addons.math) {
   math.latex = "x^2"
   source.addNode(math)
 }
+if (addons.steps) {
+  let steps = new addons.steps.StepsNode(2)
+  steps.cells[0].insert(0, "First step")
+  source.addNode(steps)
+}
+if (addons.map) {
+  let map = new addons.map.MapNode()
+  map.label = "Here"
+  source.addNode(map)
+}
+if (addons.charts) {
+  let chart = new addons.charts.ChartNode()
+  chart.snapshot = {labels: ["A", "B"], series: [{name: "Sales", values: [3, 5]}]}
+  source.addNode(chart)
+}
 const json = source.toJSON()
 
 const html = Editor.renderHTML(json)
 check(html.includes(">Report</span></h1>") && html.includes("<p style=\"text-align:start;\">Body text</p>") && html.includes("<li>One</li>") && html.includes("Cell</td>"), `The HTML was wrong:\n${html}`)
 if (addons.callouts) check(html.includes(`<aside class="alert alert-info"`), "The alert wasn't exported")
 if (addons.math) check(html.includes(`data-latex="x^2"`), "The formula wasn't exported")
+if (addons.steps) check(html.includes(`<ol class="steps"`) && html.includes("First step"), "The steps weren't exported")
+if (addons.map) check(html.includes(`<div class="map"`) && html.includes("tile.openstreetmap.org"), "The map wasn't exported")
+if (addons.charts) check(html.includes(`<figure class="chart"`) && html.includes("<svg"), "The chart wasn't exported")
 const page = Editor.renderHTML(json, true)
 check(page.startsWith("<!doctype html>") && page.includes("<style>") && page.includes("</html>"), "The full page wasn't made")
 check(Editor.renderMarkdown(json).startsWith("# Report\n\nBody text\n\n- One\n- Two"), `The Markdown was wrong:\n${Editor.renderMarkdown(json)}`)

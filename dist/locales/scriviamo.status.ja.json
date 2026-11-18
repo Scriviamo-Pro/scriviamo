@@ -1,0 +1,15 @@
+{
+  "language": "ja",
+  "strings": {
+    "Editor": {
+      "TextInsertStatusCaption": "ステータスを挿入",
+      "TextStatusRemoveCaption": "ステータスを削除",
+      "TextStatusDraft": "下書き",
+      "TextStatusInProgress": "進行中",
+      "TextStatusInReview": "レビュー中",
+      "TextStatusApproved": "承認済み",
+      "TextStatusBlocked": "保留",
+      "TextStatusDone": "完了"
+    }
+  }
+}

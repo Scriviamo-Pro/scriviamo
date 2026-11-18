@@ -1,0 +1,23 @@
+/* Statuses in text */
+
+.scv-status-tag {
+  cursor: pointer;
+}
+
+.scv-status-tag .scv-chip-source {
+  display: none;
+}
+
+.scv-status-pill {
+  display: inline-block;
+  padding: 0 8px;
+  border-radius: 999px;
+  font-size: 0.85em;
+  font-weight: 600;
+  line-height: 1.5;
+  white-space: nowrap;
+}
+
+.scv-status-popup .scv-status-pill-sample {
+  pointer-events: none;
+}

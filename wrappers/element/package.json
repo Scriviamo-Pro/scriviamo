@@ -1,0 +1,31 @@
+{
+  "name": "scriviamo-element",
+  "version": "1.1.0-beta.1",
+  "description": "A web component for the Scriviamo editor: <scriviamo-editor>, for any framework or none",
+  "type": "module",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "sideEffects": true,
+  "scripts": {
+    "sync": "node ../sync-shared.mjs",
+    "check": "npm run sync && tsc -p . --noEmit",
+    "build": "npm run sync && tsc -p . && esbuild src/index.ts --bundle --format=esm --target=es2022 --external:scriviamo --outdir=dist"
+  },
+  "peerDependencies": {
+    "scriviamo": "*"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.0",
+    "typescript": "^5.8.0"
+  }
+}

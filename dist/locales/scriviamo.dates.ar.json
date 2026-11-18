@@ -1,0 +1,12 @@
+{
+  "language": "ar",
+  "strings": {
+    "Editor": {
+      "TextInsertDateCaption": "إدراج تاريخ",
+      "TextDateChipCaption": "التاريخ",
+      "TextDateTodayCaption": "اليوم",
+      "TextDateTomorrowCaption": "غدًا",
+      "TextDateRemoveCaption": "إزالة"
+    }
+  }
+}

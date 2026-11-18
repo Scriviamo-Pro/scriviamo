@@ -1,0 +1,26 @@
+{
+  "language": "zh-CN",
+  "strings": {
+    "Editor": {
+      "TextGalleryCaption": "图库",
+      "TextGalleryLayoutCaption": "布局",
+      "TextGalleryGridCaption": "网格",
+      "TextGalleryCarouselCaption": "轮播",
+      "TextGalleryColumnsCaption": "列数",
+      "TextAddImagesCaption": "添加图片…",
+      "TextAddImageAddressCaption": "从地址添加图片…",
+      "TextRemoveImageCaption": "删除图片",
+      "TextMoveImageBackCaption": "图片前移",
+      "TextMoveImageForwardCaption": "图片后移",
+      "TextImageCaptionPlaceholder": "图注",
+      "TextImageDescriptionCaption": "描述（替代文本）",
+      "TextSelectedImageCaption": "所选图片",
+      "TextViewImageCaption": "查看原图",
+      "TextPreviousImageCaption": "上一张",
+      "TextNextImageCaption": "下一张",
+      "TextCloseViewerCaption": "关闭",
+      "TextImageAddressPrompt": "图片地址",
+      "TextGalleryEmptyCaption": "向图库添加图片"
+    }
+  }
+}

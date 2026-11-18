@@ -117,6 +117,10 @@ shows a placeholder and saves its JSON back unchanged.
 | `rawcontent` | `RawContentNode` `"rawcontent"`, HTML written into exports unchanged |
 | `media` | `AudioNode` `"audio"`, `VideoNode` `"video"` |
 | `forms` | `FormNode` `"form"`, `LabelNode` `"label"`, `TextFieldNode` `"textfield"`, `TextAreaNode` `"textarea"`, `CheckboxNode` `"checkbox"`, `RadioGroupNode` `"radiogroup"`, `DropdownNode` `"select"`, `DatalistNode` `"datalist"`, `ButtonNode` `"button"` |
+| `steps` | `StepsNode` `"steps"`, numbered steps or a timeline, each step holding text and nodes; see [Steps, timelines and tabs](steps-and-tabs.md) |
+| `attachments` | `AttachmentNode` `"attachment"`, a file with a download button; see [Files, galleries, maps and embeds](media-and-embeds.md) |
+| `gallery` | `GalleryNode` `"gallery"`, pictures as a grid or a carousel; see [Files, galleries, maps and embeds](media-and-embeds.md) |
+| `map` | `MapNode` `"map"`, a map of a place with a pin; see [Files, galleries, maps and embeds](media-and-embeds.md) |
 
 Each add-on's classes are exported by its module:
 

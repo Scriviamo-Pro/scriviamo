@@ -1,0 +1,12 @@
+{
+  "language": "ko",
+  "strings": {
+    "Editor": {
+      "TextInsertDateCaption": "날짜 삽입",
+      "TextDateChipCaption": "날짜",
+      "TextDateTodayCaption": "오늘",
+      "TextDateTomorrowCaption": "내일",
+      "TextDateRemoveCaption": "삭제"
+    }
+  }
+}

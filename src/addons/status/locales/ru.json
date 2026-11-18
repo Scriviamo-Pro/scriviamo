@@ -1,0 +1,15 @@
+{
+  "language": "ru",
+  "strings": {
+    "Editor": {
+      "TextInsertStatusCaption": "Вставить статус",
+      "TextStatusRemoveCaption": "Удалить статус",
+      "TextStatusDraft": "Черновик",
+      "TextStatusInProgress": "В работе",
+      "TextStatusInReview": "На проверке",
+      "TextStatusApproved": "Утверждено",
+      "TextStatusBlocked": "Заблокировано",
+      "TextStatusDone": "Готово"
+    }
+  }
+}

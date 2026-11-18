@@ -152,20 +152,39 @@ export class Exporter {
     return ""
   }
 
+  /**
+   * The export as a file's contents. Formats that make binary files, such as Word documents,
+   * override this rather than export; text formats get their text.
+   */
+  async exportBlob(editor: any): Promise<Blob> {
+    return new Blob([this.export(editor)], {type: `${this.mimeType};charset=utf-8`})
+  }
+
   /** Offers the export to the user as a download named fileName plus the extension. */
   exportToFile(editor: any, fileName: string = "document"): boolean {
-    let text = this.export(editor)
     if (typeof document == "undefined") return false
-    let blob = new Blob([text], {type: `${this.mimeType};charset=utf-8`})
+    // Text formats are ready at once; binary formats save once they're made.
+    if (this.exportBlob === Exporter.prototype.exportBlob) {
+      Exporter.download(new Blob([this.export(editor)], {type: `${this.mimeType};charset=utf-8`}), this.fileExtension.length > 0 ? `${fileName}.${this.fileExtension}` : fileName)
+      return true
+    }
+    this.exportBlob(editor).then(blob => Exporter.download(blob, this.fileExtension.length > 0 ? `${fileName}.${this.fileExtension}` : fileName), error => {
+      if (editor && typeof editor.showMessage == "function") editor.showMessage(String(error && error.message || error), "danger")
+    })
+    return true
+  }
+
+  /** Saves a file through the browser. */
+  static download(blob: Blob, fileName: string) {
+    if (typeof document == "undefined") return
     let url = URL.createObjectURL(blob)
     let link = document.createElement("a")
     link.href = url
-    link.download = this.fileExtension.length > 0 ? `${fileName}.${this.fileExtension}` : fileName
+    link.download = fileName
     document.body.append(link)
     link.click()
     link.remove()
     setTimeout(() => URL.revokeObjectURL(url), 1000)
-    return true
   }
 }
 

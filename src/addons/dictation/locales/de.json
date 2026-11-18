@@ -1,0 +1,13 @@
+{
+  "language": "de",
+  "strings": {
+    "Editor": {
+      "TextDictationCaption": "Diktieren",
+      "TextDictationListeningCaption": "Hört zu …",
+      "TextDictationUnavailableCaption": "Dieser Browser unterstützt kein Diktieren.",
+      "TextDictationNoTextMessage": "Klicken Sie in den Text, wo die Wörter hin sollen, und diktieren Sie dann.",
+      "TextDictationDeniedMessage": "Das Mikrofon ist nicht verfügbar. Erlauben Sie dieser Seite, es zu verwenden, und versuchen Sie es erneut.",
+      "TextDictationErrorMessage": "Diktieren beendet: %error%"
+    }
+  }
+}

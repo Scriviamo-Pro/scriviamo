@@ -1,0 +1,13 @@
+{
+  "language": "fr",
+  "strings": {
+    "Editor": {
+      "TextOutlineCaption": "Plan",
+      "TextOutlineEmptyCaption": "Les titres que vous ajoutez apparaissent ici.",
+      "TextOutlineMoveHint": "Faites glisser un titre, ou appuyez sur Alt+Haut ou Alt+Bas, pour déplacer sa section.",
+      "TextOutlineUntitledCaption": "Titre sans texte",
+      "TextOutlineCollapseCaption": "Réduire",
+      "TextOutlineExpandCaption": "Développer"
+    }
+  }
+}

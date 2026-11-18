@@ -52,7 +52,7 @@ export declare class Node {
     #private;
     /**
      * The files this node type makes nodes from when they are dropped or pasted into
-     * the editor: MIME types, which may end in "/*", or extensions such as ".csv".
+     * the editor: MIME types, which may end in "/*", extensions such as ".csv", or "*" for any file.
      */
     static droppedFileTypes: Array<string>;
     /** Decides between node types that accept the same file: the highest wins. */

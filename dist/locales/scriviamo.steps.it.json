@@ -1,0 +1,16 @@
+{
+  "language": "it",
+  "strings": {
+    "Editor": {
+      "TextStepsCaption": "Passaggi",
+      "TextTimelineCaption": "Cronologia",
+      "TextStepsStyleCaption": "Stile",
+      "TextAddStepCaption": "Aggiungi passaggio",
+      "TextRemoveStepCaption": "Rimuovi passaggio",
+      "TextMoveStepUpCaption": "Sposta passaggio su",
+      "TextMoveStepDownCaption": "Sposta passaggio giù",
+      "TextStepLabelPlaceholder": "Data o etichetta",
+      "TextStepCaption": "Passaggio"
+    }
+  }
+}

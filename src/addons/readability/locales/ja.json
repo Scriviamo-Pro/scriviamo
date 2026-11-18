@@ -1,0 +1,13 @@
+{
+  "language": "ja",
+  "strings": {
+    "Editor": {
+      "TextReadabilityGradeFormat": "%grade% 年生レベル",
+      "TextReadabilitySentenceFormat": "1 文あたり %count% 語",
+      "TextReadabilityLongSentencesFormat": "長い文 %count% 件",
+      "TextReadabilityOneLongSentenceCaption": "長い文 1 件",
+      "TextReadabilityGradeTooltip": "この文章を楽に読める学年の目安（Flesch–Kincaid）。",
+      "TextReadabilityLongSentenceTooltip": "%count% 語を超える文。クリックすると次の文へ移動します。"
+    }
+  }
+}

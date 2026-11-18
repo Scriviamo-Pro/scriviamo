@@ -1,0 +1,13 @@
+{
+  "language": "es",
+  "strings": {
+    "Editor": {
+      "TextOutlineCaption": "Esquema",
+      "TextOutlineEmptyCaption": "Los encabezados que añadas aparecerán aquí.",
+      "TextOutlineMoveHint": "Arrastra un encabezado, o pulsa Alt+Arriba o Alt+Abajo, para mover su sección.",
+      "TextOutlineUntitledCaption": "Encabezado sin texto",
+      "TextOutlineCollapseCaption": "Contraer",
+      "TextOutlineExpandCaption": "Expandir"
+    }
+  }
+}

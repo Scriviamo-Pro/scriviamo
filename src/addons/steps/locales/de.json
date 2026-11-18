@@ -1,0 +1,16 @@
+{
+  "language": "de",
+  "strings": {
+    "Editor": {
+      "TextStepsCaption": "Schritte",
+      "TextTimelineCaption": "Zeitleiste",
+      "TextStepsStyleCaption": "Stil",
+      "TextAddStepCaption": "Schritt hinzufügen",
+      "TextRemoveStepCaption": "Schritt entfernen",
+      "TextMoveStepUpCaption": "Schritt nach oben",
+      "TextMoveStepDownCaption": "Schritt nach unten",
+      "TextStepLabelPlaceholder": "Datum oder Beschriftung",
+      "TextStepCaption": "Schritt"
+    }
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "language": "de",
+  "strings": {
+    "Editor": {
+      "TextGalleryCaption": "Galerie",
+      "TextGalleryLayoutCaption": "Anordnung",
+      "TextGalleryGridCaption": "Raster",
+      "TextGalleryCarouselCaption": "Karussell",
+      "TextGalleryColumnsCaption": "Spalten",
+      "TextAddImagesCaption": "Bilder hinzufügen …",
+      "TextAddImageAddressCaption": "Bild von Adresse hinzufügen …",
+      "TextRemoveImageCaption": "Bild entfernen",
+      "TextMoveImageBackCaption": "Bild nach vorn",
+      "TextMoveImageForwardCaption": "Bild nach hinten",
+      "TextImageCaptionPlaceholder": "Bildunterschrift",
+      "TextImageDescriptionCaption": "Beschreibung (Alternativtext)",
+      "TextSelectedImageCaption": "Ausgewähltes Bild",
+      "TextViewImageCaption": "In voller Größe anzeigen",
+      "TextPreviousImageCaption": "Vorheriges Bild",
+      "TextNextImageCaption": "Nächstes Bild",
+      "TextCloseViewerCaption": "Schließen",
+      "TextImageAddressPrompt": "Adresse des Bilds",
+      "TextGalleryEmptyCaption": "Bilder zur Galerie hinzufügen"
+    }
+  }
+}

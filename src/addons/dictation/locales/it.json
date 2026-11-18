@@ -1,0 +1,13 @@
+{
+  "language": "it",
+  "strings": {
+    "Editor": {
+      "TextDictationCaption": "Detta",
+      "TextDictationListeningCaption": "In ascolto…",
+      "TextDictationUnavailableCaption": "Questo browser non supporta la dettatura.",
+      "TextDictationNoTextMessage": "Fai clic nel testo dove vanno le parole, poi detta.",
+      "TextDictationDeniedMessage": "Il microfono non è disponibile. Consenti a questa pagina di usarlo, poi riprova.",
+      "TextDictationErrorMessage": "Dettatura interrotta: %error%"
+    }
+  }
+}

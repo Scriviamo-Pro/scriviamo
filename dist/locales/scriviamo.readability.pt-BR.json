@@ -1,0 +1,13 @@
+{
+  "language": "pt-BR",
+  "strings": {
+    "Editor": {
+      "TextReadabilityGradeFormat": "Série %grade%",
+      "TextReadabilitySentenceFormat": "%count% palavras por frase",
+      "TextReadabilityLongSentencesFormat": "%count% frases longas",
+      "TextReadabilityOneLongSentenceCaption": "1 frase longa",
+      "TextReadabilityGradeTooltip": "A série escolar necessária para acompanhar este texto com facilidade (Flesch–Kincaid).",
+      "TextReadabilityLongSentenceTooltip": "Frases com mais de %count% palavras. Clique para ir à próxima."
+    }
+  }
+}

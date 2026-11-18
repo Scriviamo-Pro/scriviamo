@@ -1,0 +1,14 @@
+{
+  "language": "ja",
+  "strings": {
+    "Editor": {
+      "TextAttachmentCaption": "ファイル",
+      "TextAttachmentNameCaption": "ファイル名",
+      "TextDownloadAttachmentCaption": "ダウンロード",
+      "TextReplaceAttachmentCaption": "置き換え",
+      "TextAttachmentAddressPrompt": "ファイルのアドレス",
+      "TextAttachmentUploadingCaption": "アップロード中…",
+      "TextAttachmentUnavailableCaption": "このファイルを添付できませんでした。"
+    }
+  }
+}

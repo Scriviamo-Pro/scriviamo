@@ -1,0 +1,15 @@
+{
+  "language": "zh-CN",
+  "strings": {
+    "Editor": {
+      "TextInsertStatusCaption": "插入状态",
+      "TextStatusRemoveCaption": "删除状态",
+      "TextStatusDraft": "草稿",
+      "TextStatusInProgress": "进行中",
+      "TextStatusInReview": "审阅中",
+      "TextStatusApproved": "已批准",
+      "TextStatusBlocked": "受阻",
+      "TextStatusDone": "已完成"
+    }
+  }
+}

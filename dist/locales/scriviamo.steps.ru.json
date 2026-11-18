@@ -1,0 +1,16 @@
+{
+  "language": "ru",
+  "strings": {
+    "Editor": {
+      "TextStepsCaption": "Шаги",
+      "TextTimelineCaption": "Хронология",
+      "TextStepsStyleCaption": "Стиль",
+      "TextAddStepCaption": "Добавить шаг",
+      "TextRemoveStepCaption": "Удалить шаг",
+      "TextMoveStepUpCaption": "Переместить шаг вверх",
+      "TextMoveStepDownCaption": "Переместить шаг вниз",
+      "TextStepLabelPlaceholder": "Дата или подпись",
+      "TextStepCaption": "Шаг"
+    }
+  }
+}

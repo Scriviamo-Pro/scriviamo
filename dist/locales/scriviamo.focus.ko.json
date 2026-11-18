@@ -1,0 +1,10 @@
+{
+  "language": "ko",
+  "strings": {
+    "Editor": {
+      "TextFocusModeCaption": "집중 모드",
+      "TextFocusModeOnCaption": "현재 블록에 집중",
+      "TextTypewriterScrollingCaption": "타자기 스크롤"
+    }
+  }
+}

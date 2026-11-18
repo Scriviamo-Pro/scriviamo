@@ -1,0 +1,13 @@
+{
+  "language": "es",
+  "strings": {
+    "Editor": {
+      "TextDictationCaption": "Dictar",
+      "TextDictationListeningCaption": "Escuchando…",
+      "TextDictationUnavailableCaption": "Este navegador no admite el dictado.",
+      "TextDictationNoTextMessage": "Haz clic en el texto donde deben ir las palabras y luego dicta.",
+      "TextDictationDeniedMessage": "El micrófono no está disponible. Permite que esta página lo use y vuelve a intentarlo.",
+      "TextDictationErrorMessage": "El dictado se detuvo: %error%"
+    }
+  }
+}

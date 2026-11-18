@@ -1,0 +1,10 @@
+{
+  "language": "ja",
+  "strings": {
+    "Editor": {
+      "TextFocusModeCaption": "集中モード",
+      "TextFocusModeOnCaption": "現在のブロックに集中",
+      "TextTypewriterScrollingCaption": "タイプライタースクロール"
+    }
+  }
+}

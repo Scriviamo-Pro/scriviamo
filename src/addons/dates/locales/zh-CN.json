@@ -1,0 +1,12 @@
+{
+  "language": "zh-CN",
+  "strings": {
+    "Editor": {
+      "TextInsertDateCaption": "插入日期",
+      "TextDateChipCaption": "日期",
+      "TextDateTodayCaption": "今天",
+      "TextDateTomorrowCaption": "明天",
+      "TextDateRemoveCaption": "删除"
+    }
+  }
+}

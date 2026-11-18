@@ -1,0 +1,26 @@
+{
+  "language": "ko",
+  "strings": {
+    "Editor": {
+      "TextGalleryCaption": "갤러리",
+      "TextGalleryLayoutCaption": "레이아웃",
+      "TextGalleryGridCaption": "격자",
+      "TextGalleryCarouselCaption": "캐러셀",
+      "TextGalleryColumnsCaption": "열 수",
+      "TextAddImagesCaption": "이미지 추가…",
+      "TextAddImageAddressCaption": "주소에서 이미지 추가…",
+      "TextRemoveImageCaption": "이미지 삭제",
+      "TextMoveImageBackCaption": "이미지를 앞으로 이동",
+      "TextMoveImageForwardCaption": "이미지를 뒤로 이동",
+      "TextImageCaptionPlaceholder": "캡션",
+      "TextImageDescriptionCaption": "설명(대체 텍스트)",
+      "TextSelectedImageCaption": "선택한 이미지",
+      "TextViewImageCaption": "원래 크기로 보기",
+      "TextPreviousImageCaption": "이전 이미지",
+      "TextNextImageCaption": "다음 이미지",
+      "TextCloseViewerCaption": "닫기",
+      "TextImageAddressPrompt": "이미지 주소",
+      "TextGalleryEmptyCaption": "갤러리에 이미지를 추가하세요"
+    }
+  }
+}

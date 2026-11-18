@@ -1,0 +1,20 @@
+{
+  "language": "ko",
+  "strings": {
+    "Editor": {
+      "TextMapCaption": "지도",
+      "TextFindPlaceCaption": "장소 찾기…",
+      "TextFindPlacePrompt": "주소, 장소 또는 좌표",
+      "TextPlaceNotFoundMessage": "그 장소를 찾을 수 없습니다.",
+      "TextMapLabelCaption": "핀 레이블",
+      "TextMapLatitudeCaption": "위도",
+      "TextMapLongitudeCaption": "경도",
+      "TextMapZoomCaption": "확대/축소",
+      "TextMapHeightCaption": "높이",
+      "TextZoomInCaption": "확대",
+      "TextZoomOutCaption": "축소",
+      "TextOpenMapCaption": "OpenStreetMap에서 열기",
+      "TextShowPinCaption": "핀 표시"
+    }
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "language": "zh-CN",
+  "strings": {
+    "Editor": {
+      "TextMapCaption": "地图",
+      "TextFindPlaceCaption": "查找地点…",
+      "TextFindPlacePrompt": "地址、地点或坐标",
+      "TextPlaceNotFoundMessage": "找不到该地点。",
+      "TextMapLabelCaption": "标记标签",
+      "TextMapLatitudeCaption": "纬度",
+      "TextMapLongitudeCaption": "经度",
+      "TextMapZoomCaption": "缩放",
+      "TextMapHeightCaption": "高度",
+      "TextZoomInCaption": "放大",
+      "TextZoomOutCaption": "缩小",
+      "TextOpenMapCaption": "在 OpenStreetMap 中打开",
+      "TextShowPinCaption": "显示标记"
+    }
+  }
+}

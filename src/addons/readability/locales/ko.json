@@ -1,0 +1,13 @@
+{
+  "language": "ko",
+  "strings": {
+    "Editor": {
+      "TextReadabilityGradeFormat": "%grade%학년 수준",
+      "TextReadabilitySentenceFormat": "문장당 %count%단어",
+      "TextReadabilityLongSentencesFormat": "긴 문장 %count%개",
+      "TextReadabilityOneLongSentenceCaption": "긴 문장 1개",
+      "TextReadabilityGradeTooltip": "이 글을 쉽게 읽을 수 있는 학년(Flesch–Kincaid).",
+      "TextReadabilityLongSentenceTooltip": "%count%단어가 넘는 문장입니다. 클릭하면 다음 문장으로 이동합니다."
+    }
+  }
+}

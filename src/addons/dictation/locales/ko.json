@@ -1,0 +1,13 @@
+{
+  "language": "ko",
+  "strings": {
+    "Editor": {
+      "TextDictationCaption": "받아쓰기",
+      "TextDictationListeningCaption": "듣는 중…",
+      "TextDictationUnavailableCaption": "이 브라우저는 받아쓰기를 지원하지 않습니다.",
+      "TextDictationNoTextMessage": "단어가 들어갈 위치의 텍스트를 클릭한 다음 말하세요.",
+      "TextDictationDeniedMessage": "마이크를 사용할 수 없습니다. 이 페이지에서 마이크를 사용하도록 허용한 다음 다시 시도하세요.",
+      "TextDictationErrorMessage": "받아쓰기가 중지되었습니다: %error%"
+    }
+  }
+}

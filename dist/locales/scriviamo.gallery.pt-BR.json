@@ -1,0 +1,26 @@
+{
+  "language": "pt-BR",
+  "strings": {
+    "Editor": {
+      "TextGalleryCaption": "Galeria",
+      "TextGalleryLayoutCaption": "Layout",
+      "TextGalleryGridCaption": "Grade",
+      "TextGalleryCarouselCaption": "Carrossel",
+      "TextGalleryColumnsCaption": "Colunas",
+      "TextAddImagesCaption": "Adicionar imagens…",
+      "TextAddImageAddressCaption": "Adicionar imagem de um endereço…",
+      "TextRemoveImageCaption": "Remover imagem",
+      "TextMoveImageBackCaption": "Mover imagem para trás",
+      "TextMoveImageForwardCaption": "Mover imagem para a frente",
+      "TextImageCaptionPlaceholder": "Legenda",
+      "TextImageDescriptionCaption": "Descrição (texto alternativo)",
+      "TextSelectedImageCaption": "Imagem selecionada",
+      "TextViewImageCaption": "Ver em tamanho real",
+      "TextPreviousImageCaption": "Imagem anterior",
+      "TextNextImageCaption": "Próxima imagem",
+      "TextCloseViewerCaption": "Fechar",
+      "TextImageAddressPrompt": "Endereço da imagem",
+      "TextGalleryEmptyCaption": "Adicione imagens à galeria"
+    }
+  }
+}

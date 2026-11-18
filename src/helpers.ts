@@ -642,10 +642,24 @@ export class Autosave {
  * state. Turn it on with the statusBar option or editor.statusBarVisible. While text is
  * selected, the counts show the selection's share.
  */
+/**
+ * Something an add-on shows in the status bar, after the counts. Called as the bar updates, with
+ * the document's plain text; returns the element to show, or null for nothing.
+ */
+export type StatusBarItem = (editor: Editor, text: string) => HTMLElement | null
+
 export class StatusBar {
+  static #items: Array<{identifier: string, item: StatusBarItem}> = []
+
+  /** Adds an item to every editor's status bar, such as the readability add-on's; one with the same identifier is replaced. */
+  static registerItem(identifier: string, item: StatusBarItem) {
+    StatusBar.#items = StatusBar.#items.filter(entry => entry.identifier != identifier).concat([{identifier, item}])
+  }
+
   #editor: Editor
   #element: HTMLElement | null = null
   #counts: HTMLElement | null = null
+  #extras: HTMLElement | null = null
   #save: HTMLElement | null = null
   #timer: ReturnType<typeof setTimeout> | null = null
 
@@ -674,8 +688,9 @@ export class StatusBar {
     this.#element = element
     element.replaceChildren()
     this.#counts = Utilities.element("span", "scv-status-counts")
+    this.#extras = Utilities.element("span", "scv-status-extras")
     this.#save = Utilities.element("span", "scv-status-save")
-    element.append(this.#counts, this.#save)
+    element.append(this.#counts, this.#extras, this.#save)
     this.update()
   }
 
@@ -685,6 +700,7 @@ export class StatusBar {
     this.#timer = null
     this.#element = null
     this.#counts = null
+    this.#extras = null
     this.#save = null
   }
 
@@ -723,6 +739,20 @@ export class StatusBar {
     }
     if (this.showReadingTime && words > 0) parts.push(Utilities.format(strings.TextReadingTimeFormat, {count: number(Math.max(1, Math.ceil(words / statistics.wordsPerMinute)))}))
     this.#counts.textContent = parts.join(" · ")
+    if (this.#extras) {
+      let extras = this.#extras
+      extras.replaceChildren()
+      StatusBar.#items.forEach(({identifier, item}) => {
+        try {
+          let content = item(editor, text)
+          if (!content) return
+          content.dataset.statusItem = identifier
+          extras.append(content)
+        } catch (error) {
+          console.error(error)
+        }
+      })
+    }
 
     let autosave = editor.autosave
     this.#save.replaceChildren()

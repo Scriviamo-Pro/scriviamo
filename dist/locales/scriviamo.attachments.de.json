@@ -1,0 +1,14 @@
+{
+  "language": "de",
+  "strings": {
+    "Editor": {
+      "TextAttachmentCaption": "Datei",
+      "TextAttachmentNameCaption": "Dateiname",
+      "TextDownloadAttachmentCaption": "Herunterladen",
+      "TextReplaceAttachmentCaption": "Ersetzen",
+      "TextAttachmentAddressPrompt": "Adresse der Datei",
+      "TextAttachmentUploadingCaption": "Wird hochgeladen …",
+      "TextAttachmentUnavailableCaption": "Diese Datei konnte nicht angehängt werden."
+    }
+  }
+}

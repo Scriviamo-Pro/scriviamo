@@ -1,0 +1,13 @@
+{
+  "language": "ru",
+  "strings": {
+    "Editor": {
+      "TextDictationCaption": "Диктовать",
+      "TextDictationListeningCaption": "Слушаю…",
+      "TextDictationUnavailableCaption": "Этот браузер не поддерживает диктовку.",
+      "TextDictationNoTextMessage": "Нажмите в тексте там, где должны быть слова, и диктуйте.",
+      "TextDictationDeniedMessage": "Микрофон недоступен. Разрешите этой странице его использовать и попробуйте снова.",
+      "TextDictationErrorMessage": "Диктовка остановлена: %error%"
+    }
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "language": "ar",
+  "strings": {
+    "Editor": {
+      "TextOutlineCaption": "المخطط التفصيلي",
+      "TextOutlineEmptyCaption": "تظهر هنا العناوين التي تضيفها.",
+      "TextOutlineMoveHint": "اسحب عنوانًا، أو اضغط Alt+أعلى أو Alt+أسفل، لنقل قسمه.",
+      "TextOutlineUntitledCaption": "عنوان بلا نص",
+      "TextOutlineCollapseCaption": "طي",
+      "TextOutlineExpandCaption": "توسيع"
+    }
+  }
+}

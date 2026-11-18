@@ -87,6 +87,18 @@ editor.statusBarVisible = false            // hides it again
 editor.statusBar.showReadingTime = false   // also showWords, showCharacters, showSaveState
 ```
 
+Add-ons and applications can add to it with `StatusBar.registerItem(identifier, item)`: `item` is
+called with the editor and its plain text as the bar updates, and returns the element to show, or
+null. The [readability](writing-aids.md#readability) add-on is one.
+
+```ts
+StatusBar.registerItem("paragraphs", (editor, text) => {
+  let element = document.createElement("span")
+  element.textContent = `${editor.statistics.paragraphs} paragraphs`
+  return element
+})
+```
+
 ## Autosave
 
 Give the editor a save function, and it saves the document a moment after the user stops

@@ -1,0 +1,13 @@
+{
+  "language": "pt-BR",
+  "strings": {
+    "Editor": {
+      "TextOutlineCaption": "Estrutura",
+      "TextOutlineEmptyCaption": "Os títulos que você adicionar aparecem aqui.",
+      "TextOutlineMoveHint": "Arraste um título, ou pressione Alt+Seta para cima ou Alt+Seta para baixo, para mover a seção dele.",
+      "TextOutlineUntitledCaption": "Título sem texto",
+      "TextOutlineCollapseCaption": "Recolher",
+      "TextOutlineExpandCaption": "Expandir"
+    }
+  }
+}

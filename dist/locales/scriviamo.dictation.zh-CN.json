@@ -1,0 +1,13 @@
+{
+  "language": "zh-CN",
+  "strings": {
+    "Editor": {
+      "TextDictationCaption": "听写",
+      "TextDictationListeningCaption": "正在听…",
+      "TextDictationUnavailableCaption": "此浏览器不支持听写。",
+      "TextDictationNoTextMessage": "请先在文字中点击要插入的位置，然后开始听写。",
+      "TextDictationDeniedMessage": "麦克风不可用。请允许此页面使用麦克风，然后重试。",
+      "TextDictationErrorMessage": "听写已停止：%error%"
+    }
+  }
+}

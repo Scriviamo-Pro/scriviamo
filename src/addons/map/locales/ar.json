@@ -1,0 +1,20 @@
+{
+  "language": "ar",
+  "strings": {
+    "Editor": {
+      "TextMapCaption": "خريطة",
+      "TextFindPlaceCaption": "البحث عن مكان…",
+      "TextFindPlacePrompt": "عنوان أو مكان أو إحداثيات",
+      "TextPlaceNotFoundMessage": "تعذّر العثور على هذا المكان.",
+      "TextMapLabelCaption": "تسمية الدبوس",
+      "TextMapLatitudeCaption": "خط العرض",
+      "TextMapLongitudeCaption": "خط الطول",
+      "TextMapZoomCaption": "التكبير",
+      "TextMapHeightCaption": "الارتفاع",
+      "TextZoomInCaption": "تكبير",
+      "TextZoomOutCaption": "تصغير",
+      "TextOpenMapCaption": "فتح في OpenStreetMap",
+      "TextShowPinCaption": "إظهار الدبوس"
+    }
+  }
+}

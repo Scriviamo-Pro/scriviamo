@@ -1,0 +1,13 @@
+{
+  "language": "es",
+  "strings": {
+    "Editor": {
+      "TextReadabilityGradeFormat": "Nivel %grade%",
+      "TextReadabilitySentenceFormat": "%count% palabras por oración",
+      "TextReadabilityLongSentencesFormat": "%count% oraciones largas",
+      "TextReadabilityOneLongSentenceCaption": "1 oración larga",
+      "TextReadabilityGradeTooltip": "El curso escolar que necesita un lector para seguir este texto con facilidad (Flesch–Kincaid).",
+      "TextReadabilityLongSentenceTooltip": "Oraciones de más de %count% palabras. Haz clic para ir a la siguiente."
+    }
+  }
+}

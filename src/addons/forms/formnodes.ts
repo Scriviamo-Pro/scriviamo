@@ -956,6 +956,8 @@ export class CheckboxNode extends FormControlNode {
     let box = Utilities.element("input", "form-check-input", {type: "checkbox", tabindex: "-1"})
     box.checked = this.checked
     box.indeterminate = this.indeterminate
+    // Screen readers name the box by its caption.
+    box.setAttribute("aria-label", this.content.text.trim() || this.strings.TextCheckboxCaption)
     widget.append(box)
     row.append(widget)
     let caption = Utilities.element("span", "form-check-label scv-check-caption")
@@ -1468,6 +1470,8 @@ export class RadioGroupNode extends DropdownNode {
       let radio = Utilities.element("input", "form-check-input", {type: "radio", tabindex: "-1", name: `scv-${this.nodeId}`})
       radio.checked = option.selected
       radio.disabled = option.disabled
+      // Screen readers name the button by its option's caption.
+      radio.setAttribute("aria-label", option.captionContent.text.trim() || String(index + 1))
       widget.append(radio)
       row.append(widget)
       let caption = Utilities.element("span", "form-check-label")

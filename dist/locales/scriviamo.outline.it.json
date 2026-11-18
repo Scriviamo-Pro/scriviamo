@@ -1,0 +1,13 @@
+{
+  "language": "it",
+  "strings": {
+    "Editor": {
+      "TextOutlineCaption": "Struttura",
+      "TextOutlineEmptyCaption": "I titoli che aggiungi compaiono qui.",
+      "TextOutlineMoveHint": "Trascina un titolo, o premi Alt+Su o Alt+Giù, per spostarne la sezione.",
+      "TextOutlineUntitledCaption": "Titolo senza testo",
+      "TextOutlineCollapseCaption": "Comprimi",
+      "TextOutlineExpandCaption": "Espandi"
+    }
+  }
+}

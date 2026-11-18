@@ -4,12 +4,22 @@
 
 /** Suites by package, under suites/. */
 const ParitySuites = {
-  base: ["base/bidi.js", "base/core.js", "base/documentload.js", "base/rendering.js", "base/forms.js", "base/localization.js", "base/nodetypes.js", "base/importexport.js", "base/importexport2.js", "base/autosave.js", "base/uploads.js", "base/headless.js"],
+  base: ["base/bidi.js", "base/core.js", "base/documentload.js", "base/rendering.js", "base/forms.js", "base/localization.js", "base/nodetypes.js", "base/importexport.js", "base/importexport2.js", "base/autosave.js", "base/uploads.js", "base/headless.js", "base/paste.js"],
   callouts: ["callouts/rendering.js", "callouts/nodetypes.js", "callouts/importexport2.js"],
   rawcontent: ["rawcontent/importexport2.js"],
   media: ["media/importexport2.js"],
   math: ["math/math.js"],
   diagrams: ["diagrams/diagrams.js"],
+  steps: ["steps/steps.js"],
+  attachments: ["attachments/attachments.js"],
+  gallery: ["gallery/gallery.js"],
+  map: ["map/map.js"],
+  dates: ["dates/dates.js"],
+  status: ["status/status.js"],
+  outline: ["outline/outline.js"],
+  readability: ["readability/readability.js"],
+  focus: ["focus/focus.js"],
+  dictation: ["dictation/dictation.js"],
   forms: ["forms/forms.js", "forms/nodetypes.js", "forms/importexport2.js"],
 }
 
@@ -34,7 +44,7 @@ function ParitySuiteList(loaded) {
 
 /** Packages that have a stylesheet. */
 const ParityStylesheets = [
-  "base", "callouts", "media", "forms", "math", "diagrams",
+  "base", "callouts", "media", "forms", "math", "diagrams", "steps", "attachments", "gallery", "map", "dates", "status", "outline", "readability", "focus", "dictation",
 ]
 
 /** Data the suites share. */

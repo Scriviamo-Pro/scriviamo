@@ -1,0 +1,88 @@
+/* The outline */
+
+.scv-outline {
+  font-size: 0.9rem;
+}
+
+.scv-outline-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.scv-outline-row {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  border-radius: 6px;
+  border-block: 2px solid transparent;
+}
+
+.scv-outline-row[draggable="true"] {
+  cursor: grab;
+}
+
+.scv-outline-row:hover {
+  background: var(--scv-accent-soft, rgba(13, 110, 253, 0.08));
+}
+
+.scv-outline-current > .scv-outline-link {
+  color: var(--scv-accent, var(--bs-primary));
+  font-weight: 600;
+}
+
+.scv-outline-drop-before {
+  border-top-color: var(--scv-accent, var(--bs-primary));
+}
+
+.scv-outline-drop-after {
+  border-bottom-color: var(--scv-accent, var(--bs-primary));
+}
+
+.scv-outline-dragging {
+  opacity: 0.5;
+}
+
+.scv-outline-toggle,
+.scv-outline-toggle-space {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--scv-muted, var(--bs-secondary-color));
+  font-size: 0.7rem;
+}
+
+.scv-outline-link {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  padding: 3px 4px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  text-align: start;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.scv-outline-level-1 {
+  font-weight: 600;
+}
+
+.scv-outline-empty,
+.scv-outline-hint {
+  padding: 8px 4px;
+  color: var(--scv-muted, var(--bs-secondary-color));
+  font-size: 0.85em;
+}
+
+.scv-outline-hint {
+  margin-top: 6px;
+  border-top: 1px solid var(--scv-border, var(--bs-border-color));
+}

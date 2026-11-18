@@ -685,12 +685,20 @@ export class ChoicePopup extends Popup {
       this.element.append(this.#search)
     }
     this.#list = Utilities.element("div", "scv-chooser-list", {role: "listbox"})
+    // A list box needs a name for screen readers: what its search is for, until label sets one.
+    if (search) this.#list.setAttribute("aria-label", search.placeholder)
     this.element.append(this.#list)
     if (search) this.setItems(search.filter(""))
   }
 
   get items(): Array<ChoiceItem> {
     return this.#items.slice()
+  }
+
+  /** What screen readers call the list, such as "Insert". */
+  set label(value: string) {
+    if (value) this.#list.setAttribute("aria-label", value)
+    else this.#list.removeAttribute("aria-label")
   }
 
   get activeIndex(): number {

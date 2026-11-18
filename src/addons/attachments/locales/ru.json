@@ -1,0 +1,14 @@
+{
+  "language": "ru",
+  "strings": {
+    "Editor": {
+      "TextAttachmentCaption": "Файл",
+      "TextAttachmentNameCaption": "Имя файла",
+      "TextDownloadAttachmentCaption": "Скачать",
+      "TextReplaceAttachmentCaption": "Заменить",
+      "TextAttachmentAddressPrompt": "Адрес файла",
+      "TextAttachmentUploadingCaption": "Загрузка…",
+      "TextAttachmentUnavailableCaption": "Не удалось прикрепить этот файл."
+    }
+  }
+}

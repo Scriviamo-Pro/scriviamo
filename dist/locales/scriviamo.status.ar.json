@@ -1,0 +1,15 @@
+{
+  "language": "ar",
+  "strings": {
+    "Editor": {
+      "TextInsertStatusCaption": "إدراج حالة",
+      "TextStatusRemoveCaption": "إزالة الحالة",
+      "TextStatusDraft": "مسودة",
+      "TextStatusInProgress": "قيد التنفيذ",
+      "TextStatusInReview": "قيد المراجعة",
+      "TextStatusApproved": "معتمد",
+      "TextStatusBlocked": "متوقف",
+      "TextStatusDone": "منجز"
+    }
+  }
+}

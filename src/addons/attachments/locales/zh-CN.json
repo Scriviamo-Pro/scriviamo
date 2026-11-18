@@ -1,0 +1,14 @@
+{
+  "language": "zh-CN",
+  "strings": {
+    "Editor": {
+      "TextAttachmentCaption": "文件",
+      "TextAttachmentNameCaption": "文件名",
+      "TextDownloadAttachmentCaption": "下载",
+      "TextReplaceAttachmentCaption": "替换",
+      "TextAttachmentAddressPrompt": "文件地址",
+      "TextAttachmentUploadingCaption": "正在上传…",
+      "TextAttachmentUnavailableCaption": "无法附加此文件。"
+    }
+  }
+}

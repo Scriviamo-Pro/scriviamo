@@ -1,0 +1,16 @@
+{
+  "language": "pt-BR",
+  "strings": {
+    "Editor": {
+      "TextStepsCaption": "Etapas",
+      "TextTimelineCaption": "Linha do tempo",
+      "TextStepsStyleCaption": "Estilo",
+      "TextAddStepCaption": "Adicionar etapa",
+      "TextRemoveStepCaption": "Remover etapa",
+      "TextMoveStepUpCaption": "Mover etapa para cima",
+      "TextMoveStepDownCaption": "Mover etapa para baixo",
+      "TextStepLabelPlaceholder": "Data ou rótulo",
+      "TextStepCaption": "Etapa"
+    }
+  }
+}

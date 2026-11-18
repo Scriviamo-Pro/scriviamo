@@ -774,3 +774,170 @@ export class MarkdownConverter {
     return text
   }
 }
+
+/** Where pasted HTML came from, when it's an app whose HTML needs cleaning up. */
+export type PasteSource = "word" | "googledocs" | null
+
+/**
+ * Cleans up HTML pasted from Microsoft Word and Google Docs, keeping its structure (headings,
+ * lists, tables, links, bold, italic, underline, strikethrough, colors and highlights) and dropping
+ * its clutter: fonts and sizes set on every run, Word's own classes, styles and markup, its lists
+ * written as paragraphs with typed bullets, and Google Docs' wrapper that would make the whole
+ * paste bold. HTML from anywhere else is returned unchanged. The editor runs this on every paste.
+ */
+export class PasteCleanup {
+  /** The app pasted HTML came from, or null. */
+  static source(html: string): PasteSource {
+    if (/id="docs-internal-guid-/.test(html)) return "googledocs"
+    if (/urn:schemas-microsoft-com:office:(word|office)|<meta[^>]+content=["']?Microsoft Word|class=["']?Mso|mso-[a-z-]+:/i.test(html)) return "word"
+    return null
+  }
+
+  static clean(html: string): string {
+    let source = PasteCleanup.source(html)
+    if (!source || typeof DOMParser == "undefined") return html
+    let parsed = new DOMParser().parseFromString(html, "text/html")
+    let body = parsed.body
+    body.querySelectorAll("style, script, meta, link, title, xml").forEach(element => element.remove())
+    if (source == "googledocs") PasteCleanup.#cleanGoogleDocs(body)
+    else PasteCleanup.#cleanWord(body)
+    PasteCleanup.#cleanStyles(body)
+    body.querySelectorAll("br.Apple-interchange-newline").forEach(element => element.remove())
+    return body.innerHTML
+  }
+
+  static #unwrap(element: Element) {
+    element.replaceWith(...Array.from(element.childNodes))
+  }
+
+  static #cleanGoogleDocs(body: HTMLElement) {
+    // The whole paste is wrapped in a <b> whose style undoes the bold.
+    body.querySelectorAll("b[id^='docs-internal-guid-']").forEach(element => PasteCleanup.#unwrap(element))
+    // Paragraphs in list items and table cells are wrapped in <p>, which would make each a block.
+    body.querySelectorAll("li > p:only-child, td > p:only-child, th > p:only-child").forEach(element => PasteCleanup.#unwrap(element))
+  }
+
+  static #cleanWord(body: HTMLElement) {
+    // Office's own elements, such as <o:p>, and empty conditional leftovers.
+    Array.from(body.querySelectorAll("*")).forEach(element => {
+      if (element.tagName.includes(":")) {
+        if (/^O:P$/i.test(element.tagName)) PasteCleanup.#unwrap(element)
+        else element.remove()
+      }
+    })
+    let comments = parsedComments(body)
+    comments.forEach(comment => comment.parentNode?.removeChild(comment))
+    // Pictures Word pastes point at files on the copier's computer, which no one else can open.
+    body.querySelectorAll("img").forEach(image => {
+      if (/^file:/i.test(image.getAttribute("src") || "")) image.remove()
+    })
+    // Word's title style is a heading.
+    body.querySelectorAll<HTMLElement>("p.MsoTitle").forEach(paragraph => PasteCleanup.#rename(paragraph, "h1"))
+    body.querySelectorAll<HTMLElement>("p.MsoSubtitle").forEach(paragraph => PasteCleanup.#rename(paragraph, "h2"))
+    PasteCleanup.#wordLists(body)
+    // Empty paragraphs, which Word uses for spacing.
+    body.querySelectorAll("p").forEach(paragraph => {
+      if ((paragraph.textContent || "").replace(/[\s\u00a0]+/g, "").length == 0 && !paragraph.querySelector("img, table, input")) paragraph.remove()
+    })
+  }
+
+  static #rename(element: HTMLElement, tag: string): HTMLElement {
+    let replacement = element.ownerDocument.createElement(tag)
+    for (let attribute of Array.from(element.attributes)) replacement.setAttribute(attribute.name, attribute.value)
+    replacement.append(...Array.from(element.childNodes))
+    element.replaceWith(replacement)
+    return replacement
+  }
+
+  /** Word writes lists as paragraphs with mso-list styles and typed bullets or numbers. */
+  static #wordLists(body: HTMLElement) {
+    let isItem = (element: Element | null): element is HTMLElement => !!element && element.tagName == "P" && /mso-list\s*:\s*l\d+/i.test(element.getAttribute("style") || "")
+    let paragraphs = Array.from(body.querySelectorAll("p")).filter(isItem)
+    let done = new Set<Element>()
+    for (let first of paragraphs) {
+      if (done.has(first)) continue
+      // A run of list paragraphs next to each other is one list.
+      let run: Array<HTMLElement> = [first]
+      let listID = (style: string) => (style.match(/mso-list\s*:\s*(l\d+)/i) || [])[1] || ""
+      let id = listID(first.getAttribute("style") || "")
+      let next = first.nextElementSibling
+      // Word numbers each list with an id, such as l0; another id starts another list.
+      while (isItem(next) && listID(next.getAttribute("style") || "") == id) {
+        run.push(next)
+        next = next.nextElementSibling
+      }
+      run.forEach(item => done.add(item))
+      let document = first.ownerDocument
+      let root: HTMLElement | null = null
+      let stack: Array<{level: number, list: HTMLElement}> = []
+      for (let paragraph of run) {
+        let style = paragraph.getAttribute("style") || ""
+        let level = Number((style.match(/level(\d+)/i) || [])[1]) || 1
+        // The typed bullet or number, in a span marked mso-list:Ignore.
+        let marker = Array.from(paragraph.querySelectorAll("span")).find(span => /mso-list\s*:\s*ignore/i.test(span.getAttribute("style") || "")) || null
+        let markerText = marker ? (marker.textContent || "").replace(/\s+/g, "") : ""
+        if (marker) marker.remove()
+        let ordered = /^(\(?[0-9]+|\(?[a-z]{1,3}|\(?[ivxlc]+)[.)]$/i.test(markerText)
+        while (stack.length > 0 && stack[stack.length - 1].level > level) stack.pop()
+        if (stack.length == 0 || stack[stack.length - 1].level < level) {
+          let list = document.createElement(ordered ? "ol" : "ul")
+          if (stack.length == 0) {
+            root = list
+          } else {
+            let parentList = stack[stack.length - 1].list
+            let lastItem = parentList.lastElementChild || parentList.appendChild(document.createElement("li"))
+            lastItem.append(list)
+          }
+          stack.push({level, list})
+        }
+        let item = document.createElement("li")
+        item.append(...Array.from(paragraph.childNodes))
+        stack[stack.length - 1].list.append(item)
+      }
+      if (root) first.before(root)
+      run.forEach(paragraph => paragraph.remove())
+    }
+  }
+
+  /**
+   * Drops the styles every run carries, keeping what formats the text: weight, slant, decoration,
+   * raised and lowered text, colors other than plain black, and backgrounds other than none.
+   */
+  static #cleanStyles(body: HTMLElement) {
+    let plain = /^(#0{3}|#0{6}|black|rgb\(0,\s*0,\s*0\)|windowtext|initial|inherit|auto)$/i
+    let none = /^(transparent|initial|inherit|white|#fff|#ffffff|rgb\(255,\s*255,\s*255\)|rgba\(0,\s*0,\s*0,\s*0\))$/i
+    body.querySelectorAll("[style]").forEach(element => {
+      let html = element as HTMLElement
+      let kept: Array<string> = []
+      let css = html.style
+      let weight = css.fontWeight
+      if (weight == "bold" || weight == "bolder" || Number(weight) >= 600) kept.push("font-weight:bold")
+      if (css.fontStyle == "italic" || css.fontStyle == "oblique") kept.push("font-style:italic")
+      let decoration = `${css.textDecorationLine || css.textDecoration}`
+      let lines = ["underline", "line-through"].filter(line => decoration.includes(line))
+      if (lines.length > 0) kept.push(`text-decoration:${lines.join(" ")}`)
+      if (css.verticalAlign == "super" || css.verticalAlign == "sub") kept.push(`vertical-align:${css.verticalAlign}`)
+      if (css.color && !plain.test(css.color.trim())) kept.push(`color:${css.color}`)
+      let background = css.backgroundColor || css.background
+      if (background && !none.test(background.trim()) && !/url\(/i.test(background)) kept.push(`background-color:${css.backgroundColor || background}`)
+      if (/^(center|right|justify)$/.test(css.textAlign) && /^(P|H[1-6]|DIV|TD|TH|LI)$/.test(html.tagName)) kept.push(`text-align:${css.textAlign}`)
+      if (kept.length > 0) html.setAttribute("style", kept.join(";"))
+      else html.removeAttribute("style")
+    })
+    body.querySelectorAll("[class]").forEach(element => {
+      if (/^(Mso|xl\d|Apple-)/.test(element.getAttribute("class") || "")) element.removeAttribute("class")
+    })
+    // Spans left with nothing to say are just their text.
+    Array.from(body.querySelectorAll("span, font")).forEach(element => {
+      if (element.attributes.length == 0 || (element.tagName == "FONT" && !element.getAttribute("color"))) PasteCleanup.#unwrap(element)
+    })
+  }
+}
+
+/** The comment nodes inside an element, such as Word's conditional comments. */
+function parsedComments(root: HTMLElement): Array<globalThis.Node> {
+  let result: Array<globalThis.Node> = []
+  let walker = root.ownerDocument.createTreeWalker(root, 128)
+  while (walker.nextNode()) result.push(walker.currentNode)
+  return result
+}

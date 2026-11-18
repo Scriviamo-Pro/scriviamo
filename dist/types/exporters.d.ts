@@ -39,8 +39,15 @@ export declare class Exporter {
     mimeType: string;
     constructor(identifier: string, format?: ExportFormats);
     export(editor: any): string;
+    /**
+     * The export as a file's contents. Formats that make binary files, such as Word documents,
+     * override this rather than export; text formats get their text.
+     */
+    exportBlob(editor: any): Promise<Blob>;
     /** Offers the export to the user as a download named fileName plus the extension. */
     exportToFile(editor: any, fileName?: string): boolean;
+    /** Saves a file through the browser. */
+    static download(blob: Blob, fileName: string): void;
 }
 /**
  * The export formats an editor offers, keyed by identifier without regard to case.

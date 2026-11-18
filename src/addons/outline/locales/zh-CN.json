@@ -1,0 +1,13 @@
+{
+  "language": "zh-CN",
+  "strings": {
+    "Editor": {
+      "TextOutlineCaption": "大纲",
+      "TextOutlineEmptyCaption": "您添加的标题会显示在这里。",
+      "TextOutlineMoveHint": "拖动标题，或按 Alt+上箭头 或 Alt+下箭头，即可移动其所在部分。",
+      "TextOutlineUntitledCaption": "无文字的标题",
+      "TextOutlineCollapseCaption": "折叠",
+      "TextOutlineExpandCaption": "展开"
+    }
+  }
+}

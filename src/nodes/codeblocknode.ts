@@ -103,6 +103,10 @@ export class CodeBlockNode extends TextNode {
     header.append(copy)
 
     let pre = Utilities.element("pre", "scv-code-body")
+    // Long lines scroll sideways; a reader without a mouse reaches the scrolling with the keyboard.
+    pre.tabIndex = 0
+    pre.setAttribute("role", "region")
+    pre.setAttribute("aria-label", this.typeName)
     frame.append(pre)
     let code = document.createElement("code")
     pre.append(code)

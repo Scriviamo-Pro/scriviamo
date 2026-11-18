@@ -1,0 +1,14 @@
+{
+  "language": "fr",
+  "strings": {
+    "Editor": {
+      "TextAttachmentCaption": "Fichier",
+      "TextAttachmentNameCaption": "Nom du fichier",
+      "TextDownloadAttachmentCaption": "Télécharger",
+      "TextReplaceAttachmentCaption": "Remplacer",
+      "TextAttachmentAddressPrompt": "Adresse du fichier",
+      "TextAttachmentUploadingCaption": "Envoi en cours…",
+      "TextAttachmentUnavailableCaption": "Ce fichier n’a pas pu être joint."
+    }
+  }
+}

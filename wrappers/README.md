@@ -7,6 +7,7 @@ Components that put a Scriviamo editor into an app built with a framework.
 | [react/](react/README.md) | `scriviamo-react` | React 18 and later |
 | [vue/](vue/README.md) | `scriviamo-vue` | Vue 3.3 and later |
 | [angular/](angular/README.md) | `scriviamo-angular` | Angular 17 and later |
+| [element/](element/README.md) | `scriviamo-element` | Any framework, or none: a `<scriviamo-editor>` HTML element |
 
 Every wrapper offers the same things:
 
@@ -55,10 +56,11 @@ uses.
 ## Layout
 
 ```
-shared/editorbinding.ts   keeps an editor in step with a component's settings; all three wrappers use it
+shared/editorbinding.ts   keeps an editor in step with a component's settings; every wrapper uses it
 sync-shared.mjs           copies the binding into each package before it builds, so each builds on its own
 tsconfig.base.json        compiler settings the packages share
-react/, vue/, angular/    one package each
+react/, vue/, angular/, element/
+                          one package each
 smoke/                    browser smoke tests for the built packages
 ```
 

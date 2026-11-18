@@ -940,6 +940,17 @@
   user-select: none;
 }
 
+.scv-status-extras {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px 12px;
+}
+
+.scv-status-extras:empty {
+  display: none;
+}
+
 .scv-status-save {
   display: inline-flex;
   align-items: center;

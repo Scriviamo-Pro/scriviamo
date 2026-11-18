@@ -102,6 +102,18 @@ export interface EditorExtension {
     insertionChoices?(editor: Editor): Array<InsertionChoice>;
 }
 /**
+ * A panel about the document shown beside an editor, such as the outline add-on's. Register one
+ * with Editor.registerPanel; the inspector add-on shows each as a tab, and an application can
+ * place one anywhere with build.
+ */
+export interface EditorPanel {
+    identifier: string;
+    /** The panel's name, as its tab shows it. */
+    caption(editor: Editor): string;
+    /** Fills container for an editor, and keeps it up to date until the function it returns is called. */
+    build(container: HTMLElement, editor: Editor): () => void;
+}
+/**
  * A connection that shares the document with other users, such as the collaboration
  * add-on's client. The editor reports local changes to it and draws other users'
  * presence through it.
@@ -141,6 +153,10 @@ export declare class Editor extends EventTarget {
     /** Registers an extension for every editor created afterwards. */
     static registerExtension(extension: EditorExtension): void;
     static extensions(): Array<EditorExtension>;
+    /** Registers a panel about the document, such as an outline; one with the same identifier is replaced. */
+    static registerPanel(panel: EditorPanel): void;
+    /** The registered panels, in the order they were registered. */
+    static panels(): Array<EditorPanel>;
     /** A static member a node type declares itself, rather than inherits from the type it extends. */
     static ownStatic(type: NodeClass, name: string): any;
     id: string;

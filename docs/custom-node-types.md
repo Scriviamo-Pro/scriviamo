@@ -104,7 +104,7 @@ To add a type to one editor only, use `editor.nodeTypes.add(ProgressNode)` inste
 | `exportStyles(sheet, editor)` | Adds CSS rules to the HTML export stylesheet; see [Exporting](#exporting) |
 | `markdownShortcuts` | Markdown typed at the start of a paragraph that turns it into this type; see below |
 | `blockKinds(strings, compact)` | Entries this type adds to the block type menu, as `[identifier, caption, icon]` |
-| `droppedFileTypes`, `importDroppedFile(file, editor)` | Files dropped or pasted onto the editor that this type makes nodes from |
+| `droppedFileTypes`, `importDroppedFile(file, editor)` | Files dropped or pasted onto the editor that this type makes nodes from: MIME types such as `"image/*"`, extensions such as `".csv"`, or `"*"` for any file. `droppedFileImportPriority` decides between types that take the same file |
 
 ## Drawing
 
@@ -266,3 +266,17 @@ are an extension, which adds the list buttons and the list keyboard shortcuts.
 | `activateToolbarItem(editor, identifier, menuItem)` | Performs a tool; return true when handled |
 | `updateToolbarState(editor, set)` | Sets each tool's enabled and active state for the current selection |
 | `handleCommandKey(editor, event)` | Handles a key pressed with Ctrl or Command; return true when handled |
+
+## Panels
+
+A panel shows something about the document beside the editor, such as the outline add-on's
+heading tree. Register one with `Editor.registerPanel(panel)`; the inspector add-on shows each as
+a tab, and an application can place one anywhere by calling its `build`.
+
+| Member | Meaning |
+|---|---|
+| `identifier` | The panel's name in code |
+| `caption(editor)` | Its name as its tab shows it, in the editor's language |
+| `build(container, editor)` | Fills an element, keeps it up to date, and returns a function that stops |
+
+The status bar takes items the same way; see [The status bar](undo-search-statistics.md#the-status-bar).

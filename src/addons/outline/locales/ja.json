@@ -1,0 +1,13 @@
+{
+  "language": "ja",
+  "strings": {
+    "Editor": {
+      "TextOutlineCaption": "アウトライン",
+      "TextOutlineEmptyCaption": "追加した見出しがここに表示されます。",
+      "TextOutlineMoveHint": "見出しをドラッグするか、Alt+上矢印または Alt+下矢印を押すと、そのセクションを移動できます。",
+      "TextOutlineUntitledCaption": "テキストのない見出し",
+      "TextOutlineCollapseCaption": "折りたたむ",
+      "TextOutlineExpandCaption": "展開"
+    }
+  }
+}

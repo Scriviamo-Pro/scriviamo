@@ -1,0 +1,26 @@
+{
+  "language": "ar",
+  "strings": {
+    "Editor": {
+      "TextGalleryCaption": "معرض صور",
+      "TextGalleryLayoutCaption": "التخطيط",
+      "TextGalleryGridCaption": "شبكة",
+      "TextGalleryCarouselCaption": "عرض دوّار",
+      "TextGalleryColumnsCaption": "الأعمدة",
+      "TextAddImagesCaption": "إضافة صور…",
+      "TextAddImageAddressCaption": "إضافة صورة من عنوان…",
+      "TextRemoveImageCaption": "إزالة الصورة",
+      "TextMoveImageBackCaption": "نقل الصورة للخلف",
+      "TextMoveImageForwardCaption": "نقل الصورة للأمام",
+      "TextImageCaptionPlaceholder": "تعليق",
+      "TextImageDescriptionCaption": "الوصف (نص بديل)",
+      "TextSelectedImageCaption": "الصورة المحددة",
+      "TextViewImageCaption": "عرض بالحجم الكامل",
+      "TextPreviousImageCaption": "الصورة السابقة",
+      "TextNextImageCaption": "الصورة التالية",
+      "TextCloseViewerCaption": "إغلاق",
+      "TextImageAddressPrompt": "عنوان الصورة",
+      "TextGalleryEmptyCaption": "أضف صورًا إلى المعرض"
+    }
+  }
+}

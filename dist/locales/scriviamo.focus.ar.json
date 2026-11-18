@@ -1,0 +1,10 @@
+{
+  "language": "ar",
+  "strings": {
+    "Editor": {
+      "TextFocusModeCaption": "وضع التركيز",
+      "TextFocusModeOnCaption": "التركيز على الكتلة الحالية",
+      "TextTypewriterScrollingCaption": "تمرير الآلة الكاتبة"
+    }
+  }
+}

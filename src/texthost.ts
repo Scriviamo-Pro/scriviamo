@@ -128,6 +128,9 @@ export class TextHost {
           let widget = Utilities.element("span", "scv-widget scv-check", {contenteditable: "false"})
           let box = Utilities.element("input", "form-check-input", {type: "checkbox", tabindex: "-1"})
           box.checked = checked
+          // Screen readers name the box by its item.
+          let label = this.rich.text.substring(paragraph.start, paragraph.end).replace(/[\u2028\u2029\n]+/g, " ").trim()
+          box.setAttribute("aria-label", label.length > 0 ? label.substring(0, 120) : this.node.strings.TextChecklistCaption)
           widget.append(box)
           item.append(widget)
         }
@@ -448,8 +451,22 @@ export class TextHost {
     switch (element.tagName) {
       case "B": case "STRONG": style.bold = true; applied = true; break
       case "I": case "EM": case "CITE": case "DFN": case "VAR": style.italic = true; applied = true; break
-      case "U": case "INS": style.underline = true; applied = true; break
-      case "S": case "STRIKE": case "DEL": style.strikethrough = true; applied = true; break
+      case "U": style.underline = true; applied = true; break
+      case "S": case "STRIKE": style.strikethrough = true; applied = true; break
+      // A tracked change, as exported; other <ins> and <del> are underlined and struck through.
+      case "INS": case "DEL":
+        if (element.hasAttribute("data-scriviamo-change")) {
+          style.change = element.tagName == "INS" ? "insert" : "delete"
+          style.changeID = element.getAttribute("data-scriviamo-change") || ""
+          style.changeAuthor = element.getAttribute("data-scriviamo-author") || ""
+          style.changeTime = element.getAttribute("datetime") || ""
+        } else if (element.tagName == "INS") {
+          style.underline = true
+        } else {
+          style.strikethrough = true
+        }
+        applied = true
+        break
       case "CODE": case "TT": case "SAMP": style.code = true; applied = true; break
       case "KBD": style.keyboard = true; applied = true; break
       case "MARK": style.highlight = true; applied = true; break

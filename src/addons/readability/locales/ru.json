@@ -1,0 +1,13 @@
+{
+  "language": "ru",
+  "strings": {
+    "Editor": {
+      "TextReadabilityGradeFormat": "Класс %grade%",
+      "TextReadabilitySentenceFormat": "%count% слов в предложении",
+      "TextReadabilityLongSentencesFormat": "Длинных предложений: %count%",
+      "TextReadabilityOneLongSentenceCaption": "1 длинное предложение",
+      "TextReadabilityGradeTooltip": "Школьный класс, с которого этот текст читается легко (Флеш–Кинкейд).",
+      "TextReadabilityLongSentenceTooltip": "Предложения длиннее %count% слов. Нажмите, чтобы перейти к следующему."
+    }
+  }
+}

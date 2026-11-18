@@ -1,0 +1,13 @@
+{
+  "language": "fr",
+  "strings": {
+    "Editor": {
+      "TextDictationCaption": "Dicter",
+      "TextDictationListeningCaption": "À l’écoute…",
+      "TextDictationUnavailableCaption": "Ce navigateur ne permet pas la dictée.",
+      "TextDictationNoTextMessage": "Cliquez dans le texte, là où les mots doivent aller, puis dictez.",
+      "TextDictationDeniedMessage": "Le micro n’est pas disponible. Autorisez cette page à l’utiliser, puis réessayez.",
+      "TextDictationErrorMessage": "La dictée s’est arrêtée : %error%"
+    }
+  }
+}

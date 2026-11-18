@@ -1,4 +1,4 @@
-import {Alignments, Annotation, AnnotationHandler, Annotations, Autosave, AutosaveFunction, BackgroundImage, BlockShortcut, ChoiceItem, ChoicePopup, CodeBlockNode, CodePoints, Colors, CurrentDocumentVersion, DefaultFontSize, Dialog, DialogField, Directions, DocumentColor, DocumentStyle, Exporter, Exporters, ExportFormats, FileUploader, FileUploadKind, FontOptions, Formatting, FormattingStyles, HeadingNode, History, HTMLImporter, InsertionChoice, InsertionChooser, InspectorDefaults, InspectorSection, LineBreak, MarkdownConverter, MediaUI, Node, NodeClass, NodeSelection, NodeTypes, Notification, NotificationTypes, ParagraphBreak, Popup, PopupMenu, RichText, Search, SelectionState, Statistics, StatusBar, Strings, Stylesheet, SuggestionProviders, Suggestions, TableNode, TableSizePicker, TextHost, TextHostModes, TextNode, TextStyle, ThemeColors, ToolbarDisplayModes, ToolbarItem, ToolbarItemKinds, ToolbarItems, ToolbarMenuItem, ToolbarView, UnknownNode, Utilities} from "./internal"
+import {Alignments, Annotation, AnnotationHandler, Annotations, Autosave, AutosaveFunction, BackgroundImage, BlockShortcut, ChoiceItem, ChoicePopup, CodeBlockNode, CodePoints, Colors, CurrentDocumentVersion, DefaultFontSize, Dialog, DialogField, Directions, DocumentColor, DocumentStyle, Exporter, Exporters, ExportFormats, FileUploader, FileUploadKind, FontOptions, Formatting, FormattingStyles, HeadingNode, History, HTMLImporter, InsertionChoice, InsertionChooser, InspectorDefaults, InspectorSection, LineBreak, MarkdownConverter, MediaUI, Node, NodeClass, NodeSelection, NodeTypes, Notification, NotificationTypes, ParagraphBreak, PasteCleanup, Popup, PopupMenu, RichText, Search, SelectionState, Statistics, StatusBar, Strings, Stylesheet, SuggestionProviders, Suggestions, TableNode, TableSizePicker, TextHost, TextHostModes, TextNode, TextStyle, ThemeColors, ToolbarDisplayModes, ToolbarItem, ToolbarItemKinds, ToolbarItems, ToolbarMenuItem, ToolbarView, UnknownNode, Utilities} from "./internal"
 
 export enum ValidationSeverities {
   warning = 0,
@@ -113,6 +113,19 @@ export interface EditorExtension {
 }
 
 /**
+ * A panel about the document shown beside an editor, such as the outline add-on's. Register one
+ * with Editor.registerPanel; the inspector add-on shows each as a tab, and an application can
+ * place one anywhere with build.
+ */
+export interface EditorPanel {
+  identifier: string
+  /** The panel's name, as its tab shows it. */
+  caption(editor: Editor): string
+  /** Fills container for an editor, and keeps it up to date until the function it returns is called. */
+  build(container: HTMLElement, editor: Editor): () => void
+}
+
+/**
  * A connection that shares the document with other users, such as the collaboration
  * add-on's client. The editor reports local changes to it and draws other users'
  * presence through it.
@@ -141,6 +154,7 @@ export interface CollaborationConnection {
 export class Editor extends EventTarget {
   static #nodeTypeRegistry: Array<{type: NodeClass, order: number}> = []
   static #extensions: Array<EditorExtension> = []
+  static #panels: Array<EditorPanel> = []
 
   /**
    * Registers a node type for every editor created afterwards. order places it in
@@ -166,6 +180,16 @@ export class Editor extends EventTarget {
 
   static extensions(): Array<EditorExtension> {
     return Editor.#extensions.slice()
+  }
+
+  /** Registers a panel about the document, such as an outline; one with the same identifier is replaced. */
+  static registerPanel(panel: EditorPanel) {
+    Editor.#panels = Editor.#panels.filter(item => item.identifier != panel.identifier).concat([panel])
+  }
+
+  /** The registered panels, in the order they were registered. */
+  static panels(): Array<EditorPanel> {
+    return Editor.#panels.slice()
   }
 
   /** A static member a node type declares itself, rather than inherits from the type it extends. */
@@ -2799,6 +2823,7 @@ export class Editor extends EventTarget {
     let popup = this.#suggestionPopup
     if (!popup) {
       popup = new ChoicePopup("scv-suggestions", item => this.#commitSuggestion(item.value))
+      popup.label = this.strings.TextSuggestionsCaption
       popup.tabChooses = true
       popup.anchorProvider = () => {
         let state = this.#suggestionState
@@ -3195,6 +3220,8 @@ export class Editor extends EventTarget {
       let accepted: Array<string> = (type as any).droppedFileTypes || []
       let matches = accepted.some(pattern => {
         pattern = pattern.toLowerCase()
+        // "*" takes any file, for a type such as attachments that's the fallback for the rest.
+        if (pattern == "*") return true
         if (pattern.startsWith(".")) return name.endsWith(pattern)
         if (pattern.endsWith("/*")) return mime.startsWith(pattern.substring(0, pattern.length - 1))
         return mime == pattern
@@ -3381,7 +3408,8 @@ export class Editor extends EventTarget {
     }
 
     if (data.html.trim().length > 0) {
-      let nodes = this.importer.import(data.html)
+      // Word's and Google Docs' HTML, without their clutter.
+      let nodes = this.importer.import(PasteCleanup.clean(data.html))
       if (nodes.length == 0 && data.text.length == 0) return
       if (nodes.length > 0) {
         let single = nodes.length == 1 && nodes[0].constructor === TextNode

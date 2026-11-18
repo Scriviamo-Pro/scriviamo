@@ -173,8 +173,15 @@ export declare class Autosave {
  * state. Turn it on with the statusBar option or editor.statusBarVisible. While text is
  * selected, the counts show the selection's share.
  */
+/**
+ * Something an add-on shows in the status bar, after the counts. Called as the bar updates, with
+ * the document's plain text; returns the element to show, or null for nothing.
+ */
+export type StatusBarItem = (editor: Editor, text: string) => HTMLElement | null;
 export declare class StatusBar {
     #private;
+    /** Adds an item to every editor's status bar, such as the readability add-on's; one with the same identifier is replaced. */
+    static registerItem(identifier: string, item: StatusBarItem): void;
     showWords: boolean;
     showCharacters: boolean;
     showReadingTime: boolean;

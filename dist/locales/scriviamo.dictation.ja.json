@@ -1,0 +1,13 @@
+{
+  "language": "ja",
+  "strings": {
+    "Editor": {
+      "TextDictationCaption": "音声入力",
+      "TextDictationListeningCaption": "聞き取り中…",
+      "TextDictationUnavailableCaption": "このブラウザでは音声入力を使えません。",
+      "TextDictationNoTextMessage": "言葉を入れたい位置のテキストをクリックしてから話してください。",
+      "TextDictationDeniedMessage": "マイクを使用できません。このページにマイクの使用を許可してから、もう一度お試しください。",
+      "TextDictationErrorMessage": "音声入力が停止しました: %error%"
+    }
+  }
+}

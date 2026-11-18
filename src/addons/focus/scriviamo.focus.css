@@ -1,0 +1,23 @@
+/* Focus mode */
+
+.scv-focus-mode .scv-document > .scv-node {
+  opacity: 0.3;
+  transition: opacity 0.25s ease;
+}
+
+.scv-focus-mode .scv-document > .scv-node.scv-focus-current,
+.scv-focus-mode .scv-document > .scv-node:hover {
+  opacity: 1;
+}
+
+/* Room to bring the first and last lines to the typewriter's height. */
+.scv-typewriter .scv-document {
+  padding-top: 35vh;
+  padding-bottom: 60vh;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scv-focus-mode .scv-document > .scv-node {
+    transition: none;
+  }
+}

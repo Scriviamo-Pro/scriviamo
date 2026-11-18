@@ -1,0 +1,13 @@
+{
+  "language": "de",
+  "strings": {
+    "Editor": {
+      "TextOutlineCaption": "Gliederung",
+      "TextOutlineEmptyCaption": "Überschriften, die Sie hinzufügen, erscheinen hier.",
+      "TextOutlineMoveHint": "Ziehen Sie eine Überschrift oder drücken Sie Alt+Pfeil nach oben oder unten, um ihren Abschnitt zu verschieben.",
+      "TextOutlineUntitledCaption": "Überschrift ohne Text",
+      "TextOutlineCollapseCaption": "Einklappen",
+      "TextOutlineExpandCaption": "Ausklappen"
+    }
+  }
+}

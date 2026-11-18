@@ -1,0 +1,20 @@
+{
+  "language": "ru",
+  "strings": {
+    "Editor": {
+      "TextMapCaption": "Карта",
+      "TextFindPlaceCaption": "Найти место…",
+      "TextFindPlacePrompt": "Адрес, место или координаты",
+      "TextPlaceNotFoundMessage": "Это место не найдено.",
+      "TextMapLabelCaption": "Подпись метки",
+      "TextMapLatitudeCaption": "Широта",
+      "TextMapLongitudeCaption": "Долгота",
+      "TextMapZoomCaption": "Масштаб",
+      "TextMapHeightCaption": "Высота",
+      "TextZoomInCaption": "Увеличить",
+      "TextZoomOutCaption": "Уменьшить",
+      "TextOpenMapCaption": "Открыть в OpenStreetMap",
+      "TextShowPinCaption": "Показывать метку"
+    }
+  }
+}

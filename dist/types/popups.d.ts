@@ -157,6 +157,8 @@ export declare class ChoicePopup extends Popup {
         filter: (query: string) => Array<ChoiceItem>;
     } | null);
     get items(): Array<ChoiceItem>;
+    /** What screen readers call the list, such as "Insert". */
+    set label(value: string);
     get activeIndex(): number;
     /**
      * Whether the search field shows, for a list made with a search filter. Without it, the list

@@ -1,0 +1,10 @@
+{
+  "language": "it",
+  "strings": {
+    "Editor": {
+      "TextFocusModeCaption": "Modalità concentrazione",
+      "TextFocusModeOnCaption": "Evidenzia il blocco attuale",
+      "TextTypewriterScrollingCaption": "Scorrimento a macchina da scrivere"
+    }
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "language": "ja",
+  "strings": {
+    "Editor": {
+      "TextMapCaption": "地図",
+      "TextFindPlaceCaption": "場所を検索…",
+      "TextFindPlacePrompt": "住所、場所、または座標",
+      "TextPlaceNotFoundMessage": "その場所が見つかりませんでした。",
+      "TextMapLabelCaption": "ピンのラベル",
+      "TextMapLatitudeCaption": "緯度",
+      "TextMapLongitudeCaption": "経度",
+      "TextMapZoomCaption": "ズーム",
+      "TextMapHeightCaption": "高さ",
+      "TextZoomInCaption": "拡大",
+      "TextZoomOutCaption": "縮小",
+      "TextOpenMapCaption": "OpenStreetMap で開く",
+      "TextShowPinCaption": "ピンを表示"
+    }
+  }
+}

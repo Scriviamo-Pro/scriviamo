@@ -1,0 +1,16 @@
+{
+  "language": "ar",
+  "strings": {
+    "Editor": {
+      "TextStepsCaption": "خطوات",
+      "TextTimelineCaption": "مخطط زمني",
+      "TextStepsStyleCaption": "النمط",
+      "TextAddStepCaption": "إضافة خطوة",
+      "TextRemoveStepCaption": "إزالة الخطوة",
+      "TextMoveStepUpCaption": "نقل الخطوة لأعلى",
+      "TextMoveStepDownCaption": "نقل الخطوة لأسفل",
+      "TextStepLabelPlaceholder": "تاريخ أو تسمية",
+      "TextStepCaption": "خطوة"
+    }
+  }
+}

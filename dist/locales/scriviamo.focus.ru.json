@@ -1,0 +1,10 @@
+{
+  "language": "ru",
+  "strings": {
+    "Editor": {
+      "TextFocusModeCaption": "Режим фокуса",
+      "TextFocusModeOnCaption": "Выделять текущий блок",
+      "TextTypewriterScrollingCaption": "Прокрутка как на пишущей машинке"
+    }
+  }
+}

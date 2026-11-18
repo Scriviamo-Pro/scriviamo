@@ -1,0 +1,16 @@
+{
+  "language": "ko",
+  "strings": {
+    "Editor": {
+      "TextStepsCaption": "단계",
+      "TextTimelineCaption": "타임라인",
+      "TextStepsStyleCaption": "스타일",
+      "TextAddStepCaption": "단계 추가",
+      "TextRemoveStepCaption": "단계 삭제",
+      "TextMoveStepUpCaption": "단계를 위로 이동",
+      "TextMoveStepDownCaption": "단계를 아래로 이동",
+      "TextStepLabelPlaceholder": "날짜 또는 레이블",
+      "TextStepCaption": "단계"
+    }
+  }
+}

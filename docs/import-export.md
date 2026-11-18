@@ -64,6 +64,20 @@ is exported as inline HTML.
 let text = editor.toPlainText()
 ```
 
+## Pasting from Word and Google Docs
+
+Pasting from Microsoft Word or Google Docs keeps the structure, headings, lists, tables, links,
+bold, italic, underline, strikethrough, colors and highlights, and drops what those apps add to
+every run of text: fonts and sizes, Word's own styles and markup, and the wrapper Google Docs puts
+around a paste. Word's lists, which it writes as paragraphs with typed bullets and numbers, become
+real lists, nested as they were; its Title and Subtitle styles become headings; and pictures that
+point to files on the copier's computer, which no one else could open, are left out. HTML from
+anywhere else is pasted as it is.
+
+`PasteCleanup.clean(html)` is the cleanup, for HTML from elsewhere, such as an application's own
+import; `PasteCleanup.source(html)` says whether HTML came from Word (`"word"`), Google Docs
+(`"googledocs"`), or neither (null).
+
 ## Files and uploads
 
 Pictures, audio, video and background images that people choose, drop or paste are embedded in
@@ -136,6 +150,11 @@ class OutlineExporter extends Exporter {
 editor.exporters.add(new OutlineExporter())
 editor.exportToFile("outline")
 ```
+
+A format that makes a binary file, such as a Word document, overrides `exportBlob(editor)`, which
+resolves to the file, instead of `export`; `exportToFile` saves it once it's made. For text
+formats, `exportBlob` is the text as a file. `Exporter.download(blob, fileName)` saves any file
+through the browser.
 
 ## The export stylesheet
 

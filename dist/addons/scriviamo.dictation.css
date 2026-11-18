@@ -1,0 +1,47 @@
+/* Dictation */
+
+.scv-dictation-bubble {
+  position: absolute;
+  inset-inline-start: 50%;
+  bottom: 40px;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: min(520px, calc(100% - 32px));
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: rgba(17, 19, 24, 0.88);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+  color: #fff;
+  font-size: 0.9rem;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+[dir="rtl"] .scv-dictation-bubble {
+  transform: translateX(50%);
+}
+
+.scv-dictation-words {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.scv-dictation-dot {
+  flex-shrink: 0;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #ff4f6d;
+  animation: scv-dictation-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes scv-dictation-pulse {
+  50% { opacity: 0.35; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scv-dictation-dot { animation: none; }
+}

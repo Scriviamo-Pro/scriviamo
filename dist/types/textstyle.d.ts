@@ -75,6 +75,17 @@ export declare class TextStyle {
     suggestionTextColor: DocumentColor;
     textColor: DocumentColor;
     underline: boolean;
+    /**
+     * A tracked change: "insert" for text suggested as added, "delete" for text suggested as removed,
+     * or "" for neither. The track changes add-on makes and resolves them; any editor shows them.
+     */
+    change: string;
+    /** The tracked change's identifier, shared by the text one edit added or removed. */
+    changeID: string;
+    /** Who suggested the change. */
+    changeAuthor: string;
+    /** When the change was suggested, as an ISO date and time. */
+    changeTime: string;
     static get defaults(): TextStyle;
     static fromJSON(data: any): TextStyle;
     /** Applies the names present in data, keeping current values for missing names. */
@@ -92,6 +103,8 @@ export declare class TextStyle {
     sameInlineFormat(other: TextStyle): boolean;
     /** CSS used while editing. Default colors are left out so the theme applies. */
     editorCSS(): string;
+    /** How a tracked change looks: added text green and underlined, removed text red and struck through. */
+    changeCSS(): Array<string>;
     /** CSS written into exported HTML. */
     htmlCSS(): string;
 }

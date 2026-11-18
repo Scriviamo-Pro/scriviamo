@@ -1,0 +1,12 @@
+{
+  "language": "pt-BR",
+  "strings": {
+    "Editor": {
+      "TextInsertDateCaption": "Inserir data",
+      "TextDateChipCaption": "Data",
+      "TextDateTodayCaption": "Hoje",
+      "TextDateTomorrowCaption": "Amanhã",
+      "TextDateRemoveCaption": "Remover"
+    }
+  }
+}

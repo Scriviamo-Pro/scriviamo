@@ -112,9 +112,20 @@ export class TextStyle {
   suggestionTextColor: DocumentColor = Colors.make(0x1E, 0x40, 0xAF)
   textColor: DocumentColor = Colors.empty
   underline: boolean = false
+  /**
+   * A tracked change: "insert" for text suggested as added, "delete" for text suggested as removed,
+   * or "" for neither. The track changes add-on makes and resolves them; any editor shows them.
+   */
+  change: string = ""
+  /** The tracked change's identifier, shared by the text one edit added or removed. */
+  changeID: string = ""
+  /** Who suggested the change. */
+  changeAuthor: string = ""
+  /** When the change was suggested, as an ISO date and time. */
+  changeTime: string = ""
 
   static readonly #booleanNames: Array<string> = ["bold", "code", "hasBackgroundColor", "hasLinkColor", "highlight", "italic", "keyboard", "strikethrough", "subscript", "superscript", "underline"]
-  static readonly #stringNames: Array<string> = ["fontName", "linkTarget", "linkTitle", "linkURL", "suggestionIdentifier", "suggestionProviderIdentifier"]
+  static readonly #stringNames: Array<string> = ["change", "changeAuthor", "changeID", "changeTime", "fontName", "linkTarget", "linkTitle", "linkURL", "suggestionIdentifier", "suggestionProviderIdentifier"]
   static readonly #colorNames: Array<string> = ["backgroundColor", "linkColor", "suggestionBackgroundColor", "suggestionBorderColor", "suggestionTextColor", "textColor"]
 
   static #defaults: TextStyle | null = null
@@ -212,10 +223,18 @@ export class TextStyle {
       declarations.push("padding:1px 3px")
     }
     let decorations: Array<string> = []
-    if (this.underline) decorations.push("underline")
-    if (this.strikethrough) decorations.push("line-through")
+    if (this.underline || this.change == "insert") decorations.push("underline")
+    if (this.strikethrough || this.change == "delete") decorations.push("line-through")
     if (decorations.length > 0) declarations.push(`text-decoration:${decorations.join(" ")}`)
+    declarations.push(...this.changeCSS())
     return declarations.join(";")
+  }
+
+  /** How a tracked change looks: added text green and underlined, removed text red and struck through. */
+  changeCSS(): Array<string> {
+    if (this.change == "insert") return ["text-decoration-color:#1fa774", "background-color:rgba(31,167,116,0.14)"]
+    if (this.change == "delete") return ["text-decoration-color:#e03131", "color:#c92a2a", "background-color:rgba(224,49,49,0.10)"]
+    return []
   }
 
   /** CSS written into exported HTML. */

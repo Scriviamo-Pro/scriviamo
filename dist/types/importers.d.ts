@@ -78,3 +78,18 @@ export declare class MarkdownConverter {
     /** Converts inline Markdown into HTML. */
     static inline(value: string): string;
 }
+/** Where pasted HTML came from, when it's an app whose HTML needs cleaning up. */
+export type PasteSource = "word" | "googledocs" | null;
+/**
+ * Cleans up HTML pasted from Microsoft Word and Google Docs, keeping its structure (headings,
+ * lists, tables, links, bold, italic, underline, strikethrough, colors and highlights) and dropping
+ * its clutter: fonts and sizes set on every run, Word's own classes, styles and markup, its lists
+ * written as paragraphs with typed bullets, and Google Docs' wrapper that would make the whole
+ * paste bold. HTML from anywhere else is returned unchanged. The editor runs this on every paste.
+ */
+export declare class PasteCleanup {
+    #private;
+    /** The app pasted HTML came from, or null. */
+    static source(html: string): PasteSource;
+    static clean(html: string): string;
+}

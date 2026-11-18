@@ -1,0 +1,12 @@
+{
+  "language": "ru",
+  "strings": {
+    "Editor": {
+      "TextInsertDateCaption": "Вставить дату",
+      "TextDateChipCaption": "Дата",
+      "TextDateTodayCaption": "Сегодня",
+      "TextDateTomorrowCaption": "Завтра",
+      "TextDateRemoveCaption": "Удалить"
+    }
+  }
+}

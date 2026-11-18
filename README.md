@@ -24,7 +24,7 @@ This repository is the free edition, MIT licensed.
 - Localization of all interface text, including add-ons', with locale packs for ten languages: Arabic, Chinese, French, German, Italian, Japanese, Korean, Portuguese, Russian and Spanish
 - Your own node types, toolbar items and export formats
 - Rendering saved documents to HTML, Markdown or text on a server, with no browser
-- Components for React, Vue and Angular, and Next.js and Nuxt starter apps
+- Components for React, Vue and Angular, a web component for everything else, and Next.js and Nuxt starter apps
 
 ## Packages
 
@@ -39,6 +39,16 @@ Scriviamo is a base package plus add-ons, all ES modules.
 | `forms` | Forms and form controls |
 | `math` | Formulas written in LaTeX, drawn with KaTeX, as blocks or inside text |
 | `diagrams` | Diagrams written in Mermaid |
+| `steps` | Numbered steps and timelines |
+| `attachments` | File attachments with a download button |
+| `gallery` | Image galleries, as a grid or a carousel |
+| `map` | Maps of a place, with a pin |
+| `dates` | Dates in text, in the reader's language |
+| `status` | Status pills in text |
+| `outline` | A heading tree for going to and moving sections |
+| `focus` | Focus mode and typewriter scrolling |
+| `readability` | Grade level and long sentences in the status bar |
+| `dictation` | Voice typing |
 
 `src/examples/` has two example node types an application might add: a text block with its own
 commands, and an embedded YouTube video.
@@ -96,7 +106,7 @@ the package name:
 
 ## Framework wrappers
 
-[`wrappers/`](wrappers/README.md) has components for React, Vue and Angular, each its own package,
+[`wrappers/`](wrappers/README.md) has components for React, Vue and Angular, and a `<scriviamo-editor>` web component for any other framework or none, each its own package,
 with the editor's settings as properties and the document as a two-way value.
 
 ## Running the demo
@@ -135,7 +145,7 @@ test/
   index.html             the test page
   suites/                tests for the base package, each add-on, and combinations
 docs/                    documentation
-wrappers/                React, Vue and Angular components
+wrappers/                React, Vue and Angular components, and a web component
 ```
 
 ## License

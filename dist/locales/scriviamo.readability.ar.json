@@ -1,0 +1,13 @@
+{
+  "language": "ar",
+  "strings": {
+    "Editor": {
+      "TextReadabilityGradeFormat": "الصف %grade%",
+      "TextReadabilitySentenceFormat": "%count% كلمة في الجملة",
+      "TextReadabilityLongSentencesFormat": "جمل طويلة: %count%",
+      "TextReadabilityOneLongSentenceCaption": "جملة طويلة واحدة",
+      "TextReadabilityGradeTooltip": "الصف الدراسي الذي يحتاجه القارئ ليتابع هذا النص بسهولة (فليش–كينكيد).",
+      "TextReadabilityLongSentenceTooltip": "جمل تزيد على %count% كلمة. انقر للانتقال إلى التالية."
+    }
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "language": "ru",
+  "strings": {
+    "Editor": {
+      "TextOutlineCaption": "Структура",
+      "TextOutlineEmptyCaption": "Здесь появятся добавленные заголовки.",
+      "TextOutlineMoveHint": "Перетащите заголовок или нажмите Alt+Вверх или Alt+Вниз, чтобы переместить его раздел.",
+      "TextOutlineUntitledCaption": "Заголовок без текста",
+      "TextOutlineCollapseCaption": "Свернуть",
+      "TextOutlineExpandCaption": "Развернуть"
+    }
+  }
+}

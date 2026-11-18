@@ -1,0 +1,15 @@
+{
+  "language": "ko",
+  "strings": {
+    "Editor": {
+      "TextInsertStatusCaption": "상태 삽입",
+      "TextStatusRemoveCaption": "상태 삭제",
+      "TextStatusDraft": "초안",
+      "TextStatusInProgress": "진행 중",
+      "TextStatusInReview": "검토 중",
+      "TextStatusApproved": "승인됨",
+      "TextStatusBlocked": "막힘",
+      "TextStatusDone": "완료"
+    }
+  }
+}

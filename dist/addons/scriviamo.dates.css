@@ -1,0 +1,29 @@
+/* Dates in text */
+
+.scv-date-chip {
+  cursor: pointer;
+}
+
+.scv-chip-source {
+  display: none;
+}
+
+.scv-date-chip .scv-chip-drawn {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  padding: 0 6px;
+  border-radius: 5px;
+  background: var(--scv-accent-soft);
+  color: var(--scv-accent);
+  white-space: nowrap;
+}
+
+.scv-date-chip .scv-chip-drawn .bi {
+  font-size: 0.85em;
+}
+
+.scv-date-popup {
+  min-width: 240px;
+  padding: 8px;
+}

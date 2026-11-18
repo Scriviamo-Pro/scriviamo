@@ -112,6 +112,8 @@ export declare class RichText {
     static registerTagExport(provider: string, exporter: TagExport | null): void;
     static tagExport(provider: string): TagExport | null;
     static htmlRun(value: string, style: TextStyle): string;
+    /** A tracked change as an <ins> or <del> element around content, which imports back as the change. */
+    static changeHTML(content: string, style: TextStyle): string;
     /** Markdown for the range. */
     markdownText(start?: number, end?: number, ignoreBold?: boolean): string;
     static markdownEscape(value: string): string;

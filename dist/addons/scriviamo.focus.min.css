@@ -1,0 +1,1 @@
+.scv-focus-mode .scv-document>.scv-node{opacity:.3;transition:opacity .25s ease}.scv-focus-mode .scv-document>.scv-node.scv-focus-current,.scv-focus-mode .scv-document>.scv-node:hover{opacity:1}.scv-typewriter .scv-document{padding-top:35vh;padding-bottom:60vh}@media (prefers-reduced-motion: reduce){.scv-focus-mode .scv-document>.scv-node{transition:none}}

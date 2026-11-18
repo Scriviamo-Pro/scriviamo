@@ -1,0 +1,15 @@
+{
+  "language": "fr",
+  "strings": {
+    "Editor": {
+      "TextInsertStatusCaption": "Insérer un statut",
+      "TextStatusRemoveCaption": "Supprimer le statut",
+      "TextStatusDraft": "Brouillon",
+      "TextStatusInProgress": "En cours",
+      "TextStatusInReview": "En relecture",
+      "TextStatusApproved": "Approuvé",
+      "TextStatusBlocked": "Bloqué",
+      "TextStatusDone": "Terminé"
+    }
+  }
+}

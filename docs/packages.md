@@ -39,6 +39,16 @@ has one.
 | `forms` | Free | Forms and form controls | `form`, `label`, `textfield`, `textarea`, `checkbox`, `radiogroup`, `select`, `datalist`, `button` | Yes |
 | `math` | Free | Formulas written in LaTeX and drawn with KaTeX; see [Math and diagrams](math-and-diagrams.md) | `math` | Yes |
 | `diagrams` | Free | Diagrams written in Mermaid and drawn with it; see [Math and diagrams](math-and-diagrams.md) | `diagram` | Yes |
+| `steps` | Free | Numbered steps and timelines, each step holding blocks; see [Steps, timelines and tabs](steps-and-tabs.md) | `steps` | Yes |
+| `attachments` | Free | File attachments, shown as cards with a download button; see [Files, galleries, maps and embeds](media-and-embeds.md) | `attachment` | Yes |
+| `gallery` | Free | Image galleries, as a grid or a carousel, with a full-size viewer; see [Files, galleries, maps and embeds](media-and-embeds.md) | `gallery` | Yes |
+| `map` | Free | Maps of a place, with a pin, from OpenStreetMap tiles; see [Files, galleries, maps and embeds](media-and-embeds.md) | `map` | Yes |
+| `dates` | Free | Dates in text, as chips in the reader's language; see [Dates and statuses in text](dates-and-statuses.md) | — | Yes |
+| `status` | Free | Statuses in text, as colored pills from a set the application chooses; see [Dates and statuses in text](dates-and-statuses.md) | — | Yes |
+| `outline` | Free | The document's headings as a tree, for going to them and moving whole sections; see [Outline, focus mode, readability and dictation](writing-aids.md) | — | Yes |
+| `focus` | Free | Focus mode, which fades all but the block being written, with typewriter scrolling; see [Outline, focus mode, readability and dictation](writing-aids.md) | — | Yes |
+| `readability` | Free | The grade level and long sentences, in the status bar; see [Outline, focus mode, readability and dictation](writing-aids.md) | — | Yes |
+| `dictation` | Free | Voice typing through the browser's speech recognition; see [Outline, focus mode, readability and dictation](writing-aids.md) | — | Yes |
 
 The base package and these add-ons are MIT licensed. Premium add-ons, such as columns,
 footnotes, templates, PDF export, an AI writing assistant, data tables, an inspector panel and

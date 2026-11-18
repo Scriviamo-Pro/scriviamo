@@ -1,0 +1,14 @@
+{
+  "language": "es",
+  "strings": {
+    "Editor": {
+      "TextAttachmentCaption": "Archivo",
+      "TextAttachmentNameCaption": "Nombre del archivo",
+      "TextDownloadAttachmentCaption": "Descargar",
+      "TextReplaceAttachmentCaption": "Reemplazar",
+      "TextAttachmentAddressPrompt": "Dirección del archivo",
+      "TextAttachmentUploadingCaption": "Subiendo…",
+      "TextAttachmentUnavailableCaption": "No se pudo adjuntar este archivo."
+    }
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "language": "de",
+  "strings": {
+    "Editor": {
+      "TextInsertDateCaption": "Datum einfügen",
+      "TextDateChipCaption": "Datum",
+      "TextDateTodayCaption": "Heute",
+      "TextDateTomorrowCaption": "Morgen",
+      "TextDateRemoveCaption": "Entfernen"
+    }
+  }
+}

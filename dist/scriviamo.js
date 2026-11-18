@@ -459,8 +459,19 @@ var TextStyle = class _TextStyle {
   suggestionTextColor = Colors.make(30, 64, 175);
   textColor = Colors.empty;
   underline = false;
+  /**
+   * A tracked change: "insert" for text suggested as added, "delete" for text suggested as removed,
+   * or "" for neither. The track changes add-on makes and resolves them; any editor shows them.
+   */
+  change = "";
+  /** The tracked change's identifier, shared by the text one edit added or removed. */
+  changeID = "";
+  /** Who suggested the change. */
+  changeAuthor = "";
+  /** When the change was suggested, as an ISO date and time. */
+  changeTime = "";
   static #booleanNames = ["bold", "code", "hasBackgroundColor", "hasLinkColor", "highlight", "italic", "keyboard", "strikethrough", "subscript", "superscript", "underline"];
-  static #stringNames = ["fontName", "linkTarget", "linkTitle", "linkURL", "suggestionIdentifier", "suggestionProviderIdentifier"];
+  static #stringNames = ["change", "changeAuthor", "changeID", "changeTime", "fontName", "linkTarget", "linkTitle", "linkURL", "suggestionIdentifier", "suggestionProviderIdentifier"];
   static #colorNames = ["backgroundColor", "linkColor", "suggestionBackgroundColor", "suggestionBorderColor", "suggestionTextColor", "textColor"];
   static #defaults = null;
   static get defaults() {
@@ -582,13 +593,22 @@ var TextStyle = class _TextStyle {
       declarations.push("padding:1px 3px");
     }
     let decorations = [];
-    if (this.underline)
+    if (this.underline || this.change == "insert")
       decorations.push("underline");
-    if (this.strikethrough)
+    if (this.strikethrough || this.change == "delete")
       decorations.push("line-through");
     if (decorations.length > 0)
       declarations.push(`text-decoration:${decorations.join(" ")}`);
+    declarations.push(...this.changeCSS());
     return declarations.join(";");
+  }
+  /** How a tracked change looks: added text green and underlined, removed text red and struck through. */
+  changeCSS() {
+    if (this.change == "insert")
+      return ["text-decoration-color:#1fa774", "background-color:rgba(31,167,116,0.14)"];
+    if (this.change == "delete")
+      return ["text-decoration-color:#e03131", "color:#c92a2a", "background-color:rgba(224,49,49,0.10)"];
+    return [];
   }
   /** CSS written into exported HTML. */
   htmlCSS() {
@@ -1129,13 +1149,21 @@ var RichText = class _RichText {
       let target = style.linkTarget.length > 0 ? ` target="${Utilities.escapeAttribute(style.linkTarget)}"` : "";
       content = `<a href="${Utilities.escapeAttribute(style.linkURL)}"${title}${target}>${content}</a>`;
     }
-    return content;
+    return _RichText.changeHTML(content, style);
+  }
+  /** A tracked change as an <ins> or <del> element around content, which imports back as the change. */
+  static changeHTML(content, style) {
+    if (style.change != "insert" && style.change != "delete")
+      return content;
+    let tag = style.change == "insert" ? "ins" : "del";
+    let time = style.changeTime.length > 0 ? ` datetime="${Utilities.escapeAttribute(style.changeTime)}"` : "";
+    return `<${tag} data-scriviamo-change="${Utilities.escapeAttribute(style.changeID)}" data-scriviamo-author="${Utilities.escapeAttribute(style.changeAuthor)}"${time}>${content}</${tag}>`;
   }
   /** Markdown for the range. */
   markdownText(start = 0, end = this.text.length, ignoreBold = false) {
     let result = "";
     let markdownMatches = (a, b) => {
-      return (ignoreBold || a.bold == b.bold) && a.italic == b.italic && a.underline == b.underline && a.strikethrough == b.strikethrough && a.sameInlineFormat(b) && a.linkURL == b.linkURL && a.linkTitle == b.linkTitle && a.linkTarget == b.linkTarget && a.suggestionProviderIdentifier == b.suggestionProviderIdentifier && a.suggestionIdentifier == b.suggestionIdentifier;
+      return (ignoreBold || a.bold == b.bold) && a.italic == b.italic && a.underline == b.underline && a.strikethrough == b.strikethrough && a.sameInlineFormat(b) && a.linkURL == b.linkURL && a.linkTitle == b.linkTitle && a.linkTarget == b.linkTarget && a.suggestionProviderIdentifier == b.suggestionProviderIdentifier && a.suggestionIdentifier == b.suggestionIdentifier && a.change == b.change && a.changeID == b.changeID;
     };
     this.runs(start, end, markdownMatches).forEach((run) => {
       let style = run.style;
@@ -1177,7 +1205,7 @@ var RichText = class _RichText {
           content = `[${content}](${style.linkURL.replace(/ /g, "%20").replace(/\(/g, "%28").replace(/\)/g, "%29")}${title})`;
         }
       }
-      result += content;
+      result += _RichText.changeHTML(content, style);
     });
     return result;
   }
@@ -1297,6 +1325,8 @@ var TextHost = class _TextHost {
           let widget = Utilities.element("span", "scv-widget scv-check", { contenteditable: "false" });
           let box = Utilities.element("input", "form-check-input", { type: "checkbox", tabindex: "-1" });
           box.checked = checked;
+          let label = this.rich.text.substring(paragraph.start, paragraph.end).replace(/[\u2028\u2029\n]+/g, " ").trim();
+          box.setAttribute("aria-label", label.length > 0 ? label.substring(0, 120) : this.node.strings.TextChecklistCaption);
           widget.append(box);
           item.append(widget);
         }
@@ -1635,14 +1665,26 @@ var TextHost = class _TextHost {
         applied = true;
         break;
       case "U":
-      case "INS":
         style.underline = true;
         applied = true;
         break;
       case "S":
       case "STRIKE":
-      case "DEL":
         style.strikethrough = true;
+        applied = true;
+        break;
+      case "INS":
+      case "DEL":
+        if (element.hasAttribute("data-scriviamo-change")) {
+          style.change = element.tagName == "INS" ? "insert" : "delete";
+          style.changeID = element.getAttribute("data-scriviamo-change") || "";
+          style.changeAuthor = element.getAttribute("data-scriviamo-author") || "";
+          style.changeTime = element.getAttribute("datetime") || "";
+        } else if (element.tagName == "INS") {
+          style.underline = true;
+        } else {
+          style.strikethrough = true;
+        }
         applied = true;
         break;
       case "CODE":
@@ -3146,7 +3188,7 @@ var ToolbarItems = class extends EventTarget {
 var Node3 = class _Node {
   /**
    * The files this node type makes nodes from when they are dropped or pasted into
-   * the editor: MIME types, which may end in "/*", or extensions such as ".csv".
+   * the editor: MIME types, which may end in "/*", extensions such as ".csv", or "*" for any file.
    */
   static droppedFileTypes = [];
   /** Decides between node types that accept the same file: the highest wins. */
@@ -4063,6 +4105,9 @@ var CodeBlockNode = class _CodeBlockNode extends TextNode2 {
     });
     header.append(copy);
     let pre = Utilities.element("pre", "scv-code-body");
+    pre.tabIndex = 0;
+    pre.setAttribute("role", "region");
+    pre.setAttribute("aria-label", this.typeName);
     frame.append(pre);
     let code = document.createElement("code");
     pre.append(code);
@@ -6657,10 +6702,16 @@ var Autosave = class {
       this.saveNow();
   };
 };
-var StatusBar = class {
+var StatusBar = class _StatusBar {
+  static #items = [];
+  /** Adds an item to every editor's status bar, such as the readability add-on's; one with the same identifier is replaced. */
+  static registerItem(identifier, item) {
+    _StatusBar.#items = _StatusBar.#items.filter((entry) => entry.identifier != identifier).concat([{ identifier, item }]);
+  }
   #editor;
   #element = null;
   #counts = null;
+  #extras = null;
   #save = null;
   #timer = null;
   showWords = true;
@@ -6685,8 +6736,9 @@ var StatusBar = class {
     this.#element = element;
     element.replaceChildren();
     this.#counts = Utilities.element("span", "scv-status-counts");
+    this.#extras = Utilities.element("span", "scv-status-extras");
     this.#save = Utilities.element("span", "scv-status-save");
-    element.append(this.#counts, this.#save);
+    element.append(this.#counts, this.#extras, this.#save);
     this.update();
   }
   detach() {
@@ -6696,6 +6748,7 @@ var StatusBar = class {
     this.#timer = null;
     this.#element = null;
     this.#counts = null;
+    this.#extras = null;
     this.#save = null;
   }
   // Selecting text inside a block raises no editor event.
@@ -6739,6 +6792,21 @@ var StatusBar = class {
     if (this.showReadingTime && words > 0)
       parts.push(Utilities.format(strings.TextReadingTimeFormat, { count: number(Math.max(1, Math.ceil(words / statistics.wordsPerMinute))) }));
     this.#counts.textContent = parts.join(" \xB7 ");
+    if (this.#extras) {
+      let extras = this.#extras;
+      extras.replaceChildren();
+      _StatusBar.#items.forEach(({ identifier, item }) => {
+        try {
+          let content = item(editor, text);
+          if (!content)
+            return;
+          content.dataset.statusItem = identifier;
+          extras.append(content);
+        } catch (error) {
+          console.error(error);
+        }
+      });
+    }
     let autosave = editor.autosave;
     this.#save.replaceChildren();
     this.#save.className = "scv-status-save";
@@ -7524,6 +7592,169 @@ var MarkdownConverter = class _MarkdownConverter {
     return text;
   }
 };
+var PasteCleanup = class _PasteCleanup {
+  /** The app pasted HTML came from, or null. */
+  static source(html) {
+    if (/id="docs-internal-guid-/.test(html))
+      return "googledocs";
+    if (/urn:schemas-microsoft-com:office:(word|office)|<meta[^>]+content=["']?Microsoft Word|class=["']?Mso|mso-[a-z-]+:/i.test(html))
+      return "word";
+    return null;
+  }
+  static clean(html) {
+    let source = _PasteCleanup.source(html);
+    if (!source || typeof DOMParser == "undefined")
+      return html;
+    let parsed = new DOMParser().parseFromString(html, "text/html");
+    let body = parsed.body;
+    body.querySelectorAll("style, script, meta, link, title, xml").forEach((element) => element.remove());
+    if (source == "googledocs")
+      _PasteCleanup.#cleanGoogleDocs(body);
+    else
+      _PasteCleanup.#cleanWord(body);
+    _PasteCleanup.#cleanStyles(body);
+    body.querySelectorAll("br.Apple-interchange-newline").forEach((element) => element.remove());
+    return body.innerHTML;
+  }
+  static #unwrap(element) {
+    element.replaceWith(...Array.from(element.childNodes));
+  }
+  static #cleanGoogleDocs(body) {
+    body.querySelectorAll("b[id^='docs-internal-guid-']").forEach((element) => _PasteCleanup.#unwrap(element));
+    body.querySelectorAll("li > p:only-child, td > p:only-child, th > p:only-child").forEach((element) => _PasteCleanup.#unwrap(element));
+  }
+  static #cleanWord(body) {
+    Array.from(body.querySelectorAll("*")).forEach((element) => {
+      if (element.tagName.includes(":")) {
+        if (/^O:P$/i.test(element.tagName))
+          _PasteCleanup.#unwrap(element);
+        else
+          element.remove();
+      }
+    });
+    let comments = parsedComments(body);
+    comments.forEach((comment) => comment.parentNode?.removeChild(comment));
+    body.querySelectorAll("img").forEach((image) => {
+      if (/^file:/i.test(image.getAttribute("src") || ""))
+        image.remove();
+    });
+    body.querySelectorAll("p.MsoTitle").forEach((paragraph) => _PasteCleanup.#rename(paragraph, "h1"));
+    body.querySelectorAll("p.MsoSubtitle").forEach((paragraph) => _PasteCleanup.#rename(paragraph, "h2"));
+    _PasteCleanup.#wordLists(body);
+    body.querySelectorAll("p").forEach((paragraph) => {
+      if ((paragraph.textContent || "").replace(/[\s\u00a0]+/g, "").length == 0 && !paragraph.querySelector("img, table, input"))
+        paragraph.remove();
+    });
+  }
+  static #rename(element, tag) {
+    let replacement = element.ownerDocument.createElement(tag);
+    for (let attribute of Array.from(element.attributes))
+      replacement.setAttribute(attribute.name, attribute.value);
+    replacement.append(...Array.from(element.childNodes));
+    element.replaceWith(replacement);
+    return replacement;
+  }
+  /** Word writes lists as paragraphs with mso-list styles and typed bullets or numbers. */
+  static #wordLists(body) {
+    let isItem = (element) => !!element && element.tagName == "P" && /mso-list\s*:\s*l\d+/i.test(element.getAttribute("style") || "");
+    let paragraphs = Array.from(body.querySelectorAll("p")).filter(isItem);
+    let done = /* @__PURE__ */ new Set();
+    for (let first of paragraphs) {
+      if (done.has(first))
+        continue;
+      let run = [first];
+      let listID = (style) => (style.match(/mso-list\s*:\s*(l\d+)/i) || [])[1] || "";
+      let id = listID(first.getAttribute("style") || "");
+      let next = first.nextElementSibling;
+      while (isItem(next) && listID(next.getAttribute("style") || "") == id) {
+        run.push(next);
+        next = next.nextElementSibling;
+      }
+      run.forEach((item) => done.add(item));
+      let document2 = first.ownerDocument;
+      let root = null;
+      let stack = [];
+      for (let paragraph of run) {
+        let style = paragraph.getAttribute("style") || "";
+        let level = Number((style.match(/level(\d+)/i) || [])[1]) || 1;
+        let marker = Array.from(paragraph.querySelectorAll("span")).find((span) => /mso-list\s*:\s*ignore/i.test(span.getAttribute("style") || "")) || null;
+        let markerText = marker ? (marker.textContent || "").replace(/\s+/g, "") : "";
+        if (marker)
+          marker.remove();
+        let ordered = /^(\(?[0-9]+|\(?[a-z]{1,3}|\(?[ivxlc]+)[.)]$/i.test(markerText);
+        while (stack.length > 0 && stack[stack.length - 1].level > level)
+          stack.pop();
+        if (stack.length == 0 || stack[stack.length - 1].level < level) {
+          let list = document2.createElement(ordered ? "ol" : "ul");
+          if (stack.length == 0) {
+            root = list;
+          } else {
+            let parentList = stack[stack.length - 1].list;
+            let lastItem = parentList.lastElementChild || parentList.appendChild(document2.createElement("li"));
+            lastItem.append(list);
+          }
+          stack.push({ level, list });
+        }
+        let item = document2.createElement("li");
+        item.append(...Array.from(paragraph.childNodes));
+        stack[stack.length - 1].list.append(item);
+      }
+      if (root)
+        first.before(root);
+      run.forEach((paragraph) => paragraph.remove());
+    }
+  }
+  /**
+   * Drops the styles every run carries, keeping what formats the text: weight, slant, decoration,
+   * raised and lowered text, colors other than plain black, and backgrounds other than none.
+   */
+  static #cleanStyles(body) {
+    let plain = /^(#0{3}|#0{6}|black|rgb\(0,\s*0,\s*0\)|windowtext|initial|inherit|auto)$/i;
+    let none = /^(transparent|initial|inherit|white|#fff|#ffffff|rgb\(255,\s*255,\s*255\)|rgba\(0,\s*0,\s*0,\s*0\))$/i;
+    body.querySelectorAll("[style]").forEach((element) => {
+      let html = element;
+      let kept = [];
+      let css = html.style;
+      let weight = css.fontWeight;
+      if (weight == "bold" || weight == "bolder" || Number(weight) >= 600)
+        kept.push("font-weight:bold");
+      if (css.fontStyle == "italic" || css.fontStyle == "oblique")
+        kept.push("font-style:italic");
+      let decoration = `${css.textDecorationLine || css.textDecoration}`;
+      let lines = ["underline", "line-through"].filter((line) => decoration.includes(line));
+      if (lines.length > 0)
+        kept.push(`text-decoration:${lines.join(" ")}`);
+      if (css.verticalAlign == "super" || css.verticalAlign == "sub")
+        kept.push(`vertical-align:${css.verticalAlign}`);
+      if (css.color && !plain.test(css.color.trim()))
+        kept.push(`color:${css.color}`);
+      let background = css.backgroundColor || css.background;
+      if (background && !none.test(background.trim()) && !/url\(/i.test(background))
+        kept.push(`background-color:${css.backgroundColor || background}`);
+      if (/^(center|right|justify)$/.test(css.textAlign) && /^(P|H[1-6]|DIV|TD|TH|LI)$/.test(html.tagName))
+        kept.push(`text-align:${css.textAlign}`);
+      if (kept.length > 0)
+        html.setAttribute("style", kept.join(";"));
+      else
+        html.removeAttribute("style");
+    });
+    body.querySelectorAll("[class]").forEach((element) => {
+      if (/^(Mso|xl\d|Apple-)/.test(element.getAttribute("class") || ""))
+        element.removeAttribute("class");
+    });
+    Array.from(body.querySelectorAll("span, font")).forEach((element) => {
+      if (element.attributes.length == 0 || element.tagName == "FONT" && !element.getAttribute("color"))
+        _PasteCleanup.#unwrap(element);
+    });
+  }
+};
+function parsedComments(root) {
+  let result = [];
+  let walker = root.ownerDocument.createTreeWalker(root, 128);
+  while (walker.nextNode())
+    result.push(walker.currentNode);
+  return result;
+}
 
 // popups.ts
 var Popup2 = class _Popup {
@@ -8173,12 +8404,21 @@ var ChoicePopup = class extends Popup2 {
       this.element.append(this.#search);
     }
     this.#list = Utilities.element("div", "scv-chooser-list", { role: "listbox" });
+    if (search)
+      this.#list.setAttribute("aria-label", search.placeholder);
     this.element.append(this.#list);
     if (search)
       this.setItems(search.filter(""));
   }
   get items() {
     return this.#items.slice();
+  }
+  /** What screen readers call the list, such as "Insert". */
+  set label(value) {
+    if (value)
+      this.#list.setAttribute("aria-label", value);
+    else
+      this.#list.removeAttribute("aria-label");
   }
   get activeIndex() {
     return this.#active;
@@ -9944,7 +10184,7 @@ var ExportFormats = /* @__PURE__ */ ((ExportFormats2) => {
   ExportFormats2[ExportFormats2["plainText"] = 4] = "plainText";
   return ExportFormats2;
 })(ExportFormats || {});
-var Exporter = class {
+var Exporter = class _Exporter {
   identifier;
   format;
   fileExtension = "txt";
@@ -9982,21 +10222,39 @@ var Exporter = class {
     }
     return "";
   }
+  /**
+   * The export as a file's contents. Formats that make binary files, such as Word documents,
+   * override this rather than export; text formats get their text.
+   */
+  async exportBlob(editor) {
+    return new Blob([this.export(editor)], { type: `${this.mimeType};charset=utf-8` });
+  }
   /** Offers the export to the user as a download named fileName plus the extension. */
   exportToFile(editor, fileName = "document") {
-    let text = this.export(editor);
     if (typeof document == "undefined")
       return false;
-    let blob = new Blob([text], { type: `${this.mimeType};charset=utf-8` });
+    if (this.exportBlob === _Exporter.prototype.exportBlob) {
+      _Exporter.download(new Blob([this.export(editor)], { type: `${this.mimeType};charset=utf-8` }), this.fileExtension.length > 0 ? `${fileName}.${this.fileExtension}` : fileName);
+      return true;
+    }
+    this.exportBlob(editor).then((blob) => _Exporter.download(blob, this.fileExtension.length > 0 ? `${fileName}.${this.fileExtension}` : fileName), (error) => {
+      if (editor && typeof editor.showMessage == "function")
+        editor.showMessage(String(error && error.message || error), "danger");
+    });
+    return true;
+  }
+  /** Saves a file through the browser. */
+  static download(blob, fileName) {
+    if (typeof document == "undefined")
+      return;
     let url = URL.createObjectURL(blob);
     let link = document.createElement("a");
     link.href = url;
-    link.download = this.fileExtension.length > 0 ? `${fileName}.${this.fileExtension}` : fileName;
+    link.download = fileName;
     document.body.append(link);
     link.click();
     link.remove();
     setTimeout(() => URL.revokeObjectURL(url), 1e3);
-    return true;
   }
 };
 var Exporters = class {
@@ -10104,6 +10362,7 @@ var ClipboardType = "application/x-scriviamo";
 var Editor2 = class _Editor extends EventTarget {
   static #nodeTypeRegistry = [];
   static #extensions = [];
+  static #panels = [];
   /**
    * Registers a node type for every editor created afterwards. order places it in
    * the insertion and block type menus; the built-in types use multiples of 10.
@@ -10126,6 +10385,14 @@ var Editor2 = class _Editor extends EventTarget {
   }
   static extensions() {
     return _Editor.#extensions.slice();
+  }
+  /** Registers a panel about the document, such as an outline; one with the same identifier is replaced. */
+  static registerPanel(panel) {
+    _Editor.#panels = _Editor.#panels.filter((item) => item.identifier != panel.identifier).concat([panel]);
+  }
+  /** The registered panels, in the order they were registered. */
+  static panels() {
+    return _Editor.#panels.slice();
   }
   /** A static member a node type declares itself, rather than inherits from the type it extends. */
   static ownStatic(type, name) {
@@ -12762,6 +13029,7 @@ var Editor2 = class _Editor extends EventTarget {
     let popup = this.#suggestionPopup;
     if (!popup) {
       popup = new ChoicePopup("scv-suggestions", (item) => this.#commitSuggestion(item.value));
+      popup.label = this.strings.TextSuggestionsCaption;
       popup.tabChooses = true;
       popup.anchorProvider = () => {
         let state = this.#suggestionState;
@@ -13172,6 +13440,8 @@ var Editor2 = class _Editor extends EventTarget {
       let accepted = type.droppedFileTypes || [];
       let matches = accepted.some((pattern) => {
         pattern = pattern.toLowerCase();
+        if (pattern == "*")
+          return true;
         if (pattern.startsWith("."))
           return name.endsWith(pattern);
         if (pattern.endsWith("/*"))
@@ -13361,7 +13631,7 @@ var Editor2 = class _Editor extends EventTarget {
       return;
     }
     if (data.html.trim().length > 0) {
-      let nodes = this.importer.import(data.html);
+      let nodes = this.importer.import(PasteCleanup.clean(data.html));
       if (nodes.length == 0 && data.text.length == 0)
         return;
       if (nodes.length > 0) {
@@ -16113,6 +16383,7 @@ export {
   Notification,
   NotificationTypes,
   ParagraphBreak,
+  PasteCleanup,
   Popup2 as Popup,
   PopupMenu,
   QuoteNode,

@@ -1,0 +1,14 @@
+{
+  "language": "ko",
+  "strings": {
+    "Editor": {
+      "TextAttachmentCaption": "파일",
+      "TextAttachmentNameCaption": "파일 이름",
+      "TextDownloadAttachmentCaption": "다운로드",
+      "TextReplaceAttachmentCaption": "바꾸기",
+      "TextAttachmentAddressPrompt": "파일 주소",
+      "TextAttachmentUploadingCaption": "업로드 중…",
+      "TextAttachmentUnavailableCaption": "이 파일을 첨부하지 못했습니다."
+    }
+  }
+}

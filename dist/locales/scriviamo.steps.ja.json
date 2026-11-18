@@ -1,0 +1,16 @@
+{
+  "language": "ja",
+  "strings": {
+    "Editor": {
+      "TextStepsCaption": "手順",
+      "TextTimelineCaption": "タイムライン",
+      "TextStepsStyleCaption": "スタイル",
+      "TextAddStepCaption": "手順を追加",
+      "TextRemoveStepCaption": "手順を削除",
+      "TextMoveStepUpCaption": "手順を上へ移動",
+      "TextMoveStepDownCaption": "手順を下へ移動",
+      "TextStepLabelPlaceholder": "日付またはラベル",
+      "TextStepCaption": "手順"
+    }
+  }
+}

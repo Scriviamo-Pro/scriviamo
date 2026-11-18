@@ -1,0 +1,13 @@
+{
+  "language": "pt-BR",
+  "strings": {
+    "Editor": {
+      "TextDictationCaption": "Ditar",
+      "TextDictationListeningCaption": "Ouvindo…",
+      "TextDictationUnavailableCaption": "Este navegador não aceita ditado.",
+      "TextDictationNoTextMessage": "Clique no texto onde as palavras devem entrar e então dite.",
+      "TextDictationDeniedMessage": "O microfone não está disponível. Permita que esta página o use e tente de novo.",
+      "TextDictationErrorMessage": "O ditado parou: %error%"
+    }
+  }
+}

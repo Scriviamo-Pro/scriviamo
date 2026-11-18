@@ -1,0 +1,20 @@
+{
+  "language": "it",
+  "strings": {
+    "Editor": {
+      "TextMapCaption": "Mappa",
+      "TextFindPlaceCaption": "Trova un luogo…",
+      "TextFindPlacePrompt": "Indirizzo, luogo o coordinate",
+      "TextPlaceNotFoundMessage": "Impossibile trovare quel luogo.",
+      "TextMapLabelCaption": "Etichetta del segnaposto",
+      "TextMapLatitudeCaption": "Latitudine",
+      "TextMapLongitudeCaption": "Longitudine",
+      "TextMapZoomCaption": "Zoom",
+      "TextMapHeightCaption": "Altezza",
+      "TextZoomInCaption": "Ingrandisci",
+      "TextZoomOutCaption": "Riduci",
+      "TextOpenMapCaption": "Apri in OpenStreetMap",
+      "TextShowPinCaption": "Mostra segnaposto"
+    }
+  }
+}

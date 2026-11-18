@@ -1,0 +1,10 @@
+{
+  "language": "zh-CN",
+  "strings": {
+    "Editor": {
+      "TextFocusModeCaption": "专注模式",
+      "TextFocusModeOnCaption": "突出当前块",
+      "TextTypewriterScrollingCaption": "打字机滚动"
+    }
+  }
+}

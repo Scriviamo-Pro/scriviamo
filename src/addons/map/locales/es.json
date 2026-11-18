@@ -1,0 +1,20 @@
+{
+  "language": "es",
+  "strings": {
+    "Editor": {
+      "TextMapCaption": "Mapa",
+      "TextFindPlaceCaption": "Buscar un lugar…",
+      "TextFindPlacePrompt": "Dirección, lugar o coordenadas",
+      "TextPlaceNotFoundMessage": "No se encontró ese lugar.",
+      "TextMapLabelCaption": "Etiqueta del marcador",
+      "TextMapLatitudeCaption": "Latitud",
+      "TextMapLongitudeCaption": "Longitud",
+      "TextMapZoomCaption": "Zoom",
+      "TextMapHeightCaption": "Altura",
+      "TextZoomInCaption": "Acercar",
+      "TextZoomOutCaption": "Alejar",
+      "TextOpenMapCaption": "Abrir en OpenStreetMap",
+      "TextShowPinCaption": "Mostrar marcador"
+    }
+  }
+}

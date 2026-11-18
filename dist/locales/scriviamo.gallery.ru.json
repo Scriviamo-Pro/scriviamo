@@ -1,0 +1,26 @@
+{
+  "language": "ru",
+  "strings": {
+    "Editor": {
+      "TextGalleryCaption": "Галерея",
+      "TextGalleryLayoutCaption": "Вид",
+      "TextGalleryGridCaption": "Сетка",
+      "TextGalleryCarouselCaption": "Карусель",
+      "TextGalleryColumnsCaption": "Столбцы",
+      "TextAddImagesCaption": "Добавить изображения…",
+      "TextAddImageAddressCaption": "Добавить изображение по адресу…",
+      "TextRemoveImageCaption": "Удалить изображение",
+      "TextMoveImageBackCaption": "Переместить изображение назад",
+      "TextMoveImageForwardCaption": "Переместить изображение вперёд",
+      "TextImageCaptionPlaceholder": "Подпись",
+      "TextImageDescriptionCaption": "Описание (альтернативный текст)",
+      "TextSelectedImageCaption": "Выбранное изображение",
+      "TextViewImageCaption": "Открыть в полном размере",
+      "TextPreviousImageCaption": "Предыдущее изображение",
+      "TextNextImageCaption": "Следующее изображение",
+      "TextCloseViewerCaption": "Закрыть",
+      "TextImageAddressPrompt": "Адрес изображения",
+      "TextGalleryEmptyCaption": "Добавьте изображения в галерею"
+    }
+  }
+}

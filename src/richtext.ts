@@ -495,14 +495,22 @@ export class RichText {
       let target = style.linkTarget.length > 0 ? ` target="${Utilities.escapeAttribute(style.linkTarget)}"` : ""
       content = `<a href="${Utilities.escapeAttribute(style.linkURL)}"${title}${target}>${content}</a>`
     }
-    return content
+    return RichText.changeHTML(content, style)
+  }
+
+  /** A tracked change as an <ins> or <del> element around content, which imports back as the change. */
+  static changeHTML(content: string, style: TextStyle): string {
+    if (style.change != "insert" && style.change != "delete") return content
+    let tag = style.change == "insert" ? "ins" : "del"
+    let time = style.changeTime.length > 0 ? ` datetime="${Utilities.escapeAttribute(style.changeTime)}"` : ""
+    return `<${tag} data-scriviamo-change="${Utilities.escapeAttribute(style.changeID)}" data-scriviamo-author="${Utilities.escapeAttribute(style.changeAuthor)}"${time}>${content}</${tag}>`
   }
 
   /** Markdown for the range. */
   markdownText(start: number = 0, end: number = this.text.length, ignoreBold: boolean = false): string {
     let result = ""
     let markdownMatches = (a: TextStyle, b: TextStyle) => {
-      return (ignoreBold || a.bold == b.bold) && a.italic == b.italic && a.underline == b.underline && a.strikethrough == b.strikethrough && a.sameInlineFormat(b) && a.linkURL == b.linkURL && a.linkTitle == b.linkTitle && a.linkTarget == b.linkTarget && a.suggestionProviderIdentifier == b.suggestionProviderIdentifier && a.suggestionIdentifier == b.suggestionIdentifier
+      return (ignoreBold || a.bold == b.bold) && a.italic == b.italic && a.underline == b.underline && a.strikethrough == b.strikethrough && a.sameInlineFormat(b) && a.linkURL == b.linkURL && a.linkTitle == b.linkTitle && a.linkTarget == b.linkTarget && a.suggestionProviderIdentifier == b.suggestionProviderIdentifier && a.suggestionIdentifier == b.suggestionIdentifier && a.change == b.change && a.changeID == b.changeID
     }
     this.runs(start, end, markdownMatches).forEach(run => {
       let style = run.style
@@ -535,7 +543,7 @@ export class RichText {
           content = `[${content}](${style.linkURL.replace(/ /g, "%20").replace(/\(/g, "%28").replace(/\)/g, "%29")}${title})`
         }
       }
-      result += content
+      result += RichText.changeHTML(content, style)
     })
     return result
   }
