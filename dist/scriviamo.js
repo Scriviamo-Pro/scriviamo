@@ -10638,6 +10638,10 @@ var Editor2 = class _Editor extends EventTarget {
     _Editor.#panels = _Editor.#panels.filter((item) => item.identifier != panel.identifier).concat([panel]);
   }
   /** The registered panels, in the order they were registered. */
+  /** Removes a registered panel, by its identifier. */
+  static unregisterPanel(identifier) {
+    _Editor.#panels = _Editor.#panels.filter((item) => item.identifier != identifier);
+  }
   static panels() {
     return _Editor.#panels.slice();
   }

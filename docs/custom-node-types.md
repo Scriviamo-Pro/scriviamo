@@ -271,12 +271,13 @@ are an extension, which adds the list buttons and the list keyboard shortcuts.
 
 A panel shows something about the document beside the editor, such as the outline add-on's
 heading tree. Register one with `Editor.registerPanel(panel)`; the inspector add-on shows each as
-a tab, and an application can place one anywhere by calling its `build`.
+a tab, and an application can place one anywhere by calling its `build`. `Editor.unregisterPanel(identifier)` removes one.
 
 | Member | Meaning |
 |---|---|
 | `identifier` | The panel's name in code |
 | `caption(editor)` | Its name as its tab shows it, in the editor's language |
 | `build(container, editor)` | Fills an element, keeps it up to date, and returns a function that stops |
+| `showsByDefault` | False to leave it out of an inspector unless the inspector's `tabs` option lists it |
 
 The status bar takes items the same way; see [The status bar](undo-search-statistics.md#the-status-bar).

@@ -112,6 +112,8 @@ export interface EditorPanel {
     caption(editor: Editor): string;
     /** Fills container for an editor, and keeps it up to date until the function it returns is called. */
     build(container: HTMLElement, editor: Editor): () => void;
+    /** Whether the inspector shows it without being asked to with its tabs option; true unless false. */
+    showsByDefault?: boolean;
 }
 /**
  * A connection that shares the document with other users, such as the collaboration
@@ -156,6 +158,8 @@ export declare class Editor extends EventTarget {
     /** Registers a panel about the document, such as an outline; one with the same identifier is replaced. */
     static registerPanel(panel: EditorPanel): void;
     /** The registered panels, in the order they were registered. */
+    /** Removes a registered panel, by its identifier. */
+    static unregisterPanel(identifier: string): void;
     static panels(): Array<EditorPanel>;
     /** A static member a node type declares itself, rather than inherits from the type it extends. */
     static ownStatic(type: NodeClass, name: string): any;

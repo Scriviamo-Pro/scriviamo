@@ -123,6 +123,8 @@ export interface EditorPanel {
   caption(editor: Editor): string
   /** Fills container for an editor, and keeps it up to date until the function it returns is called. */
   build(container: HTMLElement, editor: Editor): () => void
+  /** Whether the inspector shows it without being asked to with its tabs option; true unless false. */
+  showsByDefault?: boolean
 }
 
 /**
@@ -188,6 +190,11 @@ export class Editor extends EventTarget {
   }
 
   /** The registered panels, in the order they were registered. */
+  /** Removes a registered panel, by its identifier. */
+  static unregisterPanel(identifier: string) {
+    Editor.#panels = Editor.#panels.filter(item => item.identifier != identifier)
+  }
+
   static panels(): Array<EditorPanel> {
     return Editor.#panels.slice()
   }
