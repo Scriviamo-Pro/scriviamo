@@ -243,7 +243,7 @@ export class TextStyle {
     if (this.fontName.toLowerCase() == "system") {
       declarations.push("font-family:sans-serif")
     } else if (this.fontName.length > 0) {
-      declarations.push(`font-family:'${this.fontName.replace(/'/g, "\\'")}'`)
+      declarations.push(`font-family:${Utilities.fontFamilyCSS(this.fontName).replace(/"/g, "'")}`)
     }
     if (this.fontSize > 0) declarations.push(`font-size:${this.fontSize}px`)
     if (this.bold) declarations.push("font-weight:bold")

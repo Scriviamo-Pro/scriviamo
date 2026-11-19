@@ -1,4 +1,4 @@
-import {Alignments, Annotation, AnnotationHandler, Annotations, Autosave, AutosaveFunction, BackgroundImage, BlockShortcut, ChoiceItem, ChoicePopup, CodeBlockNode, CodePoints, Colors, CurrentDocumentVersion, DefaultFontSize, Dialog, DialogField, Directions, DocumentColor, DocumentStyle, Exporter, Exporters, ExportFormats, FileUploader, FileUploadKind, FontOptions, Formatting, FormattingStyles, HeadingNode, History, HTMLImporter, InsertionChoice, InsertionChooser, InspectorDefaults, InspectorSection, LineBreak, MarkdownConverter, MediaUI, Node, NodeClass, NodeSelection, NodeTypes, Notification, NotificationTypes, ParagraphBreak, PasteCleanup, Popup, PopupMenu, RichText, Search, SelectionState, Statistics, StatusBar, Strings, Stylesheet, SuggestionProviders, Suggestions, TableNode, TableSizePicker, TextHost, TextHostModes, TextNode, TextStyle, ThemeColors, ToolbarDisplayModes, ToolbarItem, ToolbarItemKinds, ToolbarItems, ToolbarMenuItem, ToolbarView, UnknownNode, Utilities} from "./internal"
+import {Alignments, Annotation, AnnotationHandler, Annotations, Autosave, AutosaveFunction, BackgroundImage, BlockShortcut, ChoiceItem, ChoicePopup, CodeBlockNode, CodePoints, Colors, CurrentDocumentVersion, DefaultFontSize, Dialog, DialogField, Directions, DocumentColor, DocumentStyle, Exporter, Exporters, ExportFormats, FileUploader, FileUploadKind, FontOptions, Formatting, FormattingStyles, HeadingNode, History, HTMLImporter, InsertionChoice, InsertionChooser, InspectorDefaults, InspectorSection, LineBreak, MarkdownConverter, MediaUI, Node, NodeClass, NodeSelection, NodeTypes, Notification, NotificationTypes, ParagraphBreak, PasteCleanup, Popup, PopupMenu, RichText, Search, SelectionState, Statistics, StatusBar, Strings, Stylesheet, SuggestionProviders, Suggestions, TableNode, TableSizePicker, TextHost, TextHostModes, TextNode, TextStyle, ThemeColors, ToolbarDisplayModes, ToolbarItem, ToolbarItemKinds, ToolbarItems, ToolbarMenuItem, ToolbarView, UnknownNode, Utilities, WebFonts} from "./internal"
 
 export enum ValidationSeverities {
   warning = 0,
@@ -4817,12 +4817,8 @@ export class Editor extends EventTarget {
     this.#renderNodeToolbar()
   }
 
-  /** @internal Replaces the locks other users hold: node IDs and their owners' names. */
-  setCollaborationNodeLocks(locks: Map<string, string> | null) {
-    let next = new Map(locks || [])
-    let same = next.size == this.#collaborationLocks.size && Array.from(next.entries()).every(([key, value]) => this.#collaborationLocks.get(key) === value)
-    if (same) return
-    this.#collaborationLocks = next
+  /** Shows each node's locked state again after node.locked changes, and stops editing a node that became locked. */
+  refreshLocks() {
     if (this.#editingNode && this.#editingNode.locked) this.endEditing()
     this.allNodes().forEach(node => {
       node.element?.classList.toggle("scv-locked", node.locked)
@@ -4833,6 +4829,15 @@ export class Editor extends EventTarget {
     })
     this.#renderNodeToolbar()
     this.updateToolbarState()
+  }
+
+  /** @internal Replaces the locks other users hold: node IDs and their owners' names. */
+  setCollaborationNodeLocks(locks: Map<string, string> | null) {
+    let next = new Map(locks || [])
+    let same = next.size == this.#collaborationLocks.size && Array.from(next.entries()).every(([key, value]) => this.#collaborationLocks.get(key) === value)
+    if (same) return
+    this.#collaborationLocks = next
+    this.refreshLocks()
     this.#schedulePresence()
   }
 
@@ -5364,6 +5369,7 @@ export class Editor extends EventTarget {
   exportStylesheet(): Stylesheet {
     let sheet = new Stylesheet()
     sheet.addCSS(this.#baseExportCSS())
+    sheet.addCSS(WebFonts.fontFaceCSS(WebFonts.used(this)))
     // Each node type in the document, including nested ones, adds its rules once.
     let exported = new Set<any>()
     this.allNodes().forEach(node => {
@@ -5464,10 +5470,11 @@ export class Editor extends EventTarget {
     frameDocument.open()
     frameDocument.write(this.toHTML(true))
     frameDocument.close()
-    setTimeout(() => {
+    // Web fonts load before printing, so the printout doesn't use their fallback.
+    Promise.all([WebFonts.settle(frameDocument), new Promise(resolve => setTimeout(resolve, 100))]).then(() => {
       frame.contentWindow.focus()
       frame.contentWindow.print()
       setTimeout(() => frame.remove(), 1000)
-    }, 100)
+    })
   }
 }

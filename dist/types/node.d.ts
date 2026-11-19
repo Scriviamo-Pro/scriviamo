@@ -96,6 +96,11 @@ export declare class Node {
     /** Explicit height in points, or 0 to follow the natural height. */
     height: number;
     /**
+     * Part of the document's fixed structure: saved with the node, and locked while the locking
+     * add-on protects the document. Without that add-on, it's kept but has no effect.
+     */
+    fixed: boolean;
+    /**
      * Locked nodes can't be edited, moved or deleted. Not saved. While collaborating, a
      * node is also locked when another user holds the lock on it, on a node containing
      * it, or on a node it contains.
@@ -206,6 +211,8 @@ export declare class Node {
     toMarkdown(): string;
     /** The node's own text before it is drawn, such as in a headless editor, where it has no text hosts. */
     protected undrawnTexts(): Array<RichText>;
+    /** The node's own texts, drawn or not, without those of nodes inside it. */
+    texts(): Array<RichText>;
     toPlainText(): string;
     /** Whether the node writes anything into exported HTML. */
     get canExportHTML(): boolean;

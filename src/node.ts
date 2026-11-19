@@ -114,6 +114,11 @@ export class Node {
   /** Explicit height in points, or 0 to follow the natural height. */
   height: number = 0
   #locked: boolean = false
+  /**
+   * Part of the document's fixed structure: saved with the node, and locked while the locking
+   * add-on protects the document. Without that add-on, it's kept but has no effect.
+   */
+  fixed: boolean = false
 
   /**
    * Locked nodes can't be edited, moved or deleted. Not saved. While collaborating, a
@@ -417,6 +422,7 @@ export class Node {
     // Explicit sizes are kept even where this editor can't resize the node, so documents keep them.
     if (this.width > 0) result["width"] = this.width
     if (this.height > 0) result["height"] = this.height
+    if (this.fixed) result["fixed"] = true
     return result
   }
 
@@ -446,6 +452,7 @@ export class Node {
     this.backgroundImage = data.backgroundImage ? BackgroundImage.fromJSON(data.backgroundImage) : new BackgroundImage()
     this.width = Math.max(0, Utilities.number(data.width, 0))
     this.height = Math.max(0, Utilities.number(data.height, 0))
+    this.fixed = Utilities.boolean(data.fixed, false)
     return true
   }
 
@@ -472,10 +479,14 @@ export class Node {
     return []
   }
 
+  /** The node's own texts, drawn or not, without those of nodes inside it. */
+  texts(): Array<RichText> {
+    return this.hosts().length > 0 ? this.hosts().map(host => host.rich) : this.undrawnTexts()
+  }
+
   toPlainText(): string {
     let parts: Array<string> = []
-    let texts = this.hosts().length > 0 ? this.hosts().map(host => host.rich) : this.undrawnTexts()
-    texts.forEach(rich => { if (rich.text.length > 0) parts.push(rich.text.replace(/\u2028/g, "\n")) })
+    this.texts().forEach(rich => { if (rich.text.length > 0) parts.push(rich.text.replace(/\u2028/g, "\n")) })
     this.childLists().forEach(list => list.forEach(child => {
       let value = child.toPlainText()
       if (value.length > 0) parts.push(value)

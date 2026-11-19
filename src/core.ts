@@ -284,8 +284,12 @@ export class Utilities {
   static fontFamilyCSS(fontName: string): string {
     if (!fontName || fontName.toLowerCase() == "system") return `system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif`
     if (fontName.toLowerCase() == "smallsystem") return `system-ui, sans-serif`
-    return `'${fontName.replace(/'/g, "\\'")}'`
+    let fallback = Utilities.webFontFallbacks.get(fontName.toLowerCase())
+    return `'${fontName.replace(/'/g, "\\'")}'${fallback ? `, ${fallback}` : ""}`
   }
+
+  /** Each registered web font's fallback, by its family in lowercase; WebFonts keeps it. */
+  static webFontFallbacks = new Map<string, string>()
 
   /** Converts a heading's text into a URL fragment. */
   static slug(value: string): string {

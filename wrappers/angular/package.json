@@ -1,6 +1,6 @@
 {
   "name": "scriviamo-angular",
-  "version": "1.0.1-beta.10",
+  "version": "1.0.1-beta.11",
   "description": "Angular components for the Scriviamo editor",
   "scripts": {
     "sync": "node ../sync-shared.mjs",

@@ -77,6 +77,10 @@ export class TableNode extends Node {
     this.cells.length = count
   }
 
+  protected undrawnTexts(): Array<RichText> {
+    return this.cells.slice()
+  }
+
   cell(row: number, column: number): RichText {
     return this.cells[row * this.columns + column]
   }

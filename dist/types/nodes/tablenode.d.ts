@@ -33,6 +33,7 @@ export declare class TableNode extends Node {
     constructor(rows?: number, columns?: number);
     childLists(): Array<Array<Node>>;
     ensureCells(): void;
+    protected undrawnTexts(): Array<RichText>;
     cell(row: number, column: number): RichText;
     /** For each cell, the index of the cell whose span covers it, or its own index. */
     coverage(): Array<number>;

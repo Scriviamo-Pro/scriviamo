@@ -103,6 +103,8 @@ export declare class Utilities {
     static clamp(value: number, minimum: number, maximum: number): number;
     /** Builds a CSS font-family list from a document font name. */
     static fontFamilyCSS(fontName: string): string;
+    /** Each registered web font's fallback, by its family in lowercase; WebFonts keeps it. */
+    static webFontFallbacks: Map<string, string>;
     /** Converts a heading's text into a URL fragment. */
     static slug(value: string): string;
     /** Detects the MIME type of base64-encoded picture data from its leading bytes. */

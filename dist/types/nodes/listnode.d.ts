@@ -38,6 +38,10 @@ export declare class ListNode extends TextNode {
     handleKeyDown(event: KeyboardEvent, host: TextHost | null): boolean;
     /** Indents (1) or outdents (-1) the items in the current selection. */
     changeLevel(delta: number): void;
+    /** Whether a checklist item is checked. */
+    isChecked(item: number): boolean;
+    /** Checks or unchecks a checklist item, as one undo step. Returns whether it changed. */
+    setChecked(item: number, checked: boolean): boolean;
     handleClick(event: MouseEvent): boolean;
     actions(): Array<ToolbarItem>;
     performAction(item: ToolbarItem, menuItem: ToolbarMenuItem | null): boolean;

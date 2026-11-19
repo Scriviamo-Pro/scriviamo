@@ -507,6 +507,8 @@ export declare class Editor extends EventTarget {
     /** @internal Comments may be added and changed; false for a collaborator with Read access. */
     get collaborationAnnotationsAllowed(): boolean;
     set collaborationAnnotationsAllowed(value: boolean);
+    /** Shows each node's locked state again after node.locked changes, and stops editing a node that became locked. */
+    refreshLocks(): void;
     /** @internal Replaces the locks other users hold: node IDs and their owners' names. */
     setCollaborationNodeLocks(locks: Map<string, string> | null): void;
     /** @internal Loads a server snapshot, keeping the selection. Returns false when it can't be loaded. */

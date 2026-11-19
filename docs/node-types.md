@@ -17,7 +17,8 @@ known in the JSON format by its *identifier*, such as `"text"` or `"table"`.
 | `borderTopLeftRadius` and the other three corners | Corner radii, in pixels |
 | `backgroundImage` | A picture drawn behind the node |
 | `width`, `height` | An explicit size, for nodes that can be resized; 0 follows the content |
-| `locked` | Locked nodes can't be edited, moved or deleted. Not saved. |
+| `locked` | Locked nodes can't be edited, moved or deleted. Not saved. After changing it, call `editor.refreshLocks()` to show it. |
+| `fixed` | Part of the document's fixed structure, saved with the node. An add-on can lock fixed nodes; on its own it changes nothing. |
 | `suggestionProvider` | Text suggestions for this node, ahead of the editor's. Not saved. |
 | `fontOptions` | Font choices and formats for this node, in place of the editor's. Not saved. |
 

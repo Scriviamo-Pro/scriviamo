@@ -115,3 +115,48 @@ editor.updateToolbarState()
 A node can have its own `fontOptions`, which replace the editor's while that node is
 formatted. Use it, for example, to offer only monospaced fonts in a node type of your own. `editor.activeFontOptions()`
 is the set in effect.
+
+## Web fonts
+
+The Font menu names fonts; the reader's device must have them. To use a font from files, such as
+a brand's typeface or one from Google Fonts or Fontsource, register it with `WebFonts`:
+
+```ts
+import {WebFonts} from "scriviamo"
+
+WebFonts.register("Lora", [
+  {url: "/fonts/lora-regular.woff2"},
+  {url: "/fonts/lora-italic.woff2", style: "italic"},
+  {url: "/fonts/lora-bold.ttf", weight: 700}
+], {fallback: "serif"})
+
+let editor = new Editor(element)   // offers Lora in its Font menu
+```
+
+A face is a file's address, or an object with `url`, `weight` (such as `400`, `"bold"`, or
+`"100 900"` for a variable font), `style` (`"normal"` or `"italic"`), `format` (`"woff2"`,
+`"woff"`, `"truetype"` or `"opentype"`, read from the address when left out) and `unicodeRange`.
+Registering a font:
+
+- loads it into the page, a file at a time as text uses its weights and styles;
+- adds it to the Font menu of editors made after this; add it to an editor made before with
+  `editor.fontOptions.addFontName("Lora")`;
+- writes its fallback after it wherever the editor names it, so text shows in the fallback while
+  the font loads, or where it can't;
+- carries it into exports. HTML pages and the export stylesheet get `@font-face` rules for the
+  registered fonts the document uses, with each file's absolute address, so the files must be
+  reachable, and allow cross-origin requests, from wherever the page is opened. Printing waits
+  for the fonts to load.
+
+Fonts are licensed. Pass `embed: false` for a font whose license allows it on web pages but not
+in documents people download; exported files then name it without storing it.
+
+| Member | Meaning |
+|---|---|
+| `WebFonts.register(family, faces, options)` | Registers a font, replacing one of the same name. Options: `fallback`, `embed` (on by default) and `addToMenu` (on by default) |
+| `WebFonts.remove(family)` | Removes a font from the page and the Font menu of editors made after this |
+| `WebFonts.item(family)`, `WebFonts.all()` | A registered font by name, ignoring case, or all of them |
+| `WebFonts.used(editor)` | The registered fonts a document uses: the editor's own font, and any block's or text's |
+| `WebFonts.load(family)` | Loads every face now, and resolves whether they all loaded |
+| `WebFonts.fontFaceCSS(fonts, url)` | `@font-face` rules for fonts; `url` gives each file's address in the result |
+| `WebFonts.bytes(face)` | A face's file, fetched once and kept |

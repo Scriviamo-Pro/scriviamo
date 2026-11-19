@@ -19,7 +19,7 @@ const base = await import(`${dist}scriviamo.js`)
 const {Editor, HeadingNode, TextNode, ListNode, ListTypes, TableNode} = base
 const {existsSync} = await import("node:fs")
 const addons = {}
-for (const name of ["callouts", "math", "diagrams", "footnotes", "columns", "blocks", "forms", "media", "linkcards", "datatable", "rawcontent", "templates", "pdf", "assistant", "inspector", "collaboration", "steps", "tabs", "attachments", "gallery", "map", "charts", "signature", "dates", "status", "outline", "readability", "focus", "dictation", "word", "epub", "odt", "wikiimport", "accessibility", "versions", "trackchanges"]) {
+for (const name of ["callouts", "math", "diagrams", "footnotes", "columns", "blocks", "forms", "media", "linkcards", "datatable", "rawcontent", "templates", "pdf", "assistant", "inspector", "collaboration", "steps", "tabs", "attachments", "gallery", "map", "charts", "signature", "dates", "status", "outline", "readability", "focus", "dictation", "word", "epub", "odt", "wikiimport", "accessibility", "versions", "trackchanges", "locking", "variables", "tasks"]) {
   if (!existsSync(`${root}/dist/addons/scriviamo.${name}.js`)) continue
   try {
     addons[name] = await import(`${dist}addons/scriviamo.${name}.js`)

@@ -258,8 +258,11 @@ var Utilities = class _Utilities {
       return `system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif`;
     if (fontName.toLowerCase() == "smallsystem")
       return `system-ui, sans-serif`;
-    return `'${fontName.replace(/'/g, "\\'")}'`;
+    let fallback = _Utilities.webFontFallbacks.get(fontName.toLowerCase());
+    return `'${fontName.replace(/'/g, "\\'")}'${fallback ? `, ${fallback}` : ""}`;
   }
+  /** Each registered web font's fallback, by its family in lowercase; WebFonts keeps it. */
+  static webFontFallbacks = /* @__PURE__ */ new Map();
   /** Converts a heading's text into a URL fragment. */
   static slug(value) {
     return (value || "").toLowerCase().normalize("NFKD").replace(/[̀-ͯ]/g, "").replace(/[^\p{L}\p{N}\s-]/gu, "").trim().replace(/\s+/g, "-");
@@ -616,7 +619,7 @@ var TextStyle = class _TextStyle {
     if (this.fontName.toLowerCase() == "system") {
       declarations.push("font-family:sans-serif");
     } else if (this.fontName.length > 0) {
-      declarations.push(`font-family:'${this.fontName.replace(/'/g, "\\'")}'`);
+      declarations.push(`font-family:${Utilities.fontFamilyCSS(this.fontName).replace(/"/g, "'")}`);
     }
     if (this.fontSize > 0)
       declarations.push(`font-size:${this.fontSize}px`);
@@ -644,6 +647,213 @@ var TextStyle = class _TextStyle {
     if (decorations.length > 0)
       declarations.push(`text-decoration:${decorations.join(" ")}`);
     return declarations.join(";");
+  }
+};
+
+// fonts.ts
+var WebFont = class {
+  family;
+  faces;
+  fallback;
+  embed;
+  #loaded = [];
+  constructor(family, faces, fallback, embed) {
+    this.family = family;
+    this.faces = faces;
+    this.fallback = fallback;
+    this.embed = embed;
+  }
+  /** The font as a CSS font-family value, with its fallback. */
+  get css() {
+    return Utilities.fontFamilyCSS(this.family);
+  }
+  /** The faces whose files Word and OpenDocument can store: TrueType and OpenType. */
+  get desktopFaces() {
+    return this.faces.filter((face) => /^(truetype|opentype)$/.test(WebFonts.format(face)));
+  }
+  /** Adds the font to a page's fonts, without loading it until text uses it. */
+  addTo(target) {
+    let FontFaceClass = target.defaultView?.FontFace;
+    if (!FontFaceClass || !target.fonts)
+      return;
+    this.faces.forEach((face) => {
+      try {
+        let font = new FontFaceClass(this.family, `url(${JSON.stringify(WebFonts.absoluteURL(face.url))}) format(${JSON.stringify(WebFonts.format(face))})`, {
+          weight: String(face.weight ?? 400),
+          style: face.style || "normal",
+          display: "swap",
+          ...face.unicodeRange ? { unicodeRange: face.unicodeRange } : {}
+        });
+        target.fonts.add(font);
+        if (target == globalThis.document)
+          this.#loaded.push(font);
+      } catch {
+      }
+    });
+  }
+  /** Removes the font from the page it was added to. */
+  removeFromPage() {
+    let fonts = globalThis.document?.fonts;
+    this.#loaded.forEach((font) => fonts?.delete(font));
+    this.#loaded = [];
+  }
+  /** Loads every face in the page, and resolves whether they all loaded. */
+  async load() {
+    let results = await Promise.all(this.#loaded.map((font) => font.load().then(() => true, () => false)));
+    return results.every((result) => result);
+  }
+};
+var WebFonts = class _WebFonts {
+  static #fonts = /* @__PURE__ */ new Map();
+  static #bytes = /* @__PURE__ */ new Map();
+  /**
+   * Registers a font. faces is a file's address, a face, or several, one for each weight and
+   * style. Registering a family again replaces it.
+   */
+  static register(family, faces, options = {}) {
+    family = String(family || "").trim();
+    if (family.length == 0)
+      throw new Error("A web font needs a family name.");
+    let list = (Array.isArray(faces) ? faces : [faces]).map((face) => typeof face == "string" ? { url: face } : { ...face }).filter((face) => face.url);
+    if (list.length == 0)
+      throw new Error(`The font "${family}" needs at least one file.`);
+    _WebFonts.remove(family);
+    let font = new WebFont(family, list, String(options.fallback || "").trim(), options.embed !== false);
+    _WebFonts.#fonts.set(family.toLowerCase(), font);
+    Utilities.webFontFallbacks.set(family.toLowerCase(), font.fallback);
+    if (options.addToMenu !== false && !FontOptions.defaultFontNames.some((name) => name.toLowerCase() == family.toLowerCase()))
+      FontOptions.defaultFontNames.push(family);
+    if (typeof document != "undefined")
+      font.addTo(document);
+    return font;
+  }
+  /** Removes a registered font from the registry, the page and the Font menu of editors made after this. */
+  static remove(family) {
+    let key = String(family || "").toLowerCase();
+    let font = _WebFonts.#fonts.get(key);
+    if (!font)
+      return;
+    font.removeFromPage();
+    _WebFonts.#fonts.delete(key);
+    Utilities.webFontFallbacks.delete(key);
+    let index = FontOptions.defaultFontNames.findIndex((name) => name.toLowerCase() == key);
+    if (index >= 0)
+      FontOptions.defaultFontNames.splice(index, 1);
+  }
+  /** A registered font by its family name, ignoring case, or null. */
+  static item(family) {
+    return _WebFonts.#fonts.get(String(family || "").toLowerCase()) || null;
+  }
+  /** Every registered font, in the order registered. */
+  static all() {
+    return Array.from(_WebFonts.#fonts.values());
+  }
+  /** The registered fonts a document uses: the editor's font, and any block's or text's. */
+  static used(editor) {
+    if (_WebFonts.#fonts.size == 0)
+      return [];
+    let names = /* @__PURE__ */ new Set([String(editor.fontName || "").toLowerCase()]);
+    let collect = (value) => {
+      if (Array.isArray(value)) {
+        value.forEach(collect);
+      } else if (value && typeof value == "object") {
+        for (let key in value) {
+          if (key == "fontName" && typeof value[key] == "string")
+            names.add(value[key].toLowerCase());
+          else
+            collect(value[key]);
+        }
+      }
+    };
+    collect(editor.toJSONObject());
+    return _WebFonts.all().filter((font) => names.has(font.family.toLowerCase()));
+  }
+  /** Loads a registered font's files in the page, and resolves whether they all loaded. */
+  static async load(family) {
+    let font = _WebFonts.item(family);
+    return font ? font.load() : false;
+  }
+  /** @font-face rules for fonts. url gives each file's address in the result; by default its absolute address. */
+  static fontFaceCSS(fonts, url = (face) => _WebFonts.absoluteURL(face.url)) {
+    return fonts.flatMap((font) => font.faces.map((face) => {
+      let declarations = [
+        `font-family: ${JSON.stringify(font.family)}`,
+        `src: url(${JSON.stringify(url(face, font))}) format(${JSON.stringify(_WebFonts.format(face))})`,
+        `font-weight: ${face.weight ?? 400}`,
+        `font-style: ${face.style || "normal"}`,
+        `font-display: swap`
+      ];
+      if (face.unicodeRange)
+        declarations.push(`unicode-range: ${face.unicodeRange}`);
+      return `@font-face { ${declarations.join("; ")} }`;
+    })).join("\n");
+  }
+  /** The font a CSS font-family value names first, or "" for the system font and generic families. */
+  static familyName(css) {
+    let first = String(css || "").split(",")[0].trim().replace(/^["']|["']$/g, "").trim();
+    if (/^(system|system-ui|-apple-system|blinkmacsystemfont|serif|sans-serif|monospace|cursive|fantasy|ui-[a-z-]+|inherit|initial|unset)$/i.test(first))
+      return "";
+    return first;
+  }
+  /** A face's format: its own, or read from its address. */
+  static format(face) {
+    if (face.format)
+      return face.format.toLowerCase();
+    let extension = (face.url.split(/[?#]/)[0].match(/\.([a-z0-9]+)$/i) || ["", ""])[1].toLowerCase();
+    return { ttf: "truetype", otf: "opentype", woff: "woff", woff2: "woff2" }[extension] || "woff2";
+  }
+  /** A face's file extension, from its format. */
+  static extension(face) {
+    return { truetype: "ttf", opentype: "otf", woff: "woff", woff2: "woff2" }[_WebFonts.format(face)] || "woff2";
+  }
+  /** A face's media type, as EPUB and OpenDocument packages list it. */
+  static mediaType(face) {
+    return { truetype: "font/ttf", opentype: "font/otf", woff: "font/woff", woff2: "font/woff2" }[_WebFonts.format(face)] || "font/woff2";
+  }
+  /** Whether a face is bold: its weight, or the start of its range, is 600 or more. */
+  static isBold(face) {
+    let weight = String(face.weight ?? 400).trim().toLowerCase();
+    if (weight == "bold" || weight == "bolder")
+      return true;
+    return (parseFloat(weight) || 400) >= 600;
+  }
+  /** Whether a face is italic or oblique. */
+  static isItalic(face) {
+    return /italic|oblique/i.test(face.style || "");
+  }
+  /** An address as an absolute one, against the page's. */
+  static absoluteURL(url) {
+    try {
+      return typeof document != "undefined" ? new URL(url, document.baseURI).href : url;
+    } catch {
+      return url;
+    }
+  }
+  /** A face's file, fetched once and kept. Rejects when it can't be fetched. */
+  static bytes(face) {
+    let url = _WebFonts.absoluteURL(face.url);
+    if (!_WebFonts.#bytes.has(url)) {
+      let request = fetch(url).then((response) => {
+        if (!response.ok)
+          throw new Error(`${url}: ${response.status}`);
+        return response.arrayBuffer();
+      }).then((buffer) => new Uint8Array(buffer));
+      request.catch(() => _WebFonts.#bytes.delete(url));
+      _WebFonts.#bytes.set(url, request);
+    }
+    return _WebFonts.#bytes.get(url);
+  }
+  /** Loads the fonts a page's text uses, such as a printing frame's, and resolves when they're ready, or after timeout milliseconds. */
+  static async settle(target, timeout = 3e3) {
+    let fonts = target.fonts;
+    if (!fonts)
+      return;
+    let loads = [];
+    fonts.forEach((font) => {
+      if (font.status == "unloaded")
+        loads.push(font.load().catch(() => null));
+    });
+    await Promise.race([Promise.all(loads).then(() => fonts.ready), new Promise((resolve) => setTimeout(resolve, timeout))]);
   }
 };
 
@@ -3241,6 +3451,11 @@ var Node3 = class _Node {
   height = 0;
   #locked = false;
   /**
+   * Part of the document's fixed structure: saved with the node, and locked while the locking
+   * add-on protects the document. Without that add-on, it's kept but has no effect.
+   */
+  fixed = false;
+  /**
    * Locked nodes can't be edited, moved or deleted. Not saved. While collaborating, a
    * node is also locked when another user holds the lock on it, on a node containing
    * it, or on a node it contains.
@@ -3519,6 +3734,8 @@ var Node3 = class _Node {
       result["width"] = this.width;
     if (this.height > 0)
       result["height"] = this.height;
+    if (this.fixed)
+      result["fixed"] = true;
     return result;
   }
   /** Restores the node. Missing names restore their defaults. Returns false when data can't be used. */
@@ -3549,6 +3766,7 @@ var Node3 = class _Node {
     this.backgroundImage = data.backgroundImage ? BackgroundImage.fromJSON(data.backgroundImage) : new BackgroundImage();
     this.width = Math.max(0, Utilities.number(data.width, 0));
     this.height = Math.max(0, Utilities.number(data.height, 0));
+    this.fixed = Utilities.boolean(data.fixed, false);
     return true;
   }
   /** Copies the common Node properties to another node, such as when converting a paragraph into a heading. */
@@ -3569,10 +3787,13 @@ var Node3 = class _Node {
   undrawnTexts() {
     return [];
   }
+  /** The node's own texts, drawn or not, without those of nodes inside it. */
+  texts() {
+    return this.hosts().length > 0 ? this.hosts().map((host) => host.rich) : this.undrawnTexts();
+  }
   toPlainText() {
     let parts = [];
-    let texts = this.hosts().length > 0 ? this.hosts().map((host) => host.rich) : this.undrawnTexts();
-    texts.forEach((rich) => {
+    this.texts().forEach((rich) => {
       if (rich.text.length > 0)
         parts.push(rich.text.replace(/\u2028/g, "\n"));
     });
@@ -4527,6 +4748,29 @@ var ListNode = class _ListNode extends TextNode2 {
     editor.replaceNode(this, replacements);
     editor.focusNode(paragraph, 0);
   }
+  /** Whether a checklist item is checked. */
+  isChecked(item) {
+    return this.listType == 2 /* checklist */ && !!this.content.listChecked[item];
+  }
+  /** Checks or unchecks a checklist item, as one undo step. Returns whether it changed. */
+  setChecked(item, checked) {
+    if (this.listType != 2 /* checklist */ || item < 0 || item >= this.itemCount || this.isChecked(item) == checked)
+      return false;
+    if (this.editor) {
+      this.editor.history.breakCoalescing();
+      this.editor.history.checkpoint();
+    }
+    this.willChange();
+    this.#normalizeItems();
+    this.content.listChecked[item] = checked;
+    let host = this.primaryHost;
+    if (host && host.element)
+      host.render();
+    this.changed();
+    if (this.editor)
+      this.editor.history.breakCoalescing();
+    return true;
+  }
   handleClick(event) {
     let target = event.target;
     if (!(target instanceof HTMLInputElement) || !target.closest(".scv-check"))
@@ -4968,6 +5212,9 @@ var TableNode = class _TableNode extends Node3 {
     while (this.cells.length < count)
       this.cells.push(new RichText());
     this.cells.length = count;
+  }
+  undrawnTexts() {
+    return this.cells.slice();
   }
   cell(row, column) {
     return this.cells[row * this.columns + column];
@@ -15164,13 +15411,8 @@ var Editor2 = class _Editor extends EventTarget {
     this.updateToolbarState();
     this.#renderNodeToolbar();
   }
-  /** @internal Replaces the locks other users hold: node IDs and their owners' names. */
-  setCollaborationNodeLocks(locks) {
-    let next = new Map(locks || []);
-    let same = next.size == this.#collaborationLocks.size && Array.from(next.entries()).every(([key, value]) => this.#collaborationLocks.get(key) === value);
-    if (same)
-      return;
-    this.#collaborationLocks = next;
+  /** Shows each node's locked state again after node.locked changes, and stops editing a node that became locked. */
+  refreshLocks() {
     if (this.#editingNode && this.#editingNode.locked)
       this.endEditing();
     this.allNodes().forEach((node) => {
@@ -15183,6 +15425,15 @@ var Editor2 = class _Editor extends EventTarget {
     });
     this.#renderNodeToolbar();
     this.updateToolbarState();
+  }
+  /** @internal Replaces the locks other users hold: node IDs and their owners' names. */
+  setCollaborationNodeLocks(locks) {
+    let next = new Map(locks || []);
+    let same = next.size == this.#collaborationLocks.size && Array.from(next.entries()).every(([key, value]) => this.#collaborationLocks.get(key) === value);
+    if (same)
+      return;
+    this.#collaborationLocks = next;
+    this.refreshLocks();
     this.#schedulePresence();
   }
   /** @internal Loads a server snapshot, keeping the selection. Returns false when it can't be loaded. */
@@ -15753,6 +16004,7 @@ ${body}
   exportStylesheet() {
     let sheet = new Stylesheet8();
     sheet.addCSS(this.#baseExportCSS());
+    sheet.addCSS(WebFonts.fontFaceCSS(WebFonts.used(this)));
     let exported = /* @__PURE__ */ new Set();
     this.allNodes().forEach((node) => {
       let type = node.constructor;
@@ -15856,11 +16108,11 @@ ${body}
     frameDocument.open();
     frameDocument.write(this.toHTML(true));
     frameDocument.close();
-    setTimeout(() => {
+    Promise.all([WebFonts.settle(frameDocument), new Promise((resolve) => setTimeout(resolve, 100))]).then(() => {
       frame.contentWindow.focus();
       frame.contentWindow.print();
       setTimeout(() => frame.remove(), 1e3);
-    }, 100);
+    });
   }
 };
 
@@ -16412,7 +16664,9 @@ export {
   Utilities,
   ValidationIssue,
   ValidationSeverities,
-  VerticalAlignments
+  VerticalAlignments,
+  WebFont,
+  WebFonts
 };
 /**
  * Scriviamo

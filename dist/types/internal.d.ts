@@ -1,5 +1,6 @@
 export * from "./core";
 export * from "./textstyle";
+export * from "./fonts";
 export * from "./richtext";
 export * from "./texthost";
 export * from "./suggestions";

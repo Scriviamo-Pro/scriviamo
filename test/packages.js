@@ -4,7 +4,7 @@
 
 /** Suites by package, under suites/. */
 const ParitySuites = {
-  base: ["base/bidi.js", "base/core.js", "base/documentload.js", "base/rendering.js", "base/forms.js", "base/localization.js", "base/nodetypes.js", "base/importexport.js", "base/importexport2.js", "base/autosave.js", "base/uploads.js", "base/headless.js", "base/paste.js"],
+  base: ["base/bidi.js", "base/core.js", "base/documentload.js", "base/rendering.js", "base/forms.js", "base/localization.js", "base/nodetypes.js", "base/importexport.js", "base/importexport2.js", "base/autosave.js", "base/uploads.js", "base/headless.js", "base/paste.js", "base/fonts.js"],
   callouts: ["callouts/rendering.js", "callouts/nodetypes.js", "callouts/importexport2.js"],
   rawcontent: ["rawcontent/importexport2.js"],
   media: ["media/importexport2.js"],

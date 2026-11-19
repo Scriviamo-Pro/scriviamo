@@ -329,6 +329,28 @@ export class ListNode extends TextNode {
     editor.focusNode(paragraph, 0)
   }
 
+  /** Whether a checklist item is checked. */
+  isChecked(item: number): boolean {
+    return this.listType == ListTypes.checklist && !!this.content.listChecked[item]
+  }
+
+  /** Checks or unchecks a checklist item, as one undo step. Returns whether it changed. */
+  setChecked(item: number, checked: boolean): boolean {
+    if (this.listType != ListTypes.checklist || item < 0 || item >= this.itemCount || this.isChecked(item) == checked) return false
+    if (this.editor) {
+      this.editor.history.breakCoalescing()
+      this.editor.history.checkpoint()
+    }
+    this.willChange()
+    this.#normalizeItems()
+    this.content.listChecked[item] = checked
+    let host = this.primaryHost
+    if (host && host.element) host.render()
+    this.changed()
+    if (this.editor) this.editor.history.breakCoalescing()
+    return true
+  }
+
   handleClick(event: MouseEvent): boolean {
     let target = event.target as HTMLElement
     if (!(target instanceof HTMLInputElement) || !target.closest(".scv-check")) return false

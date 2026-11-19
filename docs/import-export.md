@@ -169,6 +169,9 @@ let sheet = editor.exportStylesheet()   // the same, as a Stylesheet to read or 
 A node type adds rules with a static `exportStyles(sheet, editor)` method; see
 [Writing node types](custom-node-types.md#exporting).
 
+The stylesheet also has an `@font-face` rule for each [web font](text-and-formatting.md#web-fonts)
+the document uses.
+
 ### Theme colors
 
 The export stylesheet draws with a set of theme colors: background, text, links, borders,
@@ -191,5 +194,6 @@ Colors are `DocumentColor` objects, `{red, green, blue, alpha}`, with each chann
 
 ## Printing
 
-`editor.print()` prints the document through the browser's print dialog. Page breaks from the
-blocks add-on start new pages.
+`editor.print()` prints the document through the browser's print dialog, once the
+[web fonts](text-and-formatting.md#web-fonts) it uses have loaded. Page breaks from the blocks
+add-on start new pages.
