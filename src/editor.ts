@@ -206,6 +206,11 @@ export class Editor extends EventTarget {
 
   id: string = Utilities.uuid()
   documentID: string = ""
+  /**
+   * Where the versions add-on keeps this editor's versions, when an add-on such as git provides
+   * a store for the document; null uses the versions add-on's own choice.
+   */
+  versionStore: object | null = null
 
   strings: Strings = new Strings()
   nodeTypes: NodeTypes

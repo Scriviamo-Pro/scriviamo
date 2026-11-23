@@ -10651,6 +10651,11 @@ var Editor2 = class _Editor extends EventTarget {
   }
   id = Utilities.uuid();
   documentID = "";
+  /**
+   * Where the versions add-on keeps this editor's versions, when an add-on such as git provides
+   * a store for the document; null uses the versions add-on's own choice.
+   */
+  versionStore = null;
   strings = new Strings();
   nodeTypes;
   toolbarItems = new ToolbarItems();

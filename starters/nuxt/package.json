@@ -17,5 +17,5 @@
     "scriviamo-vue": "file:../../wrappers/vue",
     "vue": "^3.5.0"
   },
-  "version": "1.0.1-beta.14"
+  "version": "1.0.1-beta.15"
 }

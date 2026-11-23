@@ -1,6 +1,6 @@
 {
   "name": "scriviamo-element",
-  "version": "1.0.1-beta.14",
+  "version": "1.0.1-beta.15",
   "description": "A web component for the Scriviamo editor: <scriviamo-editor>, for any framework or none",
   "type": "module",
   "main": "dist/index.js",

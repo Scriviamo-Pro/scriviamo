@@ -165,6 +165,11 @@ export declare class Editor extends EventTarget {
     static ownStatic(type: NodeClass, name: string): any;
     id: string;
     documentID: string;
+    /**
+     * Where the versions add-on keeps this editor's versions, when an add-on such as git provides
+     * a store for the document; null uses the versions add-on's own choice.
+     */
+    versionStore: object | null;
     strings: Strings;
     nodeTypes: NodeTypes;
     toolbarItems: ToolbarItems;
