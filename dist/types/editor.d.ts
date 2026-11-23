@@ -157,10 +157,18 @@ export declare class Editor extends EventTarget {
     static extensions(): Array<EditorExtension>;
     /** Registers a panel about the document, such as an outline; one with the same identifier is replaced. */
     static registerPanel(panel: EditorPanel): void;
-    /** The registered panels, in the order they were registered. */
     /** Removes a registered panel, by its identifier. */
     static unregisterPanel(identifier: string): void;
+    /** The registered panels, in the order they were registered. */
     static panels(): Array<EditorPanel>;
+    /**
+     * Registers an add-on's exports by the add-on's name, which it does when its module loads, so
+     * code that can't import the module, such as a framework component that works with whichever
+     * package the add-on came from, can find it with Editor.addon.
+     */
+    static registerAddon(name: string, exports: Record<string, unknown>): void;
+    /** A loaded add-on's exports, by its name, such as Editor.addon("inspector")?.Inspector; undefined until its module loads. */
+    static addon(name: string): Record<string, any> | undefined;
     /** A static member a node type declares itself, rather than inherits from the type it extends. */
     static ownStatic(type: NodeClass, name: string): any;
     id: string;

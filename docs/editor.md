@@ -191,3 +191,8 @@ Every event is a `CustomEvent` with its details in `detail`.
 and commands to every editor created afterwards. `editor.nodeTypes` lists one editor's types,
 and can add or remove types for that editor alone. See
 [Writing node types](custom-node-types.md).
+
+An add-on can register its exports by name with `Editor.registerAddon(name, exports)` when its
+module loads, and `Editor.addon(name)` gives them back, or `undefined` until it's loaded. Code that
+can't import an add-on's module directly uses it, such as the framework components, which find the
+inspector with `Editor.addon("inspector")?.Inspector` whichever package it was installed from.

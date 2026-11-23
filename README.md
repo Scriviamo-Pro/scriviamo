@@ -67,6 +67,14 @@ mode. See [Getting started](docs/getting-started.md#requirements).
 
 ## Quick start
 
+Install it from npm:
+
+```bash
+npm install scriviamo bootstrap bootstrap-icons
+```
+
+and import modules by name, such as `scriviamo` and `scriviamo/addons/callouts`. Or build it from this repository:
+
 You need [Node.js](https://nodejs.org/) to build.
 
 ```bash

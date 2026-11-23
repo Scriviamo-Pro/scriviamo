@@ -157,6 +157,7 @@ export class Editor extends EventTarget {
   static #nodeTypeRegistry: Array<{type: NodeClass, order: number}> = []
   static #extensions: Array<EditorExtension> = []
   static #panels: Array<EditorPanel> = []
+  static #addons = new Map<string, Record<string, unknown>>()
 
   /**
    * Registers a node type for every editor created afterwards. order places it in
@@ -189,14 +190,28 @@ export class Editor extends EventTarget {
     Editor.#panels = Editor.#panels.filter(item => item.identifier != panel.identifier).concat([panel])
   }
 
-  /** The registered panels, in the order they were registered. */
   /** Removes a registered panel, by its identifier. */
   static unregisterPanel(identifier: string) {
     Editor.#panels = Editor.#panels.filter(item => item.identifier != identifier)
   }
 
+  /** The registered panels, in the order they were registered. */
   static panels(): Array<EditorPanel> {
     return Editor.#panels.slice()
+  }
+
+  /**
+   * Registers an add-on's exports by the add-on's name, which it does when its module loads, so
+   * code that can't import the module, such as a framework component that works with whichever
+   * package the add-on came from, can find it with Editor.addon.
+   */
+  static registerAddon(name: string, exports: Record<string, unknown>) {
+    Editor.#addons.set(name, exports)
+  }
+
+  /** A loaded add-on's exports, by its name, such as Editor.addon("inspector")?.Inspector; undefined until its module loads. */
+  static addon(name: string): Record<string, any> | undefined {
+    return Editor.#addons.get(name)
   }
 
   /** A static member a node type declares itself, rather than inherits from the type it extends. */

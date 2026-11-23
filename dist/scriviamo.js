@@ -10610,6 +10610,7 @@ var Editor2 = class _Editor extends EventTarget {
   static #nodeTypeRegistry = [];
   static #extensions = [];
   static #panels = [];
+  static #addons = /* @__PURE__ */ new Map();
   /**
    * Registers a node type for every editor created afterwards. order places it in
    * the insertion and block type menus; the built-in types use multiples of 10.
@@ -10637,13 +10638,25 @@ var Editor2 = class _Editor extends EventTarget {
   static registerPanel(panel) {
     _Editor.#panels = _Editor.#panels.filter((item) => item.identifier != panel.identifier).concat([panel]);
   }
-  /** The registered panels, in the order they were registered. */
   /** Removes a registered panel, by its identifier. */
   static unregisterPanel(identifier) {
     _Editor.#panels = _Editor.#panels.filter((item) => item.identifier != identifier);
   }
+  /** The registered panels, in the order they were registered. */
   static panels() {
     return _Editor.#panels.slice();
+  }
+  /**
+   * Registers an add-on's exports by the add-on's name, which it does when its module loads, so
+   * code that can't import the module, such as a framework component that works with whichever
+   * package the add-on came from, can find it with Editor.addon.
+   */
+  static registerAddon(name, exports) {
+    _Editor.#addons.set(name, exports);
+  }
+  /** A loaded add-on's exports, by its name, such as Editor.addon("inspector")?.Inspector; undefined until its module loads. */
+  static addon(name) {
+    return _Editor.#addons.get(name);
   }
   /** A static member a node type declares itself, rather than inherits from the type it extends. */
   static ownStatic(type, name) {

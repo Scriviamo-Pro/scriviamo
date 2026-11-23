@@ -22,6 +22,27 @@ The editor follows Bootstrap's color modes, so `data-bs-theme="dark"` on the pag
 editor. It also takes its colors from Bootstrap's CSS variables, such as `--bs-primary` and
 `--bs-border-color`, so a customized Bootstrap theme carries over to it.
 
+## Installing from npm
+
+```bash
+npm install scriviamo bootstrap bootstrap-icons
+```
+
+Import the base package and the add-ons you use by name, with their stylesheets:
+
+```js
+import "bootstrap/dist/css/bootstrap.min.css"
+import "bootstrap-icons/font/bootstrap-icons.min.css"
+import "scriviamo/dist/scriviamo.css"
+import {Editor} from "scriviamo"
+import "scriviamo/addons/callouts"
+import "scriviamo/dist/addons/scriviamo.callouts.css"
+```
+
+Every file in `dist/` below is in the package under `scriviamo/dist/`, so the paths in these docs
+work with `scriviamo/` in front. A beta is published with the `beta` tag:
+`npm install scriviamo@beta`.
+
 ## Building
 
 The source is in `src/`. Building needs Node.js.
