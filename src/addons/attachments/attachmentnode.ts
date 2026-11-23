@@ -48,6 +48,7 @@ export class AttachmentNode extends Node {
 
   static identifier: string = "attachment"
   static caption: string = "File"
+  static captionString: string = "TextAttachmentCaption"
   static icon: string = "bi bi-paperclip"
   static keywords: string = "attachment file download upload document pdf zip"
   /** Any file no other type takes. */

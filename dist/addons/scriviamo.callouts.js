@@ -27,6 +27,7 @@ var AlertNode = class _AlertNode extends TextNode {
   }
   static identifier = "alert";
   static caption = "Alert";
+  static captionString = "TextAlertInspectorCaption";
   static icon = "bi bi-exclamation-triangle";
   static keywords = "callout note tip warning caution info danger success";
   static typeNames = ["info", "success", "warning", "danger"];

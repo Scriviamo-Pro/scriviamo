@@ -8,6 +8,7 @@ export class DividerNode extends Node {
 
   static identifier: string = "divider"
   static caption: string = "Divider"
+  static captionString: string = "TextDividerCaption"
   static icon: string = "bi bi-hr"
   static keywords: string = "rule line separator hr"
   static markdownShortcuts: Array<BlockShortcut> = [{pattern: /^---$/, insertsBlock: true}]

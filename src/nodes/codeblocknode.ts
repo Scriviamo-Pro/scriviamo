@@ -1,15 +1,16 @@
-import {BlockShortcut, Editor, HTMLImporter, InspectorDefaults, InspectorEditors, InspectorItem, InspectorSection, LineBreak, Node, RichText, Strings, Stylesheet, TextHost, TextHostModes, TextNode, TextStyle, ThemeColors, Utilities} from "../internal"
+import {BlockShortcut, Directions, Editor, HTMLImporter, InspectorDefaults, InspectorEditors, InspectorItem, InspectorSection, LineBreak, Node, RichText, Strings, Stylesheet, TextHost, TextHostModes, TextNode, TextStyle, ThemeColors, Utilities} from "../internal"
 
 /** Unstyled monospaced text, such as source code. */
 export class CodeBlockNode extends TextNode {
   static exportStyles(sheet: Stylesheet, editor: Editor | null) {
     super.exportStyles(sheet, editor)
-    sheet.addRule("pre", `margin-left: 0; margin-right: 0; padding: 16px; overflow-x: auto; border-radius: 8px; background: ${Editor.themeCSS(editor, ThemeColors.dark)}; color: ${Editor.themeCSS(editor, ThemeColors.light)}; white-space: pre`)
+    sheet.addRule("pre", `direction: ltr; text-align: left; margin-left: 0; margin-right: 0; padding: 16px; overflow-x: auto; border-radius: 8px; background: ${Editor.themeCSS(editor, ThemeColors.dark)}; color: ${Editor.themeCSS(editor, ThemeColors.light)}; white-space: pre`)
     sheet.addRule("pre code", "font-family: Menlo, Courier, monospace; font-size: 14px")
   }
 
   static identifier: string = "codeblock"
   static caption: string = "Code"
+  static captionString: string = "TextCodeInspectorCaption"
   static icon: string = "bi bi-code-square"
   static keywords: string = "source program snippet pre monospace"
   static languages: Array<string> = ["", "bash", "c", "cpp", "csharp", "css", "go", "html", "java", "javascript", "json", "kotlin", "markdown", "php", "python", "ruby", "rust", "sql", "swift", "typescript", "xml", "yaml"]
@@ -103,6 +104,8 @@ export class CodeBlockNode extends TextNode {
     header.append(copy)
 
     let pre = Utilities.element("pre", "scv-code-body")
+    // Code reads left to right, even in a right-to-left document, unless the block is set otherwise.
+    if (this.direction != Directions.rightToLeft) pre.dir = "ltr"
     // Long lines scroll sideways; a reader without a mouse reaches the scrolling with the keyboard.
     pre.tabIndex = 0
     pre.setAttribute("role", "region")
@@ -200,7 +203,8 @@ export class CodeBlockNode extends TextNode {
 
   toHTML(): string {
     let classAttribute = this.language.length > 0 ? ` class="language-${Utilities.escapeAttribute(this.language)}"` : ""
-    return `<pre style="${this.htmlBackgroundCSS()}"><code${classAttribute}>${Utilities.escapeText(this.content.text)}</code></pre>`
+    let direction = this.direction == Directions.rightToLeft ? "direction:rtl;text-align:right;" : ""
+    return `<pre style="${direction}${this.htmlBackgroundCSS()}"><code${classAttribute}>${Utilities.escapeText(this.content.text)}</code></pre>`
   }
 
   toMarkdown(): string {

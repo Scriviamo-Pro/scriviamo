@@ -14,7 +14,8 @@
       "TextZoomInCaption": "Vergrößern",
       "TextZoomOutCaption": "Verkleinern",
       "TextOpenMapCaption": "In OpenStreetMap öffnen",
-      "TextShowPinCaption": "Markierung anzeigen"
+      "TextShowPinCaption": "Markierung anzeigen",
+      "TextMapKeysHint": "Pfeiltasten verschieben die Karte, + und − zoomen"
     }
   }
 }

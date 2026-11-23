@@ -16,6 +16,7 @@ export class ListNode extends TextNode {
 
   static identifier: string = "list"
   static caption: string = "List"
+  static captionString: string = "TextListInspectorCaption"
   static icon: string = "bi bi-list-ul"
   static keywords: string = "bullet bulleted numbered ordered checklist todo task"
   static maximumLevel: number = 8

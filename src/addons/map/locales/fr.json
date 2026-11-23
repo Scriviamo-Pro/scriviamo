@@ -14,7 +14,8 @@
       "TextZoomInCaption": "Zoom avant",
       "TextZoomOutCaption": "Zoom arrière",
       "TextOpenMapCaption": "Ouvrir dans OpenStreetMap",
-      "TextShowPinCaption": "Afficher le repère"
+      "TextShowPinCaption": "Afficher le repère",
+      "TextMapKeysHint": "Les flèches déplacent la carte, + et − zooment"
     }
   }
 }

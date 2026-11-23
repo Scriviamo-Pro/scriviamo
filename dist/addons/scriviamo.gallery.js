@@ -62,6 +62,7 @@ var GalleryNode = class _GalleryNode extends Node {
   }
   static identifier = "gallery";
   static caption = "Gallery";
+  static captionString = "TextGalleryCaption";
   static icon = "bi bi-images";
   static keywords = "images photos pictures carousel slideshow grid album";
   static create(editor) {
@@ -168,7 +169,7 @@ var GalleryNode = class _GalleryNode extends Node {
     this.images.forEach((image, index) => track.append(this.#item(image, index)));
     frame.append(track);
     if (carousel) {
-      track.style.transform = `translateX(${-100 * this.selectedImage}%)`;
+      track.style.setProperty("--scv-slide", String(this.selectedImage));
       let previous = this.#navButton("bi-chevron-left", this.strings.TextPreviousImageCaption, "scv-gallery-previous", () => this.#showSlide(this.selectedImage - 1, track, dots));
       let next = this.#navButton("bi-chevron-right", this.strings.TextNextImageCaption, "scv-gallery-next", () => this.#showSlide(this.selectedImage + 1, track, dots));
       let dots = Utilities.element("div", "scv-gallery-dots");
@@ -187,7 +188,7 @@ var GalleryNode = class _GalleryNode extends Node {
   #showSlide(index, track, dots) {
     let count = this.images.length;
     this.#select((index % count + count) % count);
-    track.style.transform = `translateX(${-100 * this.selectedImage}%)`;
+    track.style.setProperty("--scv-slide", String(this.selectedImage));
     Array.from(dots.children).forEach((dot, dotIndex) => dot.classList.toggle("active", dotIndex == this.selectedImage));
   }
   #navButton(icon, label, className, action) {
@@ -254,10 +255,9 @@ var GalleryNode = class _GalleryNode extends Node {
       dialog.append(this.#navButton("bi-chevron-right", this.strings.TextNextImageCaption, "scv-gallery-next", () => show(current + 1)));
     }
     dialog.addEventListener("keydown", (event) => {
-      if (event.key == "ArrowLeft")
-        show(current - 1);
-      if (event.key == "ArrowRight")
-        show(current + 1);
+      let forward = getComputedStyle(dialog).direction == "rtl" ? "ArrowLeft" : "ArrowRight";
+      if (event.key == "ArrowLeft" || event.key == "ArrowRight")
+        show(event.key == forward ? current + 1 : current - 1);
     });
     dialog.addEventListener("click", (event) => {
       if (event.target === dialog)

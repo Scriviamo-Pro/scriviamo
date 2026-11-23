@@ -7,7 +7,9 @@
       "TextPreviewFromFrameCaption": "Utiliser l’image actuelle comme aperçu",
       "TextRemovePreviewCaption": "Retirer l’aperçu",
       "TextMediaUnavailableCaption": "Ce média ne peut pas être lu ici.",
-      "TextReplaceMediaCaption": "Remplacer"
+      "TextReplaceMediaCaption": "Remplacer",
+      "TextAudioCaption": "Audio",
+      "TextVideoCaption": "Vidéo"
     }
   }
 }

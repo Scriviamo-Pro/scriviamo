@@ -103,4 +103,22 @@
     t.equal(names.filter(name => editor.strings[name] !== pack.strings.Editor[name]), [], "Some text in the pack wasn't used")
     t.assert(names.length > 200, `The pack has only ${names.length} strings`)
   })
+
+  test(section, "node types are named in the editor's language, or by their only name", t => {
+    class Plain extends PE.Node {}
+    Plain.identifier = "parity-plain"
+    Plain.caption = "Plain Block"
+    let editor = t.editor({strings: {TextTableCaption: "Tabella", TextHeadingCaption: "Titolo"}})
+    t.equal(PE.TableNode.localizedCaption(editor.strings), "Tabella", "A type with a translation")
+    t.equal(Plain.localizedCaption(editor.strings), "Plain Block", "A type with only its default name")
+    t.equal(new PE.TableNode(1, 1).typeName, "Table", "A node outside an editor")
+    let table = new PE.TableNode(1, 1)
+    editor.addNode(table)
+    t.equal(table.typeName, "Tabella", "A node in the editor")
+    let blockTypes = new PE.InsertionChooser(editor.strings, [PE.TableNode, PE.HeadingNode, Plain], () => {})
+    blockTypes.show(editor.element, editor.element)
+    let captions = Array.from(blockTypes.element.querySelectorAll("button")).map(button => button.textContent.trim()).filter(text => text.length > 0)
+    blockTypes.close()
+    t.assert(captions.includes("Tabella") && captions.includes("Titolo") && captions.includes("Plain Block"), `The chooser's names: ${captions.join(", ")}`)
+  })
 }

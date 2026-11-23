@@ -15,6 +15,7 @@ declare const MapStrings: {
     TextZoomOutCaption: string;
     TextOpenMapCaption: string;
     TextShowPinCaption: string;
+    TextMapKeysHint: string;
 };
 type MapStringsTable = typeof MapStrings;
 declare module "scriviamo" {
@@ -32,7 +33,8 @@ export type MapGeocoder = (query: string) => Promise<MapPlace | null>;
 /**
  * A map of a place, with a pin. It's drawn from map tiles placed as pictures, OpenStreetMap's by
  * default, so it needs no script or service key, and looks the same in the editor, in exported
- * HTML and in print. In the editor, drag to move it, use the buttons to zoom, or find a place.
+ * HTML and in print. In the editor, drag to move it, use the buttons to zoom, or find a place;
+ * with the editor's keyboardControls on, Tab to the map, then the arrow keys move it and + and − zoom.
  */
 export declare class MapNode extends Node {
     #private;
@@ -48,6 +50,7 @@ export declare class MapNode extends Node {
     static exportStyles(sheet: Stylesheet, _editor: Editor | null): void;
     static identifier: string;
     static caption: string;
+    static captionString: string;
     static icon: string;
     static keywords: string;
     static importElement(element: HTMLElement, importer: HTMLImporter): Node | undefined;

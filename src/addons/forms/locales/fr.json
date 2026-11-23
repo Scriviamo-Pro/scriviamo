@@ -75,7 +75,8 @@
       "TextOnCaption": "Activé",
       "TextOffCaption": "Désactivé",
       "TextSoftCaption": "Souple",
-      "TextHardCaption": "Strict"
+      "TextHardCaption": "Strict",
+      "TextTextFieldCaption": "Champ de texte"
     }
   }
 }

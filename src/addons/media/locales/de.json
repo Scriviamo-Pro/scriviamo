@@ -7,7 +7,9 @@
       "TextPreviewFromFrameCaption": "Aktuelles Bild als Vorschau verwenden",
       "TextRemovePreviewCaption": "Vorschau entfernen",
       "TextMediaUnavailableCaption": "Dieses Medium kann hier nicht abgespielt werden.",
-      "TextReplaceMediaCaption": "Ersetzen"
+      "TextReplaceMediaCaption": "Ersetzen",
+      "TextAudioCaption": "Audio",
+      "TextVideoCaption": "Video"
     }
   }
 }

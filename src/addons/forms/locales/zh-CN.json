@@ -75,7 +75,8 @@
       "TextOnCaption": "开",
       "TextOffCaption": "关",
       "TextSoftCaption": "软换行",
-      "TextHardCaption": "硬换行"
+      "TextHardCaption": "硬换行",
+      "TextTextFieldCaption": "文本框"
     }
   }
 }

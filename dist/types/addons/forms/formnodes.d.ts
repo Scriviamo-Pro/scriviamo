@@ -231,6 +231,11 @@ export declare class FormControlNode extends TextNode {
     actions(): Array<ToolbarItem>;
     performAction(item: ToolbarItem, _menuItem: ToolbarMenuItem | null): boolean;
     protected applyAppearance(wrapper: HTMLElement, body: HTMLElement): void;
+    /**
+     * CSS that moves a control only as wide as its content, such as a button, to the middle or end
+     * of the line, as Alignment asks; empty at the start. Margins alone don't move an inline control.
+     */
+    protected htmlAlignmentCSS(): string;
     protected htmlFormAttributes(includeID?: boolean, includeStyle?: boolean): string;
     toJSON(): object;
     fromJSON(data: any): boolean;
@@ -259,6 +264,7 @@ export declare enum TextFieldTypes {
 export declare class TextFieldNode extends FormControlNode {
     static identifier: string;
     static caption: string;
+    static captionString: string;
     static icon: string;
     static keywords: string;
     static importElement(element: HTMLElement, importer: HTMLImporter): Node | undefined;
@@ -302,6 +308,7 @@ export declare class TextFieldNode extends FormControlNode {
 export declare class TextAreaNode extends TextFieldNode {
     static identifier: string;
     static caption: string;
+    static captionString: string;
     static icon: string;
     static keywords: string;
     static importElement(element: HTMLElement, importer: HTMLImporter): Node | undefined;
@@ -322,6 +329,7 @@ export declare class TextAreaNode extends TextFieldNode {
 export declare class LabelNode extends TextNode {
     static identifier: string;
     static caption: string;
+    static captionString: string;
     static icon: string;
     static keywords: string;
     static importElement(element: HTMLElement, importer: HTMLImporter): Node | undefined;
@@ -341,6 +349,7 @@ export declare class LabelNode extends TextNode {
 export declare class CheckboxNode extends FormControlNode {
     static identifier: string;
     static caption: string;
+    static captionString: string;
     static icon: string;
     static keywords: string;
     /** A checkbox input, or a label holding one, whose other content becomes the caption. */
@@ -362,6 +371,8 @@ export declare class CheckboxNode extends FormControlNode {
     }): void;
     toJSON(): object;
     fromJSON(data: any): boolean;
+    get canAlignBlock(): boolean;
+    get alignsText(): boolean;
     toHTML(): string;
     toPlainText(): string;
 }
@@ -374,6 +385,7 @@ export declare enum ButtonTypes {
 export declare class ButtonNode extends FormControlNode {
     static identifier: string;
     static caption: string;
+    static captionString: string;
     static icon: string;
     static keywords: string;
     static importElement(element: HTMLElement, importer: HTMLImporter): Node | undefined;
@@ -402,12 +414,15 @@ export declare class ButtonNode extends FormControlNode {
     }): void;
     toJSON(): object;
     fromJSON(data: any): boolean;
+    get canAlignBlock(): boolean;
+    get alignsText(): boolean;
     toHTML(): string;
 }
 /** A dropdown list. Options are edited with the Options dialog. */
 export declare class DropdownNode extends FormControlNode {
     static identifier: string;
     static caption: string;
+    static captionString: string;
     static icon: string;
     static keywords: string;
     static importElement(element: HTMLElement, importer: HTMLImporter): Node | undefined;
@@ -442,6 +457,7 @@ export declare class RadioGroupNode extends DropdownNode {
     static exportStyles(sheet: Stylesheet, editor: Editor | null): void;
     static identifier: string;
     static caption: string;
+    static captionString: string;
     static icon: string;
     static keywords: string;
     static importElement(element: HTMLElement, importer: HTMLImporter): Node | undefined;
@@ -473,6 +489,7 @@ export declare class RadioGroupNode extends DropdownNode {
 export declare class DatalistNode extends Node {
     static identifier: string;
     static caption: string;
+    static captionString: string;
     static icon: string;
     static keywords: string;
     static importElement(element: HTMLElement, importer: HTMLImporter): Node | undefined;
@@ -494,6 +511,7 @@ export declare class FormNode extends TableNode {
     static exportStyles(sheet: Stylesheet, editor: Editor | null): void;
     static identifier: string;
     static caption: string;
+    static captionString: string;
     static icon: string;
     static keywords: string;
     static importElement(element: HTMLElement, importer: HTMLImporter): Node | undefined;

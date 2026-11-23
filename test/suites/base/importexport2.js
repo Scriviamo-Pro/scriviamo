@@ -305,7 +305,44 @@
   })
 
   test(section, "dropped addresses go to the matching media type", t => {
-    t.assert(typeof PE.ImageNode.droppedTextImportPriority == "function" || typeof PE.Node.importDroppedText == "function", "There is no way for node types to claim dropped or pasted addresses (image, audio, video URLs).")
+    let editor = t.editor()
+    let made = text => {
+      let node = editor.nodeForDroppedText(text)
+      return node ? node.type : null
+    }
+    t.equal(made("https://example.com/photos/cat.JPG?size=large"), "image", "A picture's address")
+    t.equal(made(" data:image/png;base64,iVBORw0KGgo= "), "image", "A picture's data: address")
+    t.equal(made("https://example.com/about"), null, "A page's address")
+    t.equal(made("https://example.com/a.png and more"), null, "An address in a sentence")
+    t.equal(made("javascript:alert(1)//.png"), null, "An address that isn't a web or data: address")
+    if (PE.AudioNode) {
+      t.equal(made("https://example.com/podcast/episode.mp3"), "audio", "A sound's address")
+      t.equal(made("https://example.com/clips/intro.webm"), "video", "A video's address")
+    }
+    let image = editor.nodeForDroppedText("https://example.com/cat.png")
+    t.equal(image.sourceURL, "https://example.com/cat.png", "The image's address")
+
+    // Pasted on its own into an empty paragraph, an address becomes the block; in a sentence it doesn't.
+    let paste = (node, text) => {
+      let data = new DataTransfer()
+      data.setData("text/plain", text)
+      node.primaryHost.element.dispatchEvent(new ClipboardEvent("paste", {clipboardData: data, bubbles: true, cancelable: true}))
+    }
+    let empty = new PE.TextNode("")
+    editor.addNode(empty)
+    paste(empty, "https://example.com/cat.png")
+    t.equal(editor.toJSONObject().nodes.map(node => node.type), ["image"], "Pasting into an empty paragraph")
+    let sentence = new PE.TextNode("See ")
+    editor.addNode(sentence)
+    sentence.primaryHost.select(4)
+    paste(sentence, "https://example.com/dog.png")
+    t.equal(editor.toJSONObject().nodes.map(node => node.type), ["image", "text"], "Pasting into a sentence")
+
+    // Dropped from another page, as a link or picture, it becomes the block too.
+    let dropped = new DataTransfer()
+    dropped.setData("text/uri-list", "# a comment\r\nhttps://example.com/bird.gif")
+    editor.element.querySelector(".scv-document").dispatchEvent(new DragEvent("drop", {dataTransfer: dropped, bubbles: true, cancelable: true}))
+    t.equal(editor.toJSONObject().nodes.map(node => node.type), ["image", "text", "image"], "Dropping a picture's address")
   })
 
   test(section, "the block type menu offers each heading level", t => {

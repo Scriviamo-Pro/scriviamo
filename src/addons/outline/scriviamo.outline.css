@@ -86,3 +86,9 @@
   margin-top: 6px;
   border-top: 1px solid var(--scv-border, var(--bs-border-color));
 }
+
+/* A collapsed entry's arrow points along the line, so it turns around in right-to-left text. */
+[dir="rtl"] .scv-outline-toggle .bi-chevron-right,
+.scv-outline-toggle:dir(rtl) .bi-chevron-right {
+  transform: scaleX(-1);
+}

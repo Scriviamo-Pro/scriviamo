@@ -4,6 +4,7 @@ export declare class DividerNode extends Node {
     static exportStyles(sheet: Stylesheet, _editor: Editor | null): void;
     static identifier: string;
     static caption: string;
+    static captionString: string;
     static icon: string;
     static keywords: string;
     static markdownShortcuts: Array<BlockShortcut>;

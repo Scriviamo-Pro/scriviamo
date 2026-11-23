@@ -74,6 +74,7 @@ var MathNode = class _MathNode extends CodeBlockNode {
   }
   static identifier = "math";
   static caption = "Math";
+  static captionString = "TextMathCaption";
   static icon = "bi bi-plus-slash-minus";
   static keywords = "equation formula latex tex katex mathematics";
   // Higher than code blocks, so <pre><code class="language-math"> becomes a formula.

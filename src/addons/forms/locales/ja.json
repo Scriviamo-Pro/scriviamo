@@ -75,7 +75,8 @@
       "TextOnCaption": "オン",
       "TextOffCaption": "オフ",
       "TextSoftCaption": "ソフト",
-      "TextHardCaption": "ハード"
+      "TextHardCaption": "ハード",
+      "TextTextFieldCaption": "テキストフィールド"
     }
   }
 }

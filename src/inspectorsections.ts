@@ -408,8 +408,15 @@ export class InspectorDefaults {
       target.content.styles.forEach(style => style.textColor = Colors.clone(color))
     }))
     color.setDefaultValue(Colors.empty)
-    let alignment = content.add(InspectorItem.menu("textalignment", strings.TextTextAlignmentInspectorCaption, InspectorDefaults.alignmentChoices(strings, true), target => target.textAlignment, (target, value) => target.textAlignment = value))
-    alignment.setDefaultValue(Alignments.automatic)
+    // A block narrower than its container moves within it; text lines up within its block.
+    if (node.canAlignBlock) {
+      let block = content.add(InspectorItem.menu("alignment", strings.TextAlignmentCaption, InspectorDefaults.alignmentChoices(strings, true), target => target.alignment, (target, value) => target.alignment = value))
+      block.setDefaultValue(Alignments.automatic)
+    }
+    if (node.alignsText) {
+      let alignment = content.add(InspectorItem.menu("textalignment", strings.TextTextAlignmentInspectorCaption, InspectorDefaults.alignmentChoices(strings, true), target => target.textAlignment, (target, value) => target.textAlignment = value))
+      alignment.setDefaultValue(Alignments.automatic)
+    }
 
     let typography = new InspectorSection("typography", strings.TextTypographyInspectorCaption)
     let applyToCharacters = (target: TextNode, change: (style: TextStyle) => void) => target.content.styles.forEach(change)

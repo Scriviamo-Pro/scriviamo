@@ -21,6 +21,10 @@ const Attributes: Array<[string, keyof ScriviamoSettings, "string" | "boolean" |
   ["change-delay", "changeDelay", "number"]
 ]
 
+// On a server, such as while a page renders there, there are no elements: importing this module
+// defines nothing, and the class extends a stand-in.
+const ElementBase: typeof HTMLElement = typeof HTMLElement == "undefined" ? (class {} as unknown as typeof HTMLElement) : HTMLElement
+
 /**
  * A Scriviamo editor as an HTML element, for pages and apps with any framework or none. Import the
  * add-ons you use, and this module, which defines the element:
@@ -43,7 +47,7 @@ const Attributes: Array<[string, keyof ScriviamoSettings, "string" | "boolean" |
  * In a form, it's a form field: its value is submitted under its name, and form.reset() brings
  * back the document it started with.
  */
-export class ScriviamoEditorElement extends HTMLElement {
+export class ScriviamoEditorElement extends ElementBase {
   static formAssociated = true
 
   static get observedAttributes(): Array<string> {
@@ -229,6 +233,7 @@ for (let setting of ["autosave", "fileUploader", "locale", "events"] as Array<ke
 
 /** Defines the element, as <scriviamo-editor> unless another name is given. Importing this module defines it. */
 export function defineScriviamoEditor(name: string = "scriviamo-editor") {
+  if (typeof customElements == "undefined") return
   if (!customElements.get(name)) customElements.define(name, name == "scriviamo-editor" ? ScriviamoEditorElement : class extends ScriviamoEditorElement {})
 }
 

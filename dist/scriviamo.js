@@ -181,6 +181,20 @@ var Colors = class _Colors {
   }
 };
 var Utilities = class _Utilities {
+  /** The protocols isSafeURL allows by default. Addresses without one, such as /page or #part, are always allowed. */
+  static safeProtocols = ["http", "https", "mailto", "tel"];
+  /**
+   * True when an address can't run script when followed: a relative address, or one whose
+   * protocol is in protocols. Exported HTML and the editor's links use only addresses that pass,
+   * so a document that was tampered with can't carry a javascript: link.
+   */
+  static isSafeURL(url, protocols = _Utilities.safeProtocols) {
+    let address = String(url ?? "").replace(/[\u0000-\u0020\u007F]+/g, "");
+    let match = /^([a-z][a-z0-9+.-]*):/i.exec(address);
+    if (!match)
+      return true;
+    return protocols.some((protocol) => protocol.toLowerCase() == match[1].toLowerCase());
+  }
   /** The pixel size of base64 PNG, GIF or JPEG data, read from its header, or null. */
   static imageDataSize(base64) {
     try {
@@ -1354,7 +1368,7 @@ var RichText = class _RichText {
     let css = style.htmlCSS();
     if (css.length > 0 || suggestionAttributes.length > 0)
       content = `<span${suggestionAttributes}${css.length > 0 ? ` style="${Utilities.escapeAttribute(css)}"` : ""}>${content}</span>`;
-    if (style.linkURL.length > 0) {
+    if (style.linkURL.length > 0 && Utilities.isSafeURL(style.linkURL)) {
       let title = style.linkTitle.length > 0 ? ` title="${Utilities.escapeAttribute(style.linkTitle)}"` : "";
       let target = style.linkTarget.length > 0 ? ` target="${Utilities.escapeAttribute(style.linkTarget)}"` : "";
       content = `<a href="${Utilities.escapeAttribute(style.linkURL)}"${title}${target}>${content}</a>`;
@@ -1406,7 +1420,7 @@ var RichText = class _RichText {
         let css = `color:${Colors.toCSS(style.suggestionTextColor)};background-color:${Colors.toCSS(style.suggestionBackgroundColor)};border:1px solid ${Colors.toCSS(style.suggestionBorderColor)}`;
         content = `<span data-scriviamo-suggestion-provider="${Utilities.escapeAttribute(style.suggestionProviderIdentifier)}" data-scriviamo-suggestion-id="${Utilities.escapeAttribute(style.suggestionIdentifier)}" style="${Utilities.escapeAttribute(css)}">${content}</span>`;
       }
-      if (style.linkURL.length > 0) {
+      if (style.linkURL.length > 0 && Utilities.isSafeURL(style.linkURL)) {
         if (style.linkTarget.length > 0) {
           let title = style.linkTitle.length > 0 ? ` title="${Utilities.escapeAttribute(style.linkTitle)}"` : "";
           content = `<a href="${Utilities.escapeAttribute(style.linkURL)}" target="${Utilities.escapeAttribute(style.linkTarget)}"${title}>${content}</a>`;
@@ -1605,7 +1619,8 @@ var TextHost = class _TextHost {
     inner.append(document.createTextNode(text));
     if (style.linkURL.length > 0) {
       let link = document.createElement("a");
-      link.href = style.linkURL;
+      if (Utilities.isSafeURL(style.linkURL))
+        link.href = style.linkURL;
       if (style.linkTitle.length > 0)
         link.title = style.linkTitle;
       link.append(span);
@@ -3407,13 +3422,56 @@ var Node3 = class _Node {
   static importDroppedFile(_file, _editor) {
     return null;
   }
+  /** Decides between node types that claim the same pasted or dropped address: the highest wins. */
+  static droppedTextImportPriority = 0;
+  /**
+   * Makes a node from an address pasted or dropped on its own, such as a picture's, or returns
+   * null to leave it to other types, and in the end a link. text is trimmed, with no spaces.
+   */
+  static importDroppedText(_text, _editor) {
+    return null;
+  }
+  /**
+   * The address in pasted or dropped text, with the extension of its file name in lowercase and
+   * the media type of a data: address, or null when the text isn't one address.
+   */
+  static droppedAddress(text) {
+    let url = String(text ?? "").trim();
+    if (url.length == 0 || /\s/.test(url))
+      return null;
+    let data = /^data:([a-z0-9.+-]+\/[a-z0-9.+-]+)[;,]/i.exec(url);
+    if (data)
+      return { url, extension: "", mediaType: data[1].toLowerCase() };
+    if (!/^https?:\/\//i.test(url))
+      return null;
+    try {
+      let path = new URL(url).pathname;
+      let name = path.substring(path.lastIndexOf("/") + 1);
+      let dot = name.lastIndexOf(".");
+      return { url, extension: dot > 0 ? name.substring(dot + 1).toLowerCase() : "", mediaType: "" };
+    } catch {
+      return null;
+    }
+  }
   static identifier = "content";
+  /** The type's name in English, the default in every language that has no translation of it. */
   static caption = "Content";
+  /**
+   * The name of the Strings text that translates caption, such as "TextTableCaption", which the
+   * type registers with its other text, so locale packs can translate it. A type that leaves it
+   * empty has only its caption, and shows that in every language.
+   */
+  static captionString = "";
   static icon = "bi bi-square";
   static keywords = "";
   static insertable = true;
   static create(_editor) {
     return new this();
+  }
+  /** The type's name in the language of the strings given: its translation, or else caption. */
+  static localizedCaption(strings) {
+    let translated = this.captionString.length > 0 ? strings[this.captionString] : void 0;
+    return typeof translated == "string" && translated.trim().length > 0 ? translated : this.caption;
   }
   /** Makes nodes from an imported HTML element, or returns undefined to leave the element to other types. */
   static importElement(_element, _importer) {
@@ -3477,8 +3535,9 @@ var Node3 = class _Node {
   get type() {
     return this.constructor.identifier;
   }
+  /** The type's name, in the editor's language. */
   get typeName() {
-    return this.constructor.caption;
+    return this.constructor.localizedCaption(this.strings);
   }
   get strings() {
     return this.editor ? this.editor.strings : Strings.shared;
@@ -3863,6 +3922,7 @@ var TextNode2 = class _TextNode extends Node3 {
   }
   static identifier = "text";
   static caption = "Text";
+  static captionString = "TextTextCaption";
   static icon = "bi bi-text-paragraph";
   static keywords = "paragraph body plain";
   static create(editor) {
@@ -3917,6 +3977,13 @@ var TextNode2 = class _TextNode extends Node3 {
   }
   /** Whether the inspector offers the block's text and its typography. */
   get inspectorShowsText() {
+    return true;
+  }
+  /**
+   * Whether the text lines up within the block, so the inspector offers Text Alignment. False for
+   * a block only as wide as its text, such as a button, which moves with Alignment instead.
+   */
+  get alignsText() {
     return true;
   }
   get inspectorShowsTypography() {
@@ -4076,6 +4143,7 @@ var HeadingNode = class _HeadingNode extends TextNode2 {
   }
   static identifier = "heading";
   static caption = "Heading";
+  static captionString = "TextHeadingCaption";
   static icon = "bi bi-type-h1";
   static keywords = "title h1 h2 h3 h4 h5 h6 section";
   static create(editor) {
@@ -4239,11 +4307,12 @@ var HeadingNode = class _HeadingNode extends TextNode2 {
 var CodeBlockNode = class _CodeBlockNode extends TextNode2 {
   static exportStyles(sheet, editor) {
     super.exportStyles(sheet, editor);
-    sheet.addRule("pre", `margin-left: 0; margin-right: 0; padding: 16px; overflow-x: auto; border-radius: 8px; background: ${Editor2.themeCSS(editor, 14 /* dark */)}; color: ${Editor2.themeCSS(editor, 15 /* light */)}; white-space: pre`);
+    sheet.addRule("pre", `direction: ltr; text-align: left; margin-left: 0; margin-right: 0; padding: 16px; overflow-x: auto; border-radius: 8px; background: ${Editor2.themeCSS(editor, 14 /* dark */)}; color: ${Editor2.themeCSS(editor, 15 /* light */)}; white-space: pre`);
     sheet.addRule("pre code", "font-family: Menlo, Courier, monospace; font-size: 14px");
   }
   static identifier = "codeblock";
   static caption = "Code";
+  static captionString = "TextCodeInspectorCaption";
   static icon = "bi bi-code-square";
   static keywords = "source program snippet pre monospace";
   static languages = ["", "bash", "c", "cpp", "csharp", "css", "go", "html", "java", "javascript", "json", "kotlin", "markdown", "php", "python", "ruby", "rust", "sql", "swift", "typescript", "xml", "yaml"];
@@ -4326,6 +4395,8 @@ var CodeBlockNode = class _CodeBlockNode extends TextNode2 {
     });
     header.append(copy);
     let pre = Utilities.element("pre", "scv-code-body");
+    if (this.direction != 2 /* rightToLeft */)
+      pre.dir = "ltr";
     pre.tabIndex = 0;
     pre.setAttribute("role", "region");
     pre.setAttribute("aria-label", this.typeName);
@@ -4420,7 +4491,8 @@ var CodeBlockNode = class _CodeBlockNode extends TextNode2 {
   }
   toHTML() {
     let classAttribute = this.language.length > 0 ? ` class="language-${Utilities.escapeAttribute(this.language)}"` : "";
-    return `<pre style="${this.htmlBackgroundCSS()}"><code${classAttribute}>${Utilities.escapeText(this.content.text)}</code></pre>`;
+    let direction = this.direction == 2 /* rightToLeft */ ? "direction:rtl;text-align:right;" : "";
+    return `<pre style="${direction}${this.htmlBackgroundCSS()}"><code${classAttribute}>${Utilities.escapeText(this.content.text)}</code></pre>`;
   }
   toMarkdown() {
     let longest = 2;
@@ -4453,6 +4525,7 @@ var ListNode = class _ListNode extends TextNode2 {
   }
   static identifier = "list";
   static caption = "List";
+  static captionString = "TextListInspectorCaption";
   static icon = "bi bi-list-ul";
   static keywords = "bullet bulleted numbered ordered checklist todo task";
   static maximumLevel = 8;
@@ -4953,6 +5026,7 @@ var QuoteNode = class _QuoteNode extends TextNode2 {
   }
   static identifier = "quote";
   static caption = "Quote";
+  static captionString = "TextQuoteCaption";
   static icon = "bi bi-quote";
   static keywords = "blockquote citation";
   static markdownShortcuts = [{ pattern: /^> / }];
@@ -5053,6 +5127,7 @@ var DividerNode = class _DividerNode extends Node3 {
   }
   static identifier = "divider";
   static caption = "Divider";
+  static captionString = "TextDividerCaption";
   static icon = "bi bi-hr";
   static keywords = "rule line separator hr";
   static markdownShortcuts = [{ pattern: /^---$/, insertsBlock: true }];
@@ -5163,6 +5238,7 @@ var TableNode = class _TableNode extends Node3 {
   }
   static identifier = "table";
   static caption = "Table";
+  static captionString = "TextTableCaption";
   static icon = "bi bi-table";
   static keywords = "grid spreadsheet rows columns cells";
   static create(editor) {
@@ -5870,9 +5946,21 @@ var ImageNode = class _ImageNode extends Node3 {
   }
   static identifier = "image";
   static caption = "Image";
+  static captionString = "TextImageCaption";
   static icon = "bi bi-image";
   static keywords = "picture photo figure illustration graphic";
   static droppedFileTypes = ["image/*"];
+  /** File name extensions of pictures, for addresses pasted or dropped on their own. */
+  static imageExtensions = ["png", "jpg", "jpeg", "gif", "webp", "avif", "svg", "bmp", "ico"];
+  /** A picture's address, pasted or dropped on its own, becomes an image. */
+  static importDroppedText(text, _editor) {
+    let address = Node3.droppedAddress(text);
+    if (!address || !(address.mediaType.startsWith("image/") || _ImageNode.imageExtensions.includes(address.extension)))
+      return null;
+    let node = new _ImageNode();
+    node.sourceURL = address.url;
+    return node;
+  }
   static importDroppedFile(file, _editor) {
     let node = new _ImageNode();
     Promise.resolve().then(() => node.loadFile(file));
@@ -5999,6 +6087,13 @@ var ImageNode = class _ImageNode extends Node3 {
     frame.append(image);
     let handle = Utilities.element("span", "scv-resize-handle", { title: "" });
     handle.addEventListener("pointerdown", (event) => this.#beginResize(event, frame, image));
+    MediaUI.attachKeyboardResize(this, handle, frame, () => this.displayWidth > 0 && this.displayHeight > 0 ? this.displayHeight / this.displayWidth : image.naturalWidth > 0 ? image.naturalHeight / image.naturalWidth : 0.75, (width, height) => {
+      this.willChange();
+      this.displayWidth = width;
+      this.displayHeight = height;
+      this.refresh();
+      this.changed();
+    });
     frame.append(handle);
     figure.append(frame);
     let caption = Utilities.element("figcaption", "scv-image-caption");
@@ -6336,7 +6431,7 @@ var UnknownNode = class extends Node3 {
 };
 
 // nodes/mediaui.ts
-var MediaUI = class {
+var MediaUI = class _MediaUI {
   /** An empty-state panel with buttons to choose a file or enter an address. */
   static placeholder(node, icon, caption, chooseFile, enterURL) {
     let panel = Utilities.element("div", "scv-image-placeholder scv-media-placeholder", { contenteditable: "false" });
@@ -6368,6 +6463,7 @@ var MediaUI = class {
   }
   /** Lets the user drag handle to resize frame. ratio is height / width, or 0 to keep the height. */
   static attachResize(node, handle, frame, ratio, done) {
+    _MediaUI.attachKeyboardResize(node, handle, frame, ratio, done, 48);
     handle.addEventListener("pointerdown", (event) => {
       if (!node.editor || node.editor.readOnly || node.locked)
         return;
@@ -6400,6 +6496,74 @@ var MediaUI = class {
       handle.addEventListener("pointermove", move);
       handle.addEventListener("pointerup", up);
       handle.addEventListener("pointercancel", up);
+    });
+  }
+  /**
+   * Makes a resize handle a slider the keyboard reaches with Tab, when the editor's keyboardControls
+   * is on: the arrow keys make the block
+   * 10 pixels narrower or wider (50 with Shift), Page Up and Page Down 100, Home and End the
+   * narrowest and widest. Left and right follow the text's direction. Each change is one undo step.
+   */
+  static attachKeyboardResize(node, handle, frame, ratio, done, minimum = 32) {
+    let maximum = () => node.element && node.element.parentElement ? node.element.parentElement.clientWidth : 2e3;
+    handle.tabIndex = node.editor && node.editor.keyboardControls ? 0 : -1;
+    handle.dataset.scvKeyboard = "";
+    handle.setAttribute("role", "slider");
+    handle.setAttribute("aria-orientation", "horizontal");
+    handle.setAttribute("aria-label", node.strings.TextWidthInspectorCaption);
+    let describe = () => {
+      handle.setAttribute("aria-valuemin", String(minimum));
+      handle.setAttribute("aria-valuemax", String(Math.round(maximum())));
+      handle.setAttribute("aria-valuenow", String(Math.round(frame.getBoundingClientRect().width)));
+    };
+    handle.addEventListener("focus", describe);
+    handle.addEventListener("keydown", (event) => {
+      if (!node.editor || node.editor.readOnly || node.locked || event.metaKey || event.ctrlKey || event.altKey)
+        return;
+      let current = frame.getBoundingClientRect().width;
+      let step = event.shiftKey ? 50 : 10;
+      let forward = getComputedStyle(frame).direction == "rtl" ? -1 : 1;
+      let target;
+      switch (event.key) {
+        case "ArrowRight":
+          target = current + step * forward;
+          break;
+        case "ArrowLeft":
+          target = current - step * forward;
+          break;
+        case "ArrowUp":
+          target = current + step;
+          break;
+        case "ArrowDown":
+          target = current - step;
+          break;
+        case "PageUp":
+          target = current + 100;
+          break;
+        case "PageDown":
+          target = current - 100;
+          break;
+        case "Home":
+          target = minimum;
+          break;
+        case "End":
+          target = maximum();
+          break;
+        default:
+          return;
+      }
+      event.preventDefault();
+      event.stopPropagation();
+      let width = Math.round(Utilities.clamp(target, minimum, maximum()));
+      if (width == Math.round(current))
+        return;
+      let factor = ratio();
+      done(width, factor > 0 ? Math.round(width * factor) : Math.round(frame.getBoundingClientRect().height));
+      let again = node.element ? node.element.querySelector(".scv-resize-handle") : null;
+      if (again) {
+        again.focus();
+        again.setAttribute("aria-valuenow", String(width));
+      }
     });
   }
   /** Reads a file as a data: URI. */
@@ -8791,7 +8955,10 @@ var ChoicePopup = class extends Popup2 {
 };
 var InsertionChooser = class extends ChoicePopup {
   constructor(strings, types, onSelect, choices = [], onChoice = (choice) => choice.choose(null)) {
-    let entries = types.filter((type) => type.insertable).map((type) => ({ item: { caption: type.caption, icon: type.icon, value: () => onSelect(type) }, search: `${type.caption} ${type.keywords} ${type.identifier}`.toLowerCase() })).concat(choices.map((choice) => ({ item: { caption: choice.caption, icon: choice.icon, value: () => onChoice(choice) }, search: `${choice.caption} ${choice.keywords || ""}`.toLowerCase() })));
+    let entries = types.filter((type) => type.insertable).map((type) => {
+      let caption = type.localizedCaption(strings);
+      return { item: { caption, icon: type.icon, value: () => onSelect(type) }, search: `${caption} ${type.caption} ${type.keywords} ${type.identifier}`.toLowerCase() };
+    }).concat(choices.map((choice) => ({ item: { caption: choice.caption, icon: choice.icon, value: () => onChoice(choice) }, search: `${choice.caption} ${choice.keywords || ""}`.toLowerCase() })));
     super("", (item) => item.value(), {
       placeholder: strings.TextInsertNodeSearchHint,
       emptyCaption: "",
@@ -10270,10 +10437,12 @@ var ToolbarView = class {
       item.element = space;
       return space;
     }
-    let button = Utilities.element("button", "btn btn-sm scv-toolbar-button", { type: "button", title: item.tooltip, "aria-label": item.tooltip || item.caption });
+    let button = Utilities.element("button", "btn btn-sm scv-toolbar-button", { type: "button", title: item.tooltip });
     button.dataset.identifier = item.identifier;
     let showIcon = item.icon.length > 0 && displayMode != 2 /* textOnly */;
     let showCaption = item.alwaysShowCaption || displayMode != 0 /* iconOnly */ || item.icon.length == 0;
+    if (!showCaption || item.caption.length == 0)
+      button.setAttribute("aria-label", item.tooltip || item.caption);
     if (showIcon)
       button.append(Utilities.element("i", `${item.icon} scv-toolbar-icon`));
     if (showCaption) {
@@ -10600,9 +10769,12 @@ var ValidationSeverities = /* @__PURE__ */ ((ValidationSeverities2) => {
 var ValidationIssue = class {
   severity;
   message;
-  constructor(severity, message) {
+  /** Where in the JSON, when the editor's schema found it, such as "nodes[3]". */
+  path;
+  constructor(severity, message, path = "") {
     this.severity = severity;
     this.message = message;
+    this.path = path;
   }
 };
 var ClipboardType = "application/x-scriviamo";
@@ -10917,6 +11089,10 @@ var Editor2 = class _Editor extends EventTarget {
       this.updateAutosave(instanceOptions.autosave);
     if (instanceOptions.fileUploader !== void 0)
       this.fileUploader = typeof instanceOptions.fileUploader == "function" ? instanceOptions.fileUploader : null;
+    if (instanceOptions.schema)
+      this.schema = instanceOptions.schema;
+    if (instanceOptions.keyboardControls)
+      this.#keyboardControls = true;
     this.render();
     if (instanceOptions.content) {
       this.fromJSON(instanceOptions.content);
@@ -11575,9 +11751,62 @@ var Editor2 = class _Editor extends EventTarget {
     }
     return data;
   }
-  /** Builds a node from its JSON using the registered types. Unknown types are kept as they are. */
+  #schema = null;
+  #keyboardControls = false;
+  /**
+   * Whether Tab, from a selected block, reaches the block's own keyboard controls before moving on:
+   * a picture's, video's or embed's resize handle, which resizes with the arrow keys, or a map, which
+   * moves with them. Off, those controls are left out of the keyboard's way, for people who use the
+   * pointer for them. Turn it on from the application's own accessibility setting: browsers don't
+   * say whether someone needs it.
+   */
+  get keyboardControls() {
+    return this.#keyboardControls;
+  }
+  set keyboardControls(value) {
+    this.#keyboardControls = !!value;
+    this.#documentElement?.querySelectorAll("[data-scv-keyboard]").forEach((control) => control.tabIndex = value ? 0 : -1);
+  }
+  /**
+   * The node types and content the document may have, or null for any. With a schema, the
+   * editor offers only the node types it allows, takes out of what is pasted or dropped what it
+   * doesn't allow, and loads only documents that fit it. Check the saved JSON on the server too,
+   * with the same schema: a browser can be made to send anything.
+   */
+  get schema() {
+    return this.#schema;
+  }
+  set schema(value) {
+    this.#schema = value;
+    let allows = (identifier) => !value || value.allows(identifier);
+    this.nodeTypes.items().forEach((type) => {
+      if (!allows(type.identifier))
+        this.nodeTypes.remove(type);
+    });
+    _Editor.registeredNodeTypes().forEach((type) => {
+      if (allows(type.identifier) && !this.nodeTypes.item(type.identifier))
+        this.nodeTypes.add(type);
+    });
+  }
+  /** Checks the document against the schema; valid, with no issues, when there's none. */
+  validate() {
+    return this.#schema ? this.#schema.validate(this.toJSONObject()) : { valid: true, issues: [] };
+  }
+  /** Nodes with what the schema doesn't allow taken out, such as pasted ones. */
+  #allowedNodes(nodes) {
+    let schema = this.#schema;
+    if (!schema || nodes.length == 0)
+      return nodes;
+    let result = schema.clean({ nodes: nodes.map((node) => node.toJSON()) });
+    if (!result.changed)
+      return nodes;
+    return (result.document?.nodes ?? []).map((item) => this.nodeFromJSON(item)).filter((node) => node !== null);
+  }
+  /** Builds a node from its JSON using the registered types. Unknown types are kept as they are, unless the editor has a schema. */
   nodeFromJSON(data) {
     if (!data || typeof data != "object")
+      return null;
+    if (this.#schema && !this.#schema.allows(Utilities.string(data.type)))
       return null;
     let type = this.nodeTypes.item(Utilities.string(data.type));
     let node = type ? new type() : new UnknownNode();
@@ -12491,12 +12720,18 @@ var Editor2 = class _Editor extends EventTarget {
         event.preventDefault();
         this.#selectAdjacentNode(event.key == "ArrowDown", event.shiftKey);
         break;
-      case "Tab":
+      case "Tab": {
         if (event.metaKey || event.ctrlKey || event.altKey)
           break;
         event.preventDefault();
+        let control = !event.shiftKey && this.#keyboardControls && node.element ? node.element.querySelector("[data-scv-keyboard]") : null;
+        if (control && document.activeElement !== control && !this.#readOnly && !node.locked) {
+          control.focus();
+          break;
+        }
         this.#selectAdjacentNode(!event.shiftKey, false);
         break;
+      }
       case "Home":
       case "End": {
         event.preventDefault();
@@ -13624,7 +13859,8 @@ var Editor2 = class _Editor extends EventTarget {
     }
   }
   #onDragOver(event) {
-    let files = event.dataTransfer && Array.from(event.dataTransfer.types).indexOf("Files") >= 0;
+    let types = event.dataTransfer ? Array.from(event.dataTransfer.types) : [];
+    let files = types.indexOf("Files") >= 0 || types.indexOf("text/uri-list") >= 0;
     if (!this.#dragNode && !files)
       return;
     if (this.#readOnly)
@@ -13686,10 +13922,20 @@ var Editor2 = class _Editor extends EventTarget {
       return;
     }
     let files = event.dataTransfer ? Array.from(event.dataTransfer.files) : [];
-    if (files.length == 0 || this.#readOnly)
+    if (this.#readOnly || !event.dataTransfer)
       return;
-    event.preventDefault();
-    let nodes = this.nodesForFiles(files);
+    let nodes = [];
+    if (files.length > 0) {
+      event.preventDefault();
+      nodes = this.nodesForFiles(files);
+    } else {
+      let list = event.dataTransfer.getData("text/uri-list").split(/\r?\n/).map((line) => line.trim()).filter((line) => line.length > 0 && !line.startsWith("#"));
+      let node = list.length == 1 ? this.nodeForDroppedText(list[0]) : null;
+      if (!node)
+        return;
+      event.preventDefault();
+      nodes = [node];
+    }
     if (nodes.length == 0)
       return;
     if (target) {
@@ -13698,6 +13944,25 @@ var Editor2 = class _Editor extends EventTarget {
       nodes.forEach((node) => this.addNode(node));
     }
     this.selectNode(nodes[nodes.length - 1]);
+  }
+  /**
+   * The node an address pasted or dropped on its own makes, such as an image for a picture's
+   * address, or null to keep it a link: from the node type with the highest
+   * droppedTextImportPriority whose importDroppedText takes it.
+   */
+  nodeForDroppedText(text) {
+    let address = String(text ?? "").trim();
+    if (address.length == 0 || /\s/.test(address))
+      return null;
+    let types = this.nodeTypes.items().map((type, index) => ({ type, index, priority: Number(type.droppedTextImportPriority) || 0 }));
+    types.sort((a, b) => b.priority - a.priority || a.index - b.index);
+    for (let { type } of types) {
+      let importer = type.importDroppedText;
+      let node = typeof importer == "function" ? importer.call(type, address, this) : null;
+      if (node)
+        return node;
+    }
+    return null;
   }
   /** The registered node type that takes a file: the one with the highest import priority whose droppedFileTypes match. */
   #typeForFile(file) {
@@ -13876,6 +14141,14 @@ var Editor2 = class _Editor extends EventTarget {
         return;
       }
     }
+    let address = data.text.trim();
+    if (data.json.length == 0 && address.length > 0 && !/\s/.test(address) && (!host || host.mode != 3 /* plain */ && host.node.constructor === TextNode2 && host.rich.length == 0)) {
+      let node = this.nodeForDroppedText(address);
+      if (node) {
+        this.#insertNodesAtCaret([node]);
+        return;
+      }
+    }
     if (data.json.length > 0) {
       try {
         let parsed = JSON.parse(data.json);
@@ -13944,6 +14217,7 @@ var Editor2 = class _Editor extends EventTarget {
   }
   /** Inserts blocks where the caret is, splitting the paragraph being edited around them. */
   #insertNodesAtCaret(nodes) {
+    nodes = this.#allowedNodes(nodes);
     if (nodes.length == 0)
       return;
     let host = this.#activeHost;
@@ -14255,7 +14529,7 @@ var Editor2 = class _Editor extends EventTarget {
         add(strings.TextMoveDownCaption, "bi bi-arrow-down", group2, false, () => this.moveNodes(targets, 1));
     }
     this.nodeTypes.items().filter((type) => type.insertable).forEach((type) => {
-      add(type.caption, type.icon, strings.TextInsertCaption, true, () => this.insertNodeOfType(type), `${type.keywords} ${type.identifier}`);
+      add(type.localizedCaption(strings), type.icon, strings.TextInsertCaption, true, () => this.insertNodeOfType(type), `${type.caption} ${type.keywords} ${type.identifier}`);
     });
     this.insertionChoices().forEach((choice) => {
       add(choice.caption, choice.icon, strings.TextInsertCaption, true, () => choice.choose(null), choice.keywords || "");
@@ -14717,9 +14991,9 @@ var Editor2 = class _Editor extends EventTarget {
       }
       case "insert": {
         let types = this.nodeTypes.items().filter((type) => type.insertable);
-        item.menuItems = types.map((type) => new ToolbarMenuItem(type.identifier, type.caption, type.icon));
+        item.menuItems = types.map((type) => new ToolbarMenuItem(type.identifier, type.localizedCaption(strings), type.icon));
         item.makePopup = (choose) => {
-          let chooser = new InsertionChooser(strings, types, (type) => choose(new ToolbarMenuItem(type.identifier, type.caption, type.icon)));
+          let chooser = new InsertionChooser(strings, types, (type) => choose(new ToolbarMenuItem(type.identifier, type.localizedCaption(strings), type.icon)));
           chooser.hasSearchField = types.length >= this.insertMenuSearchThreshold;
           return chooser;
         };
@@ -15766,11 +16040,13 @@ var Editor2 = class _Editor extends EventTarget {
         let type = Utilities.string(node.type);
         if (type.length == 0)
           issues.push(new ValidationIssue(0 /* warning */, `${path}[${index}] has no type.`));
-        else if (!this.nodeTypes.item(type))
+        else if (!this.nodeTypes.item(type) && !this.#schema)
           issues.push(new ValidationIssue(0 /* warning */, `${path}[${index}] has the unsupported type "${type}" and will be kept as it is.`));
       });
     };
     check(source.nodes, "nodes");
+    if (this.#schema)
+      this.#schema.validate(source).issues.forEach((issue) => issues.push(new ValidationIssue(1 /* error */, issue.message, issue.path)));
     return issues;
   }
   /** Converts documents saved in earlier formats. */
@@ -15924,7 +16200,7 @@ var Editor2 = class _Editor extends EventTarget {
   /** Replaces the document with HTML. */
   /** Replaces the document with HTML. HTML with nothing the editor can import leaves the document as it was. */
   fromHTML(html) {
-    let nodes = this.importer.import(html);
+    let nodes = this.#allowedNodes(this.importer.import(html));
     if (nodes.length == 0)
       return;
     let style = this.importer.documentStyle(html);
@@ -15940,7 +16216,7 @@ var Editor2 = class _Editor extends EventTarget {
       style = this.importer.elementDocumentStyle(wrapper);
       html = wrapper.innerHTML;
     }
-    this.#loadImported(this.importer.import(html), style);
+    this.#loadImported(this.#allowedNodes(this.importer.import(html)), style);
   }
   #loadImported(nodes, style = null) {
     if (style) {
@@ -15969,7 +16245,7 @@ var Editor2 = class _Editor extends EventTarget {
   }
   /** Inserts HTML where the user is working, or after target. */
   insertHTML(html, target) {
-    let nodes = this.importer.import(html);
+    let nodes = this.#allowedNodes(this.importer.import(html));
     if (target) {
       this.insertNodesAfter(target, nodes);
     } else {
@@ -16135,6 +16411,206 @@ ${body}
       frame.contentWindow.print();
       setTimeout(() => frame.remove(), 1e3);
     });
+  }
+};
+
+// schema.ts
+var SchemaIssueCodes = /* @__PURE__ */ ((SchemaIssueCodes2) => {
+  SchemaIssueCodes2["invalidDocument"] = "invalidDocument";
+  SchemaIssueCodes2["unknownType"] = "unknownType";
+  SchemaIssueCodes2["typeNotAllowed"] = "typeNotAllowed";
+  SchemaIssueCodes2["unsafeAddress"] = "unsafeAddress";
+  SchemaIssueCodes2["tooManyNodes"] = "tooManyNodes";
+  SchemaIssueCodes2["tooDeep"] = "tooDeep";
+  SchemaIssueCodes2["textTooLong"] = "textTooLong";
+  SchemaIssueCodes2["rule"] = "rule";
+  return SchemaIssueCodes2;
+})(SchemaIssueCodes || {});
+var SchemaIssue = class {
+  code;
+  message;
+  /** Where in the JSON, such as "nodes[3]" or "nodes[3].styleTable[0].linkURL". */
+  path;
+  /** The node's id and type, where the issue is about a node. */
+  nodeID;
+  type;
+  constructor(code, message, path = "", nodeID = "", type = "") {
+    this.code = code;
+    this.message = message;
+    this.path = path;
+    this.nodeID = nodeID;
+    this.type = type;
+  }
+};
+var DocumentSchema2 = class _DocumentSchema {
+  /**
+   * The keys under which node types save addresses that are followed or loaded, checked against
+   * the protocols. Add your own node types' keys here.
+   */
+  static addressKeys = /* @__PURE__ */ new Set(["linkURL", "url", "sourceURL", "imageURL", "iconURL", "resourceURL", "embedSource", "source"]);
+  /** Of those, the ones that are media and so may be data: addresses, with dataAddresses on. */
+  static mediaKeys = /* @__PURE__ */ new Set(["sourceURL", "imageURL", "iconURL", "resourceURL", "source"]);
+  options;
+  constructor(options = {}) {
+    this.options = { ...options };
+  }
+  /** True when the schema allows a node type, by identifier. Text is always allowed. */
+  allows(type) {
+    if (type == "text")
+      return true;
+    if (this.options.excludedNodeTypes?.includes(type))
+      return false;
+    if (this.options.nodeTypes)
+      return this.options.nodeTypes.includes(type);
+    return Editor2.registeredNodeTypes().some((item) => item.identifier == type);
+  }
+  /** Checks a document, as JSON text or the object toJSONObject() returns. */
+  validate(document2) {
+    let { issues } = this.#walk(document2, false);
+    return { valid: issues.length == 0, issues };
+  }
+  /**
+   * Takes out of a document what the schema doesn't allow: nodes of other types, with what's
+   * inside them, and addresses with other protocols (a link keeps its text). The document given
+   * isn't changed. Limits can't be cleaned, so issues lists any that remain, and valid says
+   * whether the result fits.
+   */
+  clean(document2) {
+    let { source, issues, changed } = this.#walk(document2, true);
+    let remaining = issues.filter((issue) => ["invalidDocument" /* invalidDocument */, "tooManyNodes" /* tooManyNodes */, "tooDeep" /* tooDeep */, "textTooLong" /* textTooLong */, "rule" /* rule */].includes(issue.code));
+    return { document: source, valid: remaining.length == 0, issues, changed };
+  }
+  /** Cleans a list of nodes' JSON, such as pasted ones, the way clean cleans a document's. */
+  cleanNodes(nodes) {
+    return this.clean({ nodes }).document?.nodes ?? [];
+  }
+  #addressAllowed(key, value) {
+    if (value.length == 0)
+      return true;
+    let protocols = this.options.protocols ?? Utilities.safeProtocols;
+    if (Utilities.isSafeURL(value, protocols))
+      return true;
+    if (this.options.dataAddresses !== false && _DocumentSchema.mediaKeys.has(key)) {
+      return /^data:(image\/(png|jpe?g|gif|webp|avif|bmp|svg\+xml)|audio\/[a-z0-9.+-]+|video\/[a-z0-9.+-]+|application\/pdf)[;,]/i.test(value.trim());
+    }
+    return false;
+  }
+  #walk(document2, cleaning) {
+    let issues = [];
+    let source = document2;
+    if (typeof document2 == "string") {
+      try {
+        source = JSON.parse(document2);
+      } catch {
+        return { source: null, issues: [new SchemaIssue("invalidDocument" /* invalidDocument */, "The document is not valid JSON.")], changed: false };
+      }
+    } else if (cleaning) {
+      source = JSON.parse(JSON.stringify(document2));
+    }
+    if (!source || typeof source != "object" || Array.isArray(source) || !Array.isArray(source.nodes)) {
+      return { source, issues: [new SchemaIssue("invalidDocument" /* invalidDocument */, "The document must be a JSON object with a nodes array.")], changed: false };
+    }
+    let options = this.options;
+    let known = new Set(Editor2.registeredNodeTypes().map((item) => item.identifier));
+    let count = 0;
+    let textLength = 0;
+    let changed = false;
+    let inspect = (value, path, node) => {
+      if (Array.isArray(value)) {
+        value.forEach((item, index) => inspect(item, `${path}[${index}]`, node));
+        return;
+      }
+      if (!value || typeof value != "object")
+        return;
+      for (let key of Object.keys(value)) {
+        let item = value[key];
+        let itemPath = path.length > 0 ? `${path}.${key}` : key;
+        if (key == "nodes" && Array.isArray(item)) {
+          continue;
+        } else if (typeof item == "string") {
+          if (key == "text")
+            textLength += item.length;
+          if (_DocumentSchema.addressKeys.has(key) && !this.#addressAllowed(key, item)) {
+            issues.push(new SchemaIssue("unsafeAddress" /* unsafeAddress */, `${itemPath} has an address the schema doesn't allow: ${item.slice(0, 80)}`, itemPath, Utilities.string(node?.nodeId ?? node?.id), Utilities.string(node?.type)));
+            if (cleaning) {
+              delete value[key];
+              changed = true;
+            }
+          }
+        } else if (item && typeof item == "object") {
+          inspect(item, itemPath, node);
+        }
+      }
+    };
+    let visit = (nodes, path, depth) => {
+      let kept2 = [];
+      nodes.forEach((node, index) => {
+        let nodePath = `${path}[${index}]`;
+        if (!node || typeof node != "object" || Array.isArray(node)) {
+          issues.push(new SchemaIssue("invalidDocument" /* invalidDocument */, `${nodePath} is not a node object.`, nodePath));
+          if (cleaning)
+            changed = true;
+          else
+            kept2.push(node);
+          return;
+        }
+        let type = Utilities.string(node.type);
+        let id = Utilities.string(node.nodeId ?? node.id);
+        if (!known.has(type) && type != "text") {
+          issues.push(new SchemaIssue("unknownType" /* unknownType */, `${nodePath} has the type "${type}", which isn't registered.`, nodePath, id, type));
+          if (cleaning) {
+            changed = true;
+            return;
+          }
+        } else if (!this.allows(type)) {
+          issues.push(new SchemaIssue("typeNotAllowed" /* typeNotAllowed */, `${nodePath} is a "${type}" node, which the schema doesn't allow.`, nodePath, id, type));
+          if (cleaning) {
+            changed = true;
+            return;
+          }
+        }
+        count++;
+        if (options.maxDepth !== void 0 && depth > options.maxDepth) {
+          issues.push(new SchemaIssue("tooDeep" /* tooDeep */, `${nodePath} is nested ${depth} deep; the schema allows ${options.maxDepth}.`, nodePath, id, type));
+        }
+        for (let rule of options.rules ?? []) {
+          let found = rule(node, { path: nodePath, depth });
+          for (let message of Array.isArray(found) ? found : found ? [found] : []) {
+            issues.push(new SchemaIssue("rule" /* rule */, message, nodePath, id, type));
+          }
+        }
+        inspect(node, nodePath, node);
+        let nested = (value, valuePath) => {
+          if (Array.isArray(value)) {
+            value.forEach((item, itemIndex) => nested(item, `${valuePath}[${itemIndex}]`));
+          } else if (value && typeof value == "object") {
+            for (let key of Object.keys(value)) {
+              let item = value[key];
+              let itemPath = `${valuePath}.${key}`;
+              if (key == "nodes" && Array.isArray(item)) {
+                let kept3 = visit(item, itemPath, depth + 1);
+                if (cleaning)
+                  value[key] = kept3;
+              } else if (item && typeof item == "object")
+                nested(item, itemPath);
+            }
+          }
+        };
+        nested(node, nodePath);
+        kept2.push(node);
+      });
+      return kept2;
+    };
+    let kept = visit(source.nodes, "nodes", 0);
+    if (cleaning)
+      source.nodes = kept;
+    if (options.maxNodes !== void 0 && count > options.maxNodes) {
+      issues.push(new SchemaIssue("tooManyNodes" /* tooManyNodes */, `The document has ${count} nodes; the schema allows ${options.maxNodes}.`));
+    }
+    if (options.maxTextLength !== void 0 && textLength > options.maxTextLength) {
+      issues.push(new SchemaIssue("textTooLong" /* textTooLong */, `The document has ${textLength} characters of text; the schema allows ${options.maxTextLength}.`));
+    }
+    return { source, issues, changed };
   }
 };
 
@@ -16509,8 +16985,14 @@ var InspectorDefaults = class _InspectorDefaults {
       target.content.styles.forEach((style) => style.textColor = Colors.clone(color2));
     }));
     color.setDefaultValue(Colors.empty);
-    let alignment = content.add(InspectorItem2.menu("textalignment", strings.TextTextAlignmentInspectorCaption, _InspectorDefaults.alignmentChoices(strings, true), (target) => target.textAlignment, (target, value) => target.textAlignment = value));
-    alignment.setDefaultValue(0 /* automatic */);
+    if (node.canAlignBlock) {
+      let block = content.add(InspectorItem2.menu("alignment", strings.TextAlignmentCaption, _InspectorDefaults.alignmentChoices(strings, true), (target) => target.alignment, (target, value) => target.alignment = value));
+      block.setDefaultValue(0 /* automatic */);
+    }
+    if (node.alignsText) {
+      let alignment = content.add(InspectorItem2.menu("textalignment", strings.TextTextAlignmentInspectorCaption, _InspectorDefaults.alignmentChoices(strings, true), (target) => target.textAlignment, (target, value) => target.textAlignment = value));
+      alignment.setDefaultValue(0 /* automatic */);
+    }
     let typography = new InspectorSection11("typography", strings.TextTypographyInspectorCaption);
     let applyToCharacters = (target, change) => target.content.styles.forEach(change);
     let defaultSize = (target) => target instanceof HeadingNode ? HeadingNode.fontSizeForLevel(target.level) : 0;
@@ -16625,6 +17107,7 @@ export {
   Dialog,
   Directions,
   DividerNode,
+  DocumentSchema2 as DocumentSchema,
   Editor2 as Editor,
   ExportFormats,
   Exporter,
@@ -16662,6 +17145,8 @@ export {
   PopupMenu,
   QuoteNode,
   RichText,
+  SchemaIssue,
+  SchemaIssueCodes,
   Search,
   Statistics,
   StatusBar,

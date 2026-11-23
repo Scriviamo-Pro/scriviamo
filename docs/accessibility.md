@@ -1,16 +1,20 @@
 # Accessibility
 
 Scriviamo aims to meet the Web Content Accessibility Guidelines (WCAG) 2.2 at level AA, both in
-the editor itself and in the documents people write with it. This page says what has been checked,
-how, and what is still to do. It is a draft: the conformance report at the end is not yet a full
-Accessibility Conformance Report (ACR), because screen reader testing hasn't been done.
+the editor itself and in the documents people write with it. This page says what is checked and
+how. The conformance report at the end is a draft, from automated testing and review without
+screen readers.
 
 ## In the editor
 
 - **Keyboard.** Every toolbar tool, menu, dialog and the inspector work from the keyboard. Inside
   the document, the arrow keys move between blocks, Tab moves between table cells and columns,
   Shift-Command-P (Shift-Control-P) searches every command, and Escape closes menus and popovers.
-  Dialogs are native `<dialog>` elements, which keep focus inside until they close.
+  With the editor's `keyboardControls` option on, Tab reaches a selected picture's, video's or
+  embed's resize handle, which resizes with the arrow keys, and a map, which moves with the arrow
+  keys and zooms with + and −. Browsers don't say whether someone needs this, so an application
+  turns it on from its own accessibility setting. Dialogs are native `<dialog>` elements, which keep
+  focus inside until they close. [Keyboard shortcuts](keyboard-shortcuts.md) lists every key.
 - **Names.** Toolbar buttons, menus, list boxes, checkboxes in checklists and forms, and radio
   buttons have names screen readers read. Code samples that scroll sideways can be reached with
   Tab and are named "Code".
@@ -28,23 +32,17 @@ tables, `alt` text on pictures, `<figure>` and `<figcaption>`, the document's la
 direction, MathML for formulas, and SVG with a name for charts and maps.
 
 
-## How the editor was audited
+## How the editor is audited
 
-On 18 November 2026, the demo page, with every add-on loaded, was checked with axe-core 4.10.2
-against the WCAG 2.0, 2.1 and 2.2 A and AA rules, in Bootstrap's light and dark themes, with the
-Insert menu open and the inspector showing. The audit found, and this release fixes:
-
-- checkboxes in checklists, and checkbox and radio blocks in forms, had no name;
-- code samples that scroll sideways couldn't be reached from the keyboard;
-- list boxes in menus, such as the suggestions list, had no name.
-
-After the fixes, axe reports no violations in the editor or the inspector. axe asks for colors over
-pictures and gradients to be checked by eye, which is in the manual review below.
+Every test run checks the editor with axe-core against the WCAG 2.0, 2.1 and 2.2 A and AA rules: a
+document holding every block type, with the inspector showing and the Insert menu open, in
+Bootstrap's light and dark themes, and in Arabic, right to left. A violation fails the tests, so no
+release goes out with one. axe asks for colors over pictures and gradients to be checked by eye.
 
 ## Conformance report (draft)
 
 The format follows the WCAG section of the VPAT 2.5. "Supports" means the criterion was checked and
-met; "Needs manual review" means it hasn't been checked by a person with assistive technology yet.
+met; "Needs manual review" means it depends on a person checking with assistive technology.
 Criteria that depend on the content people write, such as captions for their videos, are
 "Supports" where the editor gives authors what they need to meet them.
 
@@ -66,7 +64,7 @@ Criteria that depend on the content people write, such as captions for their vid
 | 1.4.11 Non-text contrast | AA | Needs manual review | |
 | 1.4.12 Text spacing | AA | Needs manual review | |
 | 1.4.13 Content on hover or focus | AA | Needs manual review | Tooltips and popovers |
-| 2.1.1 Keyboard | A | Partially supports | The toolbar, menus, dialogs and inspector work from the keyboard; resizing pictures and moving maps need a pointer, with the inspector's fields as the keyboard alternative |
+| 2.1.1 Keyboard | A | Supports | The toolbar, menus, dialogs and inspector work from the keyboard; with `keyboardControls` on, pictures, video and embeds resize, and maps move and zoom, with keys, and the inspector's fields do the same either way; see [Keyboard shortcuts](keyboard-shortcuts.md) |
 | 2.1.2 No keyboard trap | A | Supports | Escape leaves menus and popovers; dialogs close with Escape |
 | 2.1.4 Character key shortcuts | A | Supports | Shortcuts use Command or Control |
 | 2.2.1 Timing adjustable | A | Supports | |
@@ -84,7 +82,7 @@ Criteria that depend on the content people write, such as captions for their vid
 | 2.5.2 Pointer cancellation | A | Supports | |
 | 2.5.3 Label in name | A | Supports | |
 | 2.5.4 Motion actuation | A | Supports | |
-| 2.5.7 Dragging movements | AA | Partially supports | Blocks, outline sections, pictures and maps move by dragging; blocks and sections also have commands and keys, pictures and maps have inspector fields |
+| 2.5.7 Dragging movements | AA | Supports | Blocks, outline sections, pictures and maps move by dragging; each also moves or resizes with keys, and with commands or inspector fields |
 | 2.5.8 Target size | AA | Needs manual review | Small toolbar buttons are 30 pixels |
 | 3.1.1 Language of page | A | Not applicable | The application sets its page's language |
 | 3.1.2 Language of parts | AA | Supports | Exports carry the document's direction |
@@ -95,12 +93,3 @@ Criteria that depend on the content people write, such as captions for their vid
 | 3.3.8 Accessible authentication | AA | Not applicable | |
 | 4.1.2 Name, role, value | A | Partially supports | Interface controls are named; editable blocks need testing with screen readers |
 | 4.1.3 Status messages | AA | Needs manual review | Messages and the dictation bubble use live regions |
-
-## Still to do
-
-- **Screen reader testing** with VoiceOver on macOS and iOS, NVDA and JAWS on Windows, and
-  TalkBack on Android: reading and editing each block type, the toolbar, the inspector and the
-  dialogs. This is what turns the draft into a full report.
-- **Manual review** of the criteria marked above, including keyboard-only use of every add-on.
-- **Keyboard alternatives** for resizing pictures and for moving maps, beyond the inspector.
-- **Right-to-left review**, block by block.

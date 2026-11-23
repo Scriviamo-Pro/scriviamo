@@ -55,6 +55,7 @@ export declare class DiagramNode extends CodeBlockNode {
     static exportStyles(sheet: Stylesheet, editor: Editor | null): void;
     static identifier: string;
     static caption: string;
+    static captionString: string;
     static icon: string;
     static keywords: string;
     static importPriority: number;

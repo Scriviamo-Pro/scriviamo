@@ -235,6 +235,7 @@ export class MediaNode extends Node {
 export class AudioNode extends MediaNode {
   static identifier: string = "audio"
   static caption: string = "Audio"
+  static captionString: string = "TextAudioCaption"
   static icon: string = "bi bi-music-note-beamed"
   static keywords: string = "sound music podcast recording mp3"
 
@@ -242,6 +243,19 @@ export class AudioNode extends MediaNode {
     return element.tagName == "AUDIO" ? MediaNode.readElement(new AudioNode(), element, importer) : undefined
   }
   static droppedFileTypes: Array<string> = ["audio/*"]
+
+  /** File name extensions of audio, for addresses pasted or dropped on their own. */
+  static audioExtensions: Array<string> = ["mp3", "wav", "ogg", "oga", "m4a", "aac", "flac", "opus"]
+
+  /** A sound's address, pasted or dropped on its own, becomes an audio block. */
+  static importDroppedText(text: string, _editor: Editor): Node | null {
+    let address = Node.droppedAddress(text)
+    if (!address || !(address.mediaType.startsWith("audio/") || AudioNode.audioExtensions.includes(address.extension))) return null
+    let node = new AudioNode()
+    if (address.url.toLowerCase().startsWith("data:")) node.resourceData = address.url
+    else node.resourceURL = address.url
+    return node
+  }
 
   static importDroppedFile(file: File, _editor: Editor): Node | null {
     let node = new AudioNode()
@@ -275,6 +289,7 @@ export class AudioNode extends MediaNode {
 export class VideoNode extends MediaNode {
   static identifier: string = "video"
   static caption: string = "Video"
+  static captionString: string = "TextVideoCaption"
   static icon: string = "bi bi-film"
   static keywords: string = "movie clip film mp4 player"
 
@@ -282,6 +297,19 @@ export class VideoNode extends MediaNode {
     return element.tagName == "VIDEO" ? MediaNode.readElement(new VideoNode(), element, importer) : undefined
   }
   static droppedFileTypes: Array<string> = ["video/*"]
+
+  /** File name extensions of video, for addresses pasted or dropped on their own. */
+  static videoExtensions: Array<string> = ["mp4", "webm", "mov", "m4v", "ogv"]
+
+  /** A video's address, pasted or dropped on its own, becomes a video block. */
+  static importDroppedText(text: string, _editor: Editor): Node | null {
+    let address = Node.droppedAddress(text)
+    if (!address || !(address.mediaType.startsWith("video/") || VideoNode.videoExtensions.includes(address.extension))) return null
+    let node = new VideoNode()
+    if (address.url.toLowerCase().startsWith("data:")) node.resourceData = address.url
+    else node.resourceURL = address.url
+    return node
+  }
 
   static importDroppedFile(file: File, _editor: Editor): Node | null {
     let node = new VideoNode()

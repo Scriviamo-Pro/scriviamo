@@ -385,6 +385,14 @@ var FormControlNode = class extends TextNode {
     super.applyAppearance(wrapper, body);
     wrapper.classList.toggle("scv-control-disabled", this.disabled);
   }
+  /**
+   * CSS that moves a control only as wide as its content, such as a button, to the middle or end
+   * of the line, as Alignment asks; empty at the start. Margins alone don't move an inline control.
+   */
+  htmlAlignmentCSS() {
+    let css = this.htmlBackgroundCSS();
+    return /margin-left:auto|margin-inline-start:auto/.test(css) ? "display:block;width:fit-content;max-width:100%;" : "";
+  }
   htmlFormAttributes(includeID = true, includeStyle = true) {
     let result = "";
     if (includeID && this.id.length > 0)
@@ -455,6 +463,7 @@ var TextFieldTypes = /* @__PURE__ */ ((TextFieldTypes2) => {
 var TextFieldNode = class _TextFieldNode extends FormControlNode {
   static identifier = "textfield";
   static caption = "Text Field";
+  static captionString = "TextTextFieldCaption";
   static icon = "bi bi-input-cursor-text";
   static keywords = "form input field textbox email password number date";
   static importElement(element, importer) {
@@ -721,6 +730,7 @@ var TextFieldNode = class _TextFieldNode extends FormControlNode {
 var TextAreaNode = class _TextAreaNode extends TextFieldNode {
   static identifier = "textarea";
   static caption = "Text Area";
+  static captionString = "TextAreaCaption";
   static icon = "bi bi-textarea-resize";
   static keywords = "form input multiline comments message";
   static importElement(element, importer) {
@@ -813,6 +823,7 @@ var TextAreaNode = class _TextAreaNode extends TextFieldNode {
 var LabelNode = class _LabelNode extends TextNode {
   static identifier = "label";
   static caption = "Label";
+  static captionString = "TextLabelCaption";
   static icon = "bi bi-tag";
   static keywords = "form caption";
   static importElement(element, importer) {
@@ -877,6 +888,7 @@ var LabelNode = class _LabelNode extends TextNode {
 var CheckboxNode = class _CheckboxNode extends FormControlNode {
   static identifier = "checkbox";
   static caption = "Checkbox";
+  static captionString = "TextCheckboxCaption";
   static icon = "bi bi-check2-square";
   static keywords = "form toggle tick option agree";
   /** A checkbox input, or a label holding one, whose other content becomes the caption. */
@@ -1000,8 +1012,17 @@ var CheckboxNode = class _CheckboxNode extends FormControlNode {
     this.value = Utilities.string(data.value);
     return true;
   }
+  // Only as wide as its caption, so it moves with Alignment rather than aligning its text.
+  get canAlignBlock() {
+    return true;
+  }
+  get alignsText() {
+    return false;
+  }
   toHTML() {
-    let result = `<input${this.htmlFormAttributes()} type="checkbox"`;
+    let captioned = this.captionText.length > 0;
+    let style = this.htmlAlignmentCSS() + this.htmlBackgroundCSS();
+    let result = `<input${this.htmlFormAttributes(true, false)}${!captioned && style.length > 0 ? ` style="${Utilities.escapeAttribute(style)}"` : ""} type="checkbox"`;
     if (this.checked)
       result += " checked";
     if (this.required)
@@ -1009,9 +1030,9 @@ var CheckboxNode = class _CheckboxNode extends FormControlNode {
     if (this.value.length > 0 && this.value != "on")
       result += ` value="${Utilities.escapeAttribute(this.value)}"`;
     result += ">";
-    if (this.captionText.length == 0)
+    if (!captioned)
       return result;
-    return `<label>${result}${this.content.htmlText()}</label>`;
+    return `<label${style.length > 0 ? ` style="${Utilities.escapeAttribute(style)}"` : ""}>${result}${this.content.htmlText()}</label>`;
   }
   toPlainText() {
     return `${this.checked ? "[x]" : "[ ]"} ${this.captionText}`;
@@ -1026,6 +1047,7 @@ var ButtonTypes = /* @__PURE__ */ ((ButtonTypes2) => {
 var ButtonNode = class _ButtonNode extends FormControlNode {
   static identifier = "button";
   static caption = "Button";
+  static captionString = "TextButtonCaption";
   static icon = "bi bi-hand-index";
   static keywords = "form submit reset action";
   static importElement(element, importer) {
@@ -1167,8 +1189,16 @@ var ButtonNode = class _ButtonNode extends FormControlNode {
     this.buttonType = Utilities.clamp(Utilities.integer(data.buttonType, 0), 0, 2);
     return true;
   }
+  // Only as wide as its caption, so it moves with Alignment rather than aligning its text.
+  get canAlignBlock() {
+    return true;
+  }
+  get alignsText() {
+    return false;
+  }
   toHTML() {
-    let attributes = `${this.htmlFormAttributes()} type="${_ButtonNode.typeNames[this.buttonType]}"`;
+    let style = this.htmlAlignmentCSS() + this.htmlBackgroundCSS();
+    let attributes = `${this.htmlFormAttributes(true, false)}${style.length > 0 ? ` style="${Utilities.escapeAttribute(style)}"` : ""} type="${_ButtonNode.typeNames[this.buttonType]}"`;
     if (this.value.length > 0)
       attributes += ` value="${Utilities.escapeAttribute(this.value)}"`;
     let pairs = [["command", this.command], ["commandfor", this.commandFor], ["formaction", this.formAction], ["formenctype", this.formEnctype], ["formmethod", this.formMethod], ["formtarget", this.formTarget], ["popovertarget", this.popoverTarget], ["popovertargetaction", this.popoverTargetAction]];
@@ -1184,6 +1214,7 @@ var ButtonNode = class _ButtonNode extends FormControlNode {
 var DropdownNode = class _DropdownNode extends FormControlNode {
   static identifier = "select";
   static caption = "Dropdown";
+  static captionString = "TextDropdownCaption";
   static icon = "bi bi-menu-button-wide";
   static keywords = "form select choice combobox list";
   static importElement(element, importer) {
@@ -1361,6 +1392,7 @@ var RadioGroupNode = class _RadioGroupNode extends DropdownNode {
   }
   static identifier = "radiogroup";
   static caption = "Radio Group";
+  static captionString = "TextRadioGroupCaption";
   static icon = "bi bi-ui-radios";
   static keywords = "form radio choice option fieldset";
   static importElement(element, importer) {
@@ -1607,6 +1639,7 @@ var RadioGroupNode = class _RadioGroupNode extends DropdownNode {
 var DatalistNode = class _DatalistNode extends Node {
   static identifier = "datalist";
   static caption = "Datalist";
+  static captionString = "TextDatalistCaption";
   static icon = "bi bi-card-list";
   static keywords = "form suggestions autocomplete options";
   static importElement(element, importer) {
@@ -1728,6 +1761,7 @@ var FormNode = class _FormNode extends TableNode {
   }
   static identifier = "form";
   static caption = "Form";
+  static captionString = "TextFormCaption";
   static icon = "bi bi-ui-checks-grid";
   static keywords = "form fields controls submit";
   static importElement(element, importer) {

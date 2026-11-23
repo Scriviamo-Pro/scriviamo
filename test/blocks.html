@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="en" data-bs-theme="light">
+  <head>
+    <title>Scriviamo blocks</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- Every node type the edition has, in one document, with the inspector beside it: for
+         checking blocks by eye, and for the accessibility audit tools/browser-tests.mjs runs with
+         axe-core. Serve the repository and open /test/blocks.html. ?lang=ar shows it in Arabic,
+         right to left, with the Arabic locale packs; ?theme=dark in Bootstrap's dark theme. -->
+    <script type="importmap">{"imports": {"scriviamo": "../dist/scriviamo.js"}}</script>
+    <script>
+      const pageOptions = new URLSearchParams(location.search)
+      if (pageOptions.get("lang") == "ar") {
+        document.documentElement.lang = "ar"
+        document.documentElement.dir = "rtl"
+      }
+      if (pageOptions.get("theme") == "dark") document.documentElement.dataset.bsTheme = "dark"
+      // Bootstrap's right-to-left build for Arabic, as an Arabic app would load it.
+      document.write(`<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap${pageOptions.get("lang") == "ar" ? ".rtl" : ""}.min.css">`)
+    </script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="../dist/scriviamo.css">
+    <style>
+      body { padding: 16px; }
+      .blocks-layout { display: flex; gap: 12px; align-items: flex-start; }
+      #editor { flex: 1; height: calc(100vh - 32px); }
+      #inspector { width: 340px; height: calc(100vh - 32px); overflow: auto; }
+    </style>
+  </head>
+  <body>
+    <div class="blocks-layout">
+      <div id="editor"></div>
+      <div id="inspector" class="border rounded"></div>
+    </div>
+    <script type="module">
+      // Every add-on this edition has; the ones it doesn't are skipped.
+      const Addons = ["callouts", "blocks", "columns", "rawcontent", "media", "linkcards", "forms", "math", "diagrams", "collaboration", "datatable", "inspector", "footnotes", "templates", "pdf", "assistant", "steps", "attachments", "gallery", "map", "tabs", "charts", "signature", "dates", "status", "outline", "readability", "focus", "dictation", "word", "epub", "odt", "wikiimport", "accessibility", "versions", "trackchanges", "locking", "variables", "tasks", "git"]
+      const S = Object.assign({}, await import("scriviamo"))
+      const loaded = []
+      for (const name of Addons) {
+        try {
+          Object.assign(S, await import(`../dist/addons/scriviamo.${name}.js`))
+          loaded.push(name)
+          let link = document.createElement("link")
+          link.rel = "stylesheet"
+          link.href = `../dist/addons/scriviamo.${name}.css`
+          link.onerror = () => link.remove()
+          document.head.append(link)
+        } catch {}
+      }
+      window.Scriviamo = S
+
+      const english = pageOptions.get("lang") != "ar"
+      if (!english) {
+        // The base package's Arabic pack, and every loaded add-on's.
+        const files = ["scriviamo.ar.json", ...loaded.map(name => `scriviamo.${name}.ar.json`)]
+        const packs = await Promise.all(files.map(file => fetch(`../dist/locales/${file}`).then(response => response.ok ? response.json() : null).catch(() => null)))
+        S.Strings.useLocale(packs.filter(Boolean))
+      }
+
+      const editor = new S.Editor(document.getElementById("editor"), {
+        keyboardControls: true,
+        direction: english ? S.Directions.leftToRight : S.Directions.rightToLeft,
+        statusBar: true,
+        allowAnnotations: true
+      })
+      window.editor = editor
+
+      // Text that mixes directions: numbers, Latin words, code, links and marks inside Arabic.
+      editor.fromMarkdown(english ? [
+        "# Every block",
+        "",
+        "A paragraph with **bold**, _italic_, `code`, a [link](https://example.com), the number 2026 and the word Scriviamo in it.",
+        "",
+        "- First item",
+        "- Second item, with 3 apples",
+        "  - A nested item",
+        "",
+        "1. One",
+        "2. Two",
+        "",
+        "- [ ] An open task",
+        "- [x] A finished task",
+        "",
+        "> A quotation that is long enough to wrap onto a second line in the editor, to see where the lines start.",
+        "",
+        "| Name | Count |",
+        "| --- | --- |",
+        "| Apples | 3 |",
+        "| Pears | 12 |",
+        "",
+        "```js",
+        "let total = 3 + 12 // code stays left to right",
+        "```"
+      ].join("\n") : [
+        "# كل أنواع الكتل",
+        "",
+        "فقرة فيها **خط عريض** و_مائل_ و`code` و[رابط](https://example.com)، والرقم 2026 وكلمة Scriviamo بداخلها.",
+        "",
+        "- البند الأول",
+        "- البند الثاني، مع 3 تفاحات",
+        "  - بند متداخل",
+        "",
+        "1. واحد",
+        "2. اثنان",
+        "",
+        "- [ ] مهمة مفتوحة",
+        "- [x] مهمة منتهية",
+        "",
+        "> اقتباس طويل بما يكفي ليلتف على سطر ثانٍ في المحرر، لنرى أين تبدأ الأسطر وأين تنتهي في هذا الاتجاه.",
+        "",
+        "| الاسم | العدد |",
+        "| --- | --- |",
+        "| تفاح | 3 |",
+        "| كمثرى | 12 |",
+        "",
+        "```js",
+        "let total = 3 + 12 // code stays left to right",
+        "```"
+      ].join("\n"))
+
+      // Then one of each node type that can be inserted, after a heading naming it.
+      const skipped = []
+      for (const type of S.Editor.registeredNodeTypes()) {
+        if (!type.insertable || [S.TextNode, S.HeadingNode, S.ListNode, S.QuoteNode, S.CodeBlockNode, S.TableNode].includes(type)) continue
+        try {
+          let node = type.create(editor)
+          if (!node) continue
+          editor.addNode(new S.HeadingNode(node.typeName || type.identifier, S.HeadingLevels.heading3))
+          editor.addNode(node)
+        } catch (error) {
+          skipped.push(`${type.identifier}: ${error.message}`)
+        }
+      }
+      if (skipped.length) console.warn("Node types that couldn't be made:", skipped)
+      editor.history.reset()
+
+      if (S.Inspector) new S.Inspector(document.getElementById("inspector"), {editor})
+      else document.getElementById("inspector").remove()
+      // For tools/browser-tests.mjs, which waits for the page before auditing it.
+      window.blocksReady = true
+    </script>
+  </body>
+</html>

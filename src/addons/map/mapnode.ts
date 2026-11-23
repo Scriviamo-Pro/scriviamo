@@ -15,7 +15,8 @@ const MapStrings = {
   TextZoomInCaption: "Zoom In",
   TextZoomOutCaption: "Zoom Out",
   TextOpenMapCaption: "Open in OpenStreetMap",
-  TextShowPinCaption: "Show Pin"
+  TextShowPinCaption: "Show Pin",
+  TextMapKeysHint: "Arrow keys move the map, + and − zoom"
 }
 
 type MapStringsTable = typeof MapStrings
@@ -43,7 +44,8 @@ const ExportWidth = 1024
 /**
  * A map of a place, with a pin. It's drawn from map tiles placed as pictures, OpenStreetMap's by
  * default, so it needs no script or service key, and looks the same in the editor, in exported
- * HTML and in print. In the editor, drag to move it, use the buttons to zoom, or find a place.
+ * HTML and in print. In the editor, drag to move it, use the buttons to zoom, or find a place;
+ * with the editor's keyboardControls on, Tab to the map, then the arrow keys move it and + and − zoom.
  */
 export class MapNode extends Node {
   /** The tile pictures' address, with {z}, {x} and {y}. Follow the tile service's usage policy. */
@@ -73,6 +75,7 @@ export class MapNode extends Node {
 
   static identifier: string = "map"
   static caption: string = "Map"
+  static captionString: string = "TextMapCaption"
   static icon: string = "bi bi-geo-alt"
   static keywords: string = "map location address place pin directions openstreetmap"
 
@@ -234,6 +237,39 @@ export class MapNode extends Node {
     let controls = Utilities.element("div", "scv-map-controls")
     controls.append(this.#button("bi-plus-lg", this.strings.TextZoomInCaption, () => this.setZoom(this.zoom + 1)), this.#button("bi-dash-lg", this.strings.TextZoomOutCaption, () => this.setZoom(this.zoom - 1)))
     frame.append(controls)
+
+    // From the keyboard: the arrow keys move the map (further with Shift), + and - zoom.
+    // In the keyboard's way only when the editor's keyboardControls is on.
+    frame.tabIndex = this.editor && this.editor.keyboardControls ? 0 : -1
+    frame.dataset.scvKeyboard = ""
+    frame.setAttribute("role", "group")
+    frame.setAttribute("aria-label", `${this.typeName}. ${this.strings.TextMapKeysHint}`)
+    frame.addEventListener("keydown", event => {
+      if (event.target !== frame || !this.editor || this.editor.readOnly || this.locked || event.metaKey || event.ctrlKey || event.altKey) return
+      let step = event.shiftKey ? 256 : 64
+      let moves: {[key: string]: [number, number]} = {ArrowUp: [0, -step], ArrowDown: [0, step], ArrowLeft: [-step, 0], ArrowRight: [step, 0]}
+      if (event.key in moves) {
+        let [dx, dy] = moves[event.key]
+        let point = MapNode.unproject(center.x + dx, center.y + dy, this.zoom)
+        this.willChange()
+        // To a millionth of a degree, about 10 cm: the way a moved map is saved.
+        this.latitude = Number(MapNode.#clampLatitude(point.latitude).toFixed(6))
+        this.longitude = Number(point.longitude.toFixed(6))
+        this.refresh()
+        this.changed()
+      } else if (event.key == "+" || event.key == "=" || event.code == "NumpadAdd") {
+        this.setZoom(this.zoom + 1)
+      } else if (event.key == "-" || event.key == "_" || event.key == "\u2212" || event.code == "NumpadSubtract") {
+        this.setZoom(this.zoom - 1)
+      } else {
+        return
+      }
+      event.preventDefault()
+      event.stopPropagation()
+      // The map draws itself again; keep the keyboard on it.
+      let again = this.element ? this.element.querySelector(".scv-map") as HTMLElement | null : null
+      again?.focus()
+    })
 
     // Dragging moves the map; letting go records the new center.
     frame.addEventListener("pointerdown", event => {

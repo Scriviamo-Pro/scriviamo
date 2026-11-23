@@ -9,6 +9,7 @@ export class QuoteNode extends TextNode {
 
   static identifier: string = "quote"
   static caption: string = "Quote"
+  static captionString: string = "TextQuoteCaption"
   static icon: string = "bi bi-quote"
   static keywords: string = "blockquote citation"
   static markdownShortcuts: Array<BlockShortcut> = [{pattern: /^> /}]

@@ -102,6 +102,7 @@ var DiagramNode = class _DiagramNode extends CodeBlockNode {
   }
   static identifier = "diagram";
   static caption = "Diagram";
+  static captionString = "TextDiagramCaption";
   static icon = "bi bi-diagram-3";
   static keywords = "mermaid flowchart chart graph sequence gantt";
   // Higher than code blocks, so <pre><code class="language-mermaid"> becomes a diagram.

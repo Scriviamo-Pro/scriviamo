@@ -14,7 +14,8 @@
       "TextZoomInCaption": "Увеличить",
       "TextZoomOutCaption": "Уменьшить",
       "TextOpenMapCaption": "Открыть в OpenStreetMap",
-      "TextShowPinCaption": "Показывать метку"
+      "TextShowPinCaption": "Показывать метку",
+      "TextMapKeysHint": "Стрелки перемещают карту, + и − меняют масштаб"
     }
   }
 }

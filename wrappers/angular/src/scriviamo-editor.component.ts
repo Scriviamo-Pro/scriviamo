@@ -1,4 +1,5 @@
-import {ChangeDetectionStrategy, Component, ElementRef, EventEmitter, forwardRef, Input, NgZone, OnChanges, OnDestroy, OnInit, Output, ViewChild} from "@angular/core"
+import {isPlatformBrowser} from "@angular/common"
+import {ChangeDetectionStrategy, Component, ElementRef, EventEmitter, forwardRef, inject, Input, NgZone, OnChanges, OnDestroy, OnInit, Output, PLATFORM_ID, ViewChild} from "@angular/core"
 import {ControlValueAccessor, NG_VALUE_ACCESSOR} from "@angular/forms"
 import type {Editor, Node, ToolbarDisplayModes} from "scriviamo"
 import {EditorBinding, ScriviamoFormat, ScriviamoSettings} from "./editorbinding"
@@ -11,6 +12,9 @@ import {EditorBinding, ScriviamoFormat, ScriviamoSettings} from "./editorbinding
  * It also works with Angular forms, through ngModel or a form control. value is read when it
  * changes from outside: the editor's own changes come back through valueChange, and passing
  * them back in doesn't reload the document.
+ *
+ * With server rendering, the server renders only the element the editor fills, and the editor is
+ * created in the browser; the component isn't hydrated, since the editor builds its own content.
  */
 @Component({
   selector: "scriviamo-editor",
@@ -18,6 +22,7 @@ import {EditorBinding, ScriviamoFormat, ScriviamoSettings} from "./editorbinding
   template: "<div #host class=\"scriviamo-editor-host\"></div>",
   styles: [":host { display: block; } .scriviamo-editor-host { height: 100%; }"],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {ngSkipHydration: "true"},
   providers: [{provide: NG_VALUE_ACCESSOR, useExisting: forwardRef(() => ScriviamoEditorComponent), multi: true}]
 })
 export class ScriviamoEditorComponent implements OnInit, OnChanges, OnDestroy, ControlValueAccessor {
@@ -61,9 +66,11 @@ export class ScriviamoEditorComponent implements OnInit, OnChanges, OnDestroy, C
   #onFormChange: (value: string) => void = () => {}
   #onFormTouched: () => void = () => {}
 
+  #browser = isPlatformBrowser(inject(PLATFORM_ID))
+
   constructor(private zone: NgZone) {}
 
-  /** The editor, once the view exists. */
+  /** The editor, once the view exists; always null on the server. */
   get editor(): Editor | null {
     return this.#binding ? this.#binding.editor : null
   }
@@ -95,6 +102,8 @@ export class ScriviamoEditorComponent implements OnInit, OnChanges, OnDestroy, C
   // The editor is created as early as possible, so a template binding such as
   // [editor]="doc.editor" already sees it in the first check. The host is a static query.
   ngOnInit() {
+    // On the server there's no page to edit in.
+    if (!this.#browser) return
     // The editor's own listeners run outside Angular; only the outputs re-enter it.
     this.zone.runOutsideAngular(() => {
       this.#binding = new EditorBinding(this.host.nativeElement, this.#settings(), {

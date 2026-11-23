@@ -32,7 +32,14 @@ Strings.useLocale(packs)
 ```
 
 A language's packs cover all the text the editor shows. The interface follows the page's
-direction, so for Arabic set `dir="rtl"` on the page or on the editor's element.
+direction, so for Arabic set `dir="rtl"` on the page or on the editor's element, and load
+Bootstrap's right-to-left stylesheet (`bootstrap.rtl.min.css`) in place of its usual one.
+
+In right-to-left text, blocks, lists, tables, menus, dialogs and the inspector mirror, and arrows
+that point along the line turn around. Code blocks, and the source of formulas and diagrams,
+stay left to right, as code reads; set a code block's direction to right to left to change that.
+`test/blocks.html?lang=ar` shows every block type in an Arabic document, and `test/blocks.html` the
+same in English, to compare.
 
 ## Locale packs
 

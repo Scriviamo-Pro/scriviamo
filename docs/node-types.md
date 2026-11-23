@@ -40,7 +40,7 @@ A paragraph of styled text. The other text blocks extend it.
 | `text` | The plain text. Setting it replaces the content and its styles. |
 | `content` | The text and its character styles, as `RichText` |
 | `fontName`, `fontSize`, `bold`, `italic`, `underline` | The paragraph's default formatting; a size of 0 follows the document |
-| `textAlignment` | The alignment of the text inside the node |
+| `textAlignment` | The alignment of the text inside the node. Buttons and checkboxes, only as wide as their captions, move with `alignment` instead. |
 
 ### Heading — `HeadingNode`, `"heading"`
 

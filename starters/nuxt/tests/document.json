@@ -1,0 +1,55 @@
+{
+  "version": 4,
+  "documentId": "",
+  "fontName": "System",
+  "fontSize": 16,
+  "backgroundColor": {
+    "red": 255,
+    "green": 255,
+    "blue": 255,
+    "alpha": 0
+  },
+  "nodes": [
+    {
+      "nodeId": "3609543f-579a-44de-a1b8-d68772939b2d",
+      "type": "heading",
+      "bold": true,
+      "fontSize": 32,
+      "content": {
+        "text": "Hello from the fixture",
+        "headingLevel": 1,
+        "styleTable": [
+          {
+            "bold": true,
+            "fontSize": 32
+          }
+        ],
+        "styleRuns": [
+          22,
+          0
+        ]
+      }
+    },
+    {
+      "nodeId": "1acdcb79-2a72-47f7-9d34-9a382494ba1d",
+      "type": "text",
+      "content": {
+        "text": "A paragraph with a link.",
+        "styleTable": [
+          {},
+          {
+            "linkURL": "https://example.com/"
+          }
+        ],
+        "styleRuns": [
+          19,
+          0,
+          4,
+          1,
+          1,
+          0
+        ]
+      }
+    }
+  ]
+}

@@ -490,7 +490,7 @@ export class RichText {
     if (style.highlight) content = `<mark>${content}</mark>`
     let css = style.htmlCSS()
     if (css.length > 0 || suggestionAttributes.length > 0) content = `<span${suggestionAttributes}${css.length > 0 ? ` style="${Utilities.escapeAttribute(css)}"` : ""}>${content}</span>`
-    if (style.linkURL.length > 0) {
+    if (style.linkURL.length > 0 && Utilities.isSafeURL(style.linkURL)) {
       let title = style.linkTitle.length > 0 ? ` title="${Utilities.escapeAttribute(style.linkTitle)}"` : ""
       let target = style.linkTarget.length > 0 ? ` target="${Utilities.escapeAttribute(style.linkTarget)}"` : ""
       content = `<a href="${Utilities.escapeAttribute(style.linkURL)}"${title}${target}>${content}</a>`
@@ -534,7 +534,7 @@ export class RichText {
         let css = `color:${Colors.toCSS(style.suggestionTextColor)};background-color:${Colors.toCSS(style.suggestionBackgroundColor)};border:1px solid ${Colors.toCSS(style.suggestionBorderColor)}`
         content = `<span data-scriviamo-suggestion-provider="${Utilities.escapeAttribute(style.suggestionProviderIdentifier)}" data-scriviamo-suggestion-id="${Utilities.escapeAttribute(style.suggestionIdentifier)}" style="${Utilities.escapeAttribute(css)}">${content}</span>`
       }
-      if (style.linkURL.length > 0) {
+      if (style.linkURL.length > 0 && Utilities.isSafeURL(style.linkURL)) {
         if (style.linkTarget.length > 0) {
           let title = style.linkTitle.length > 0 ? ` title="${Utilities.escapeAttribute(style.linkTitle)}"` : ""
           content = `<a href="${Utilities.escapeAttribute(style.linkURL)}" target="${Utilities.escapeAttribute(style.linkTarget)}"${title}>${content}</a>`

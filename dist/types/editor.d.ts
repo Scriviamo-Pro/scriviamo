@@ -1,4 +1,4 @@
-import { Alignments, Annotation, Annotations, Autosave, AutosaveFunction, BackgroundImage, DialogField, Directions, DocumentColor, Exporters, FileUploader, FileUploadKind, FontOptions, Formatting, HeadingNode, History, HTMLImporter, InsertionChoice, InspectorSection, Node, NodeClass, NodeSelection, NodeTypes, Notification, Search, SelectionState, Statistics, StatusBar, Strings, Stylesheet, SuggestionProviders, TextHost, TextNode, TextStyle, ThemeColors, ToolbarDisplayModes, ToolbarItem, ToolbarItems, ToolbarMenuItem } from "./internal";
+import { Alignments, Annotation, Annotations, Autosave, AutosaveFunction, BackgroundImage, DialogField, Directions, DocumentColor, DocumentSchema, Exporters, FileUploader, FileUploadKind, FontOptions, Formatting, HeadingNode, History, HTMLImporter, InsertionChoice, InspectorSection, Node, NodeClass, NodeSelection, NodeTypes, Notification, Search, SelectionState, Statistics, StatusBar, Strings, Stylesheet, SuggestionProviders, TextHost, TextNode, TextStyle, ThemeColors, ToolbarDisplayModes, ToolbarItem, ToolbarItems, ToolbarMenuItem, SchemaResult } from "./internal";
 export declare enum ValidationSeverities {
     warning = 0,
     error = 1
@@ -6,7 +6,9 @@ export declare enum ValidationSeverities {
 export declare class ValidationIssue {
     severity: ValidationSeverities;
     message: string;
-    constructor(severity: ValidationSeverities, message: string);
+    /** Where in the JSON, when the editor's schema found it, such as "nodes[3]". */
+    path: string;
+    constructor(severity: ValidationSeverities, message: string, path?: string);
 }
 export interface EditorOptions {
     /** Document JSON, as a string or object. */
@@ -44,6 +46,10 @@ export interface EditorOptions {
         retryDelay?: number;
         warnBeforeLeaving?: boolean;
     };
+    /** The node types and content the document may have; see DocumentSchema. */
+    schema?: DocumentSchema | null;
+    /** Tab from a selected block reaches its keyboard controls, such as a picture's resize handle; see keyboardControls. */
+    keyboardControls?: boolean;
 }
 /**
  * A block-based rich text editor. The document is an ordered list of nodes;
@@ -352,7 +358,26 @@ export declare class Editor extends EventTarget {
     /** Copies a node, giving it and its descendants new IDs. */
     cloneNode(node: Node): Node | null;
     static renewIDs(data: any): any;
-    /** Builds a node from its JSON using the registered types. Unknown types are kept as they are. */
+    /**
+     * Whether Tab, from a selected block, reaches the block's own keyboard controls before moving on:
+     * a picture's, video's or embed's resize handle, which resizes with the arrow keys, or a map, which
+     * moves with them. Off, those controls are left out of the keyboard's way, for people who use the
+     * pointer for them. Turn it on from the application's own accessibility setting: browsers don't
+     * say whether someone needs it.
+     */
+    get keyboardControls(): boolean;
+    set keyboardControls(value: boolean);
+    /**
+     * The node types and content the document may have, or null for any. With a schema, the
+     * editor offers only the node types it allows, takes out of what is pasted or dropped what it
+     * doesn't allow, and loads only documents that fit it. Check the saved JSON on the server too,
+     * with the same schema: a browser can be made to send anything.
+     */
+    get schema(): DocumentSchema | null;
+    set schema(value: DocumentSchema | null);
+    /** Checks the document against the schema; valid, with no issues, when there's none. */
+    validate(): SchemaResult;
+    /** Builds a node from its JSON using the registered types. Unknown types are kept as they are, unless the editor has a schema. */
     nodeFromJSON(data: any): Node | null;
     /** Inserts a node of a registered type where the user is working, and starts editing it. */
     insertNodeOfType(type: NodeClass | string, replace?: Node | null): Node | null;
@@ -434,6 +459,12 @@ export declare class Editor extends EventTarget {
      * are added or loaded.
      */
     recognizeSuggestions(nodes: Array<Node>): void;
+    /**
+     * The node an address pasted or dropped on its own makes, such as an image for a picture's
+     * address, or null to keep it a link: from the node type with the highest
+     * droppedTextImportPriority whose importDroppedText takes it.
+     */
+    nodeForDroppedText(text: string): Node | null;
     /** Nodes made from files, by the node types that accept them. Files no type accepts are skipped. */
     nodesForFiles(files: Array<File>): Array<Node>;
     /** Copies (or cuts) the selection, as the Copy and Cut commands do. */

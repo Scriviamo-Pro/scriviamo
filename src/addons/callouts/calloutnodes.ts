@@ -38,6 +38,7 @@ export class AlertNode extends TextNode {
 
   static identifier: string = "alert"
   static caption: string = "Alert"
+  static captionString: string = "TextAlertInspectorCaption"
   static icon: string = "bi bi-exclamation-triangle"
   static keywords: string = "callout note tip warning caution info danger success"
 

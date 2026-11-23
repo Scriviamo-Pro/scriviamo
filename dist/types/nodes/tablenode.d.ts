@@ -14,6 +14,7 @@ export declare class TableNode extends Node {
     static exportStyles(sheet: Stylesheet, editor: Editor | null): void;
     static identifier: string;
     static caption: string;
+    static captionString: string;
     static icon: string;
     static keywords: string;
     static create(editor: Editor): Node;

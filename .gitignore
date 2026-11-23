@@ -49,3 +49,5 @@ starters/*/.output/
 starters/*/.data/
 starters/*/data/
 starters/nextjs/next-env.d.ts
+starters/*/.angular/
+starters/angular/dist/

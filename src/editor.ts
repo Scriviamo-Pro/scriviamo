@@ -1,4 +1,4 @@
-import {Alignments, Annotation, AnnotationHandler, Annotations, Autosave, AutosaveFunction, BackgroundImage, BlockShortcut, ChoiceItem, ChoicePopup, CodeBlockNode, CodePoints, Colors, CurrentDocumentVersion, DefaultFontSize, Dialog, DialogField, Directions, DocumentColor, DocumentStyle, Exporter, Exporters, ExportFormats, FileUploader, FileUploadKind, FontOptions, Formatting, FormattingStyles, HeadingNode, History, HTMLImporter, InsertionChoice, InsertionChooser, InspectorDefaults, InspectorSection, LineBreak, MarkdownConverter, MediaUI, Node, NodeClass, NodeSelection, NodeTypes, Notification, NotificationTypes, ParagraphBreak, PasteCleanup, Popup, PopupMenu, RichText, Search, SelectionState, Statistics, StatusBar, Strings, Stylesheet, SuggestionProviders, Suggestions, TableNode, TableSizePicker, TextHost, TextHostModes, TextNode, TextStyle, ThemeColors, ToolbarDisplayModes, ToolbarItem, ToolbarItemKinds, ToolbarItems, ToolbarMenuItem, ToolbarView, UnknownNode, Utilities, WebFonts} from "./internal"
+import {Alignments, Annotation, AnnotationHandler, Annotations, Autosave, AutosaveFunction, BackgroundImage, BlockShortcut, ChoiceItem, ChoicePopup, CodeBlockNode, CodePoints, Colors, CurrentDocumentVersion, DefaultFontSize, Dialog, DialogField, Directions, DocumentColor, DocumentSchema, DocumentStyle, Exporter, Exporters, ExportFormats, FileUploader, FileUploadKind, FontOptions, Formatting, FormattingStyles, HeadingNode, History, HTMLImporter, InsertionChoice, InsertionChooser, InspectorDefaults, InspectorSection, LineBreak, MarkdownConverter, MediaUI, Node, NodeClass, NodeSelection, NodeTypes, Notification, NotificationTypes, ParagraphBreak, PasteCleanup, Popup, PopupMenu, RichText, Search, SelectionState, Statistics, StatusBar, Strings, Stylesheet, SuggestionProviders, Suggestions, TableNode, TableSizePicker, TextHost, TextHostModes, TextNode, TextStyle, ThemeColors, ToolbarDisplayModes, ToolbarItem, ToolbarItemKinds, ToolbarItems, ToolbarMenuItem, SchemaResult, ToolbarView, UnknownNode, Utilities, WebFonts} from "./internal"
 
 export enum ValidationSeverities {
   warning = 0,
@@ -8,10 +8,13 @@ export enum ValidationSeverities {
 export class ValidationIssue {
   severity: ValidationSeverities
   message: string
+  /** Where in the JSON, when the editor's schema found it, such as "nodes[3]". */
+  path: string
 
-  constructor(severity: ValidationSeverities, message: string) {
+  constructor(severity: ValidationSeverities, message: string, path: string = "") {
     this.severity = severity
     this.message = message
+    this.path = path
   }
 }
 
@@ -45,6 +48,10 @@ export interface EditorOptions {
   fileUploader?: FileUploader | null
   /** Saves the document a moment after each change: a save function, or one with settings. See Autosave. */
   autosave?: AutosaveFunction | {save: AutosaveFunction, delay?: number, maximumWait?: number, retryDelay?: number, warnBeforeLeaving?: boolean}
+  /** The node types and content the document may have; see DocumentSchema. */
+  schema?: DocumentSchema | null
+  /** Tab from a selected block reaches its keyboard controls, such as a picture's resize handle; see keyboardControls. */
+  keyboardControls?: boolean
 }
 
 interface PendingStyle {
@@ -484,6 +491,8 @@ export class Editor extends EventTarget {
     if (typeof instanceOptions.insertMenuSearchThreshold == "number") this.insertMenuSearchThreshold = instanceOptions.insertMenuSearchThreshold
     if (instanceOptions.autosave) this.updateAutosave(instanceOptions.autosave)
     if (instanceOptions.fileUploader !== undefined) this.fileUploader = typeof instanceOptions.fileUploader == "function" ? instanceOptions.fileUploader : null
+    if (instanceOptions.schema) this.schema = instanceOptions.schema
+    if (instanceOptions.keyboardControls) this.#keyboardControls = true
 
     this.render()
 
@@ -1192,9 +1201,60 @@ export class Editor extends EventTarget {
     return data
   }
 
-  /** Builds a node from its JSON using the registered types. Unknown types are kept as they are. */
+  #schema: DocumentSchema | null = null
+  #keyboardControls: boolean = false
+
+  /**
+   * Whether Tab, from a selected block, reaches the block's own keyboard controls before moving on:
+   * a picture's, video's or embed's resize handle, which resizes with the arrow keys, or a map, which
+   * moves with them. Off, those controls are left out of the keyboard's way, for people who use the
+   * pointer for them. Turn it on from the application's own accessibility setting: browsers don't
+   * say whether someone needs it.
+   */
+  get keyboardControls(): boolean {
+    return this.#keyboardControls
+  }
+
+  set keyboardControls(value: boolean) {
+    this.#keyboardControls = !!value
+    this.#documentElement?.querySelectorAll("[data-scv-keyboard]").forEach(control => (control as HTMLElement).tabIndex = value ? 0 : -1)
+  }
+
+  /**
+   * The node types and content the document may have, or null for any. With a schema, the
+   * editor offers only the node types it allows, takes out of what is pasted or dropped what it
+   * doesn't allow, and loads only documents that fit it. Check the saved JSON on the server too,
+   * with the same schema: a browser can be made to send anything.
+   */
+  get schema(): DocumentSchema | null {
+    return this.#schema
+  }
+
+  set schema(value: DocumentSchema | null) {
+    this.#schema = value
+    let allows = (identifier: string) => !value || value.allows(identifier)
+    this.nodeTypes.items().forEach(type => { if (!allows(type.identifier)) this.nodeTypes.remove(type) })
+    Editor.registeredNodeTypes().forEach(type => { if (allows(type.identifier) && !this.nodeTypes.item(type.identifier)) this.nodeTypes.add(type) })
+  }
+
+  /** Checks the document against the schema; valid, with no issues, when there's none. */
+  validate(): SchemaResult {
+    return this.#schema ? this.#schema.validate(this.toJSONObject()) : {valid: true, issues: []}
+  }
+
+  /** Nodes with what the schema doesn't allow taken out, such as pasted ones. */
+  #allowedNodes(nodes: Array<Node>): Array<Node> {
+    let schema = this.#schema
+    if (!schema || nodes.length == 0) return nodes
+    let result = schema.clean({nodes: nodes.map(node => node.toJSON())})
+    if (!result.changed) return nodes
+    return (result.document?.nodes ?? []).map(item => this.nodeFromJSON(item)).filter((node): node is Node => node !== null)
+  }
+
+  /** Builds a node from its JSON using the registered types. Unknown types are kept as they are, unless the editor has a schema. */
   nodeFromJSON(data: any): Node | null {
     if (!data || typeof data != "object") return null
+    if (this.#schema && !this.#schema.allows(Utilities.string(data.type))) return null
     let type = this.nodeTypes.item(Utilities.string(data.type))
     let node: Node = type ? new type() : new UnknownNode()
     node.editor = this
@@ -2074,11 +2134,19 @@ export class Editor extends EventTarget {
         event.preventDefault()
         this.#selectAdjacentNode(event.key == "ArrowDown", event.shiftKey)
         break
-      case "Tab":
+      case "Tab": {
         if (event.metaKey || event.ctrlKey || event.altKey) break
         event.preventDefault()
+        // With keyboardControls on, Tab reaches the block's own keyboard control first, such as a
+        // picture's resize handle or a map, marked data-scv-keyboard; the next Tab moves on.
+        let control = !event.shiftKey && this.#keyboardControls && node.element ? node.element.querySelector("[data-scv-keyboard]") as HTMLElement | null : null
+        if (control && document.activeElement !== control && !this.#readOnly && !node.locked) {
+          control.focus()
+          break
+        }
         this.#selectAdjacentNode(!event.shiftKey, false)
         break
+      }
       case "Home":
       case "End": {
         event.preventDefault()
@@ -3167,7 +3235,9 @@ export class Editor extends EventTarget {
   }
 
   #onDragOver(event: DragEvent) {
-    let files = event.dataTransfer && Array.from(event.dataTransfer.types).indexOf("Files") >= 0
+    let types = event.dataTransfer ? Array.from(event.dataTransfer.types) : []
+    // Files, or a link or picture dragged from another page, which may become a block.
+    let files = types.indexOf("Files") >= 0 || types.indexOf("text/uri-list") >= 0
     if (!this.#dragNode && !files) return
     if (this.#readOnly) return
     event.preventDefault()
@@ -3225,9 +3295,19 @@ export class Editor extends EventTarget {
       return
     }
     let files = event.dataTransfer ? Array.from(event.dataTransfer.files) : []
-    if (files.length == 0 || this.#readOnly) return
-    event.preventDefault()
-    let nodes = this.nodesForFiles(files)
+    if (this.#readOnly || !event.dataTransfer) return
+    let nodes: Array<Node> = []
+    if (files.length > 0) {
+      event.preventDefault()
+      nodes = this.nodesForFiles(files)
+    } else {
+      // A picture's or a video's address dragged from another page becomes that block.
+      let list = event.dataTransfer.getData("text/uri-list").split(/\r?\n/).map(line => line.trim()).filter(line => line.length > 0 && !line.startsWith("#"))
+      let node = list.length == 1 ? this.nodeForDroppedText(list[0]) : null
+      if (!node) return
+      event.preventDefault()
+      nodes = [node]
+    }
     if (nodes.length == 0) return
     if (target) {
       this.insertNodes(target.list, target.index, nodes, target.owner)
@@ -3235,6 +3315,24 @@ export class Editor extends EventTarget {
       nodes.forEach(node => this.addNode(node))
     }
     this.selectNode(nodes[nodes.length - 1])
+  }
+
+  /**
+   * The node an address pasted or dropped on its own makes, such as an image for a picture's
+   * address, or null to keep it a link: from the node type with the highest
+   * droppedTextImportPriority whose importDroppedText takes it.
+   */
+  nodeForDroppedText(text: string): Node | null {
+    let address = String(text ?? "").trim()
+    if (address.length == 0 || /\s/.test(address)) return null
+    let types = this.nodeTypes.items().map((type, index) => ({type, index, priority: Number((type as any).droppedTextImportPriority) || 0}))
+    types.sort((a, b) => b.priority - a.priority || a.index - b.index)
+    for (let {type} of types) {
+      let importer = (type as any).importDroppedText
+      let node = typeof importer == "function" ? importer.call(type, address, this) as Node | null : null
+      if (node) return node
+    }
+    return null
   }
 
   /** The registered node type that takes a file: the one with the highest import priority whose droppedFileTypes match. */
@@ -3409,6 +3507,17 @@ export class Editor extends EventTarget {
       }
     }
 
+    // An address on its own, pasted into an empty paragraph or with blocks selected, becomes the
+    // block it's for, such as an image for a picture's address. In a sentence it stays a link.
+    let address = data.text.trim()
+    if (data.json.length == 0 && address.length > 0 && !/\s/.test(address) && (!host || (host.mode != TextHostModes.plain && host.node.constructor === TextNode && host.rich.length == 0))) {
+      let node = this.nodeForDroppedText(address)
+      if (node) {
+        this.#insertNodesAtCaret([node])
+        return
+      }
+    }
+
     if (data.json.length > 0) {
       try {
         let parsed = JSON.parse(data.json)
@@ -3479,6 +3588,7 @@ export class Editor extends EventTarget {
 
   /** Inserts blocks where the caret is, splitting the paragraph being edited around them. */
   #insertNodesAtCaret(nodes: Array<Node>) {
+    nodes = this.#allowedNodes(nodes)
     if (nodes.length == 0) return
     let host = this.#activeHost
     this.history.checkpoint()
@@ -3733,7 +3843,7 @@ export class Editor extends EventTarget {
 
     // Node types to insert, and the extensions' other insertion choices.
     this.nodeTypes.items().filter(type => type.insertable).forEach(type => {
-      add(type.caption, type.icon, strings.TextInsertCaption, true, () => this.insertNodeOfType(type), `${type.keywords} ${type.identifier}`)
+      add(type.localizedCaption(strings), type.icon, strings.TextInsertCaption, true, () => this.insertNodeOfType(type), `${type.caption} ${type.keywords} ${type.identifier}`)
     })
     this.insertionChoices().forEach(choice => {
       add(choice.caption, choice.icon, strings.TextInsertCaption, true, () => choice.choose(null), choice.keywords || "")
@@ -4188,10 +4298,10 @@ export class Editor extends EventTarget {
       }
       case "insert": {
         let types = this.nodeTypes.items().filter(type => type.insertable)
-        item.menuItems = types.map(type => new ToolbarMenuItem(type.identifier, type.caption, type.icon))
+        item.menuItems = types.map(type => new ToolbarMenuItem(type.identifier, type.localizedCaption(strings), type.icon))
         // The same chooser as "/", with its search field once the list is long enough.
         item.makePopup = choose => {
-          let chooser = new InsertionChooser(strings, types, type => choose(new ToolbarMenuItem(type.identifier, type.caption, type.icon)))
+          let chooser = new InsertionChooser(strings, types, type => choose(new ToolbarMenuItem(type.identifier, type.localizedCaption(strings), type.icon)))
           chooser.hasSearchField = types.length >= this.insertMenuSearchThreshold
           return chooser
         }
@@ -5152,10 +5262,12 @@ export class Editor extends EventTarget {
         }
         let type = Utilities.string(node.type)
         if (type.length == 0) issues.push(new ValidationIssue(ValidationSeverities.warning, `${path}[${index}] has no type.`))
-        else if (!this.nodeTypes.item(type)) issues.push(new ValidationIssue(ValidationSeverities.warning, `${path}[${index}] has the unsupported type "${type}" and will be kept as it is.`))
+        // With a schema, the schema reports it instead, as a node that can't be loaded.
+        else if (!this.nodeTypes.item(type) && !this.#schema) issues.push(new ValidationIssue(ValidationSeverities.warning, `${path}[${index}] has the unsupported type "${type}" and will be kept as it is.`))
       })
     }
     check(source.nodes, "nodes")
+    if (this.#schema) this.#schema.validate(source).issues.forEach(issue => issues.push(new ValidationIssue(ValidationSeverities.error, issue.message, issue.path)))
     return issues
   }
 
@@ -5304,7 +5416,7 @@ export class Editor extends EventTarget {
   /** Replaces the document with HTML. */
   /** Replaces the document with HTML. HTML with nothing the editor can import leaves the document as it was. */
   fromHTML(html: string) {
-    let nodes = this.importer.import(html)
+    let nodes = this.#allowedNodes(this.importer.import(html))
     if (nodes.length == 0) return
     let style = this.importer.documentStyle(html)
     this.#loadImported(nodes, style)
@@ -5321,7 +5433,7 @@ export class Editor extends EventTarget {
       style = this.importer.elementDocumentStyle(wrapper)
       html = wrapper.innerHTML
     }
-    this.#loadImported(this.importer.import(html), style)
+    this.#loadImported(this.#allowedNodes(this.importer.import(html)), style)
   }
 
   #loadImported(nodes: Array<Node>, style: DocumentStyle | null = null) {
@@ -5347,7 +5459,7 @@ export class Editor extends EventTarget {
 
   /** Inserts HTML where the user is working, or after target. */
   insertHTML(html: string, target?: Node) {
-    let nodes = this.importer.import(html)
+    let nodes = this.#allowedNodes(this.importer.import(html))
     if (target) {
       this.insertNodesAfter(target, nodes)
     } else {

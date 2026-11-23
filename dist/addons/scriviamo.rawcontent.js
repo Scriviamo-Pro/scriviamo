@@ -10,6 +10,7 @@ Strings.register(RawcontentStrings);
 var RawContentNode = class extends CodeBlockNode {
   static identifier = "rawcontent";
   static caption = "Raw HTML";
+  static captionString = "TextRawContentCaption";
   static icon = "bi bi-filetype-html";
   inspectorSections() {
     let strings = this.strings;

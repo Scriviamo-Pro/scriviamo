@@ -1,6 +1,6 @@
 {
   "name": "scriviamo-angular",
-  "version": "1.0.1-beta.16",
+  "version": "1.0.1-beta.17",
   "description": "Angular components for the Scriviamo editor",
   "scripts": {
     "sync": "node ../sync-shared.mjs",
@@ -8,6 +8,7 @@
     "build": "npm run sync && ng-packagr -p ng-package.json -c tsconfig.json"
   },
   "peerDependencies": {
+    "@angular/common": ">=17",
     "@angular/core": ">=17",
     "@angular/forms": ">=17",
     "scriviamo": "*"

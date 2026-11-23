@@ -13,9 +13,14 @@ export declare class ImageNode extends Node {
     static exportStyles(sheet: Stylesheet, editor: Editor | null): void;
     static identifier: string;
     static caption: string;
+    static captionString: string;
     static icon: string;
     static keywords: string;
     static droppedFileTypes: Array<string>;
+    /** File name extensions of pictures, for addresses pasted or dropped on their own. */
+    static imageExtensions: Array<string>;
+    /** A picture's address, pasted or dropped on its own, becomes an image. */
+    static importDroppedText(text: string, _editor: Editor): Node | null;
     static importDroppedFile(file: File, _editor: Editor): Node | null;
     /** Largest width given to a newly loaded picture. */
     static maximumInitialWidth: number;

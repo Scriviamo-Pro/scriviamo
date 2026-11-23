@@ -19,10 +19,13 @@ export class ToolbarView {
       return space
     }
 
-    let button = Utilities.element("button", "btn btn-sm scv-toolbar-button", {type: "button", title: item.tooltip, "aria-label": item.tooltip || item.caption})
+    let button = Utilities.element("button", "btn btn-sm scv-toolbar-button", {type: "button", title: item.tooltip})
     button.dataset.identifier = item.identifier
     let showIcon = item.icon.length > 0 && displayMode != ToolbarDisplayModes.textOnly
     let showCaption = item.alwaysShowCaption || displayMode != ToolbarDisplayModes.iconOnly || item.icon.length == 0
+    // A button showing its caption, such as the current font, is named by it, so what's read is
+    // what's seen; its tooltip describes it. One showing only an icon is named by its tooltip.
+    if (!showCaption || item.caption.length == 0) button.setAttribute("aria-label", item.tooltip || item.caption)
     if (showIcon) button.append(Utilities.element("i", `${item.icon} scv-toolbar-icon`))
     if (showCaption) {
       let caption = Utilities.element("span", "scv-toolbar-caption")

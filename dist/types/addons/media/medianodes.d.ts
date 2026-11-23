@@ -69,10 +69,15 @@ export declare class MediaNode extends Node {
 export declare class AudioNode extends MediaNode {
     static identifier: string;
     static caption: string;
+    static captionString: string;
     static icon: string;
     static keywords: string;
     static importElement(element: HTMLElement, importer: HTMLImporter): Node | undefined;
     static droppedFileTypes: Array<string>;
+    /** File name extensions of audio, for addresses pasted or dropped on their own. */
+    static audioExtensions: Array<string>;
+    /** A sound's address, pasted or dropped on its own, becomes an audio block. */
+    static importDroppedText(text: string, _editor: Editor): Node | null;
     static importDroppedFile(file: File, _editor: Editor): Node | null;
     static insertable: boolean;
     protected get defaultWidth(): number;
@@ -85,10 +90,15 @@ export declare class VideoNode extends MediaNode {
     #private;
     static identifier: string;
     static caption: string;
+    static captionString: string;
     static icon: string;
     static keywords: string;
     static importElement(element: HTMLElement, importer: HTMLImporter): Node | undefined;
     static droppedFileTypes: Array<string>;
+    /** File name extensions of video, for addresses pasted or dropped on their own. */
+    static videoExtensions: Array<string>;
+    /** A video's address, pasted or dropped on its own, becomes a video block. */
+    static importDroppedText(text: string, _editor: Editor): Node | null;
     static importDroppedFile(file: File, _editor: Editor): Node | null;
     static insertable: boolean;
     /** A poster picture as base64 PNG data, without a data URI prefix. */

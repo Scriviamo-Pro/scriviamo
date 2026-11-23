@@ -75,7 +75,8 @@
       "TextOnCaption": "켜기",
       "TextOffCaption": "끄기",
       "TextSoftCaption": "소프트",
-      "TextHardCaption": "하드"
+      "TextHardCaption": "하드",
+      "TextTextFieldCaption": "텍스트 필드"
     }
   }
 }

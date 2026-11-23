@@ -31,6 +31,7 @@ var StepsNode = class _StepsNode extends TableNode {
   }
   static identifier = "steps";
   static caption = "Steps";
+  static captionString = "TextStepsCaption";
   static icon = "bi bi-list-ol";
   static keywords = "steps procedure how-to instructions timeline history milestones roadmap";
   /** Ahead of the list node, which would otherwise read these lists as plain ones. */

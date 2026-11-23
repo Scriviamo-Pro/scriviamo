@@ -1,0 +1,8 @@
+.editor-frame {
+  height: calc(100vh - 160px);
+  min-height: 420px;
+}
+
+scriviamo-editor.editor-frame {
+  display: block;
+}

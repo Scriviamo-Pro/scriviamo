@@ -2,7 +2,8 @@
 import {mkdir, readFile, readdir, writeFile} from "node:fs/promises"
 import {join} from "node:path"
 
-const folder = join(process.cwd(), "data")
+// DOCUMENTS_FOLDER moves it, as the tests do; data/ in the app's folder otherwise.
+const folder = process.env["DOCUMENTS_FOLDER"] || join(process.cwd(), "data")
 
 export interface StoredDocument {
   id: string

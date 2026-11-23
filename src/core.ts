@@ -201,6 +201,22 @@ export class Colors {
 }
 
 export class Utilities {
+  /** The protocols isSafeURL allows by default. Addresses without one, such as /page or #part, are always allowed. */
+  static safeProtocols: Array<string> = ["http", "https", "mailto", "tel"]
+
+  /**
+   * True when an address can't run script when followed: a relative address, or one whose
+   * protocol is in protocols. Exported HTML and the editor's links use only addresses that pass,
+   * so a document that was tampered with can't carry a javascript: link.
+   */
+  static isSafeURL(url: string, protocols: Array<string> = Utilities.safeProtocols): boolean {
+    // Browsers ignore tabs, line breaks and leading control characters in a protocol.
+    let address = String(url ?? "").replace(/[\u0000-\u0020\u007F]+/g, "")
+    let match = /^([a-z][a-z0-9+.-]*):/i.exec(address)
+    if (!match) return true
+    return protocols.some(protocol => protocol.toLowerCase() == match![1].toLowerCase())
+  }
+
   /** The pixel size of base64 PNG, GIF or JPEG data, read from its header, or null. */
   static imageDataSize(base64: string): {width: number, height: number} | null {
     try {

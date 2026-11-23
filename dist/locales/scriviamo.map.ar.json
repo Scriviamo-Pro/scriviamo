@@ -14,7 +14,8 @@
       "TextZoomInCaption": "تكبير",
       "TextZoomOutCaption": "تصغير",
       "TextOpenMapCaption": "فتح في OpenStreetMap",
-      "TextShowPinCaption": "إظهار الدبوس"
+      "TextShowPinCaption": "إظهار الدبوس",
+      "TextMapKeysHint": "تحرّك مفاتيح الأسهم الخريطة، و+ و− للتكبير والتصغير"
     }
   }
 }

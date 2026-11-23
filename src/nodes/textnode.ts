@@ -9,6 +9,7 @@ export class TextNode extends Node {
 
   static identifier: string = "text"
   static caption: string = "Text"
+  static captionString: string = "TextTextCaption"
   static icon: string = "bi bi-text-paragraph"
   static keywords: string = "paragraph body plain"
 
@@ -74,6 +75,14 @@ export class TextNode extends Node {
 
   /** Whether the inspector offers the block's text and its typography. */
   get inspectorShowsText(): boolean {
+    return true
+  }
+
+  /**
+   * Whether the text lines up within the block, so the inspector offers Text Alignment. False for
+   * a block only as wide as its text, such as a button, which moves with Alignment instead.
+   */
+  get alignsText(): boolean {
     return true
   }
 
@@ -240,6 +249,7 @@ export class HeadingNode extends TextNode {
 
   static identifier: string = "heading"
   static caption: string = "Heading"
+  static captionString: string = "TextHeadingCaption"
   static icon: string = "bi bi-type-h1"
   static keywords: string = "title h1 h2 h3 h4 h5 h6 section"
 

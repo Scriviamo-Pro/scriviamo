@@ -14,7 +14,8 @@
       "TextZoomInCaption": "拡大",
       "TextZoomOutCaption": "縮小",
       "TextOpenMapCaption": "OpenStreetMap で開く",
-      "TextShowPinCaption": "ピンを表示"
+      "TextShowPinCaption": "ピンを表示",
+      "TextMapKeysHint": "矢印キーで地図を移動、+ と − で拡大・縮小"
     }
   }
 }

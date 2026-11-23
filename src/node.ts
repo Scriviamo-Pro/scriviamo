@@ -11,7 +11,12 @@ export interface NodeClass {
   new (): Node
   /** The JSON "type" value. The toolbar identifier is "node:" + identifier. */
   identifier: string
+  /** The type's name in English, the default in every language that has no translation of it. */
   caption: string
+  /** The name of the Strings text that translates caption; empty when there's only the default. */
+  captionString: string
+  /** The type's name in the language of the strings given: the translation, or caption. */
+  localizedCaption(strings: Strings): string
   icon: string
   /** Extra words matched by the insertion search. */
   keywords: string
@@ -65,14 +70,57 @@ export class Node {
     return null
   }
 
+  /** Decides between node types that claim the same pasted or dropped address: the highest wins. */
+  static droppedTextImportPriority: number = 0
+  /**
+   * Makes a node from an address pasted or dropped on its own, such as a picture's, or returns
+   * null to leave it to other types, and in the end a link. text is trimmed, with no spaces.
+   */
+  static importDroppedText(_text: string, _editor: Editor): Node | null {
+    return null
+  }
+
+  /**
+   * The address in pasted or dropped text, with the extension of its file name in lowercase and
+   * the media type of a data: address, or null when the text isn't one address.
+   */
+  static droppedAddress(text: string): {url: string, extension: string, mediaType: string} | null {
+    let url = String(text ?? "").trim()
+    if (url.length == 0 || /\s/.test(url)) return null
+    let data = /^data:([a-z0-9.+-]+\/[a-z0-9.+-]+)[;,]/i.exec(url)
+    if (data) return {url, extension: "", mediaType: data[1].toLowerCase()}
+    if (!/^https?:\/\//i.test(url)) return null
+    try {
+      let path = new URL(url).pathname
+      let name = path.substring(path.lastIndexOf("/") + 1)
+      let dot = name.lastIndexOf(".")
+      return {url, extension: dot > 0 ? name.substring(dot + 1).toLowerCase() : "", mediaType: ""}
+    } catch {
+      return null
+    }
+  }
+
   static identifier: string = "content"
+  /** The type's name in English, the default in every language that has no translation of it. */
   static caption: string = "Content"
+  /**
+   * The name of the Strings text that translates caption, such as "TextTableCaption", which the
+   * type registers with its other text, so locale packs can translate it. A type that leaves it
+   * empty has only its caption, and shows that in every language.
+   */
+  static captionString: string = ""
   static icon: string = "bi bi-square"
   static keywords: string = ""
   static insertable: boolean = true
 
   static create(_editor: Editor): Node {
     return new this()
+  }
+
+  /** The type's name in the language of the strings given: its translation, or else caption. */
+  static localizedCaption(strings: Strings): string {
+    let translated = this.captionString.length > 0 ? (strings as any)[this.captionString] : undefined
+    return typeof translated == "string" && translated.trim().length > 0 ? translated : this.caption
   }
 
   /** Makes nodes from an imported HTML element, or returns undefined to leave the element to other types. */
@@ -148,8 +196,9 @@ export class Node {
     return (this.constructor as typeof Node).identifier
   }
 
+  /** The type's name, in the editor's language. */
   get typeName(): string {
-    return (this.constructor as typeof Node).caption
+    return (this.constructor as typeof Node).localizedCaption(this.strings)
   }
 
   get strings(): Strings {

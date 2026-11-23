@@ -14,7 +14,8 @@
       "TextZoomInCaption": "放大",
       "TextZoomOutCaption": "缩小",
       "TextOpenMapCaption": "在 OpenStreetMap 中打开",
-      "TextShowPinCaption": "显示标记"
+      "TextShowPinCaption": "显示标记",
+      "TextMapKeysHint": "方向键移动地图，+ 和 − 缩放"
     }
   }
 }

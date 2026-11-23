@@ -7,7 +7,9 @@
       "TextPreviewFromFrameCaption": "将当前画面用作预览图",
       "TextRemovePreviewCaption": "移除预览图",
       "TextMediaUnavailableCaption": "此媒体无法在这里播放。",
-      "TextReplaceMediaCaption": "替换"
+      "TextReplaceMediaCaption": "替换",
+      "TextAudioCaption": "音频",
+      "TextVideoCaption": "视频"
     }
   }
 }

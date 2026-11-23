@@ -5,6 +5,13 @@ export declare class MediaUI {
     static placeholder(node: Node, icon: string, caption: string, chooseFile: (() => void) | null, enterURL: () => void): HTMLElement;
     /** Lets the user drag handle to resize frame. ratio is height / width, or 0 to keep the height. */
     static attachResize(node: Node, handle: HTMLElement, frame: HTMLElement, ratio: () => number, done: (width: number, height: number) => void): void;
+    /**
+     * Makes a resize handle a slider the keyboard reaches with Tab, when the editor's keyboardControls
+     * is on: the arrow keys make the block
+     * 10 pixels narrower or wider (50 with Shift), Page Up and Page Down 100, Home and End the
+     * narrowest and widest. Left and right follow the text's direction. Each change is one undo step.
+     */
+    static attachKeyboardResize(node: Node, handle: HTMLElement, frame: HTMLElement, ratio: () => number, done: (width: number, height: number) => void, minimum?: number): void;
     /** Reads a file as a data: URI. */
     static readDataURI(file: Blob): Promise<string>;
     static pickFile(accept: string, handler: (file: File) => void): void;

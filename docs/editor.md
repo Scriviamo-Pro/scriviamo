@@ -34,6 +34,8 @@ its options.
 | `insertMenuSearchThreshold` | The toolbar's Insert menu shows a search field once it offers at least this many block types. 5 by default; 0 always shows it, and `Infinity` never does |
 | `strings` | The interface text; see [Localization](localization.md) |
 | `fileUploader` | Uploads the files people add and returns their addresses; see [Files and uploads](import-export.md#files-and-uploads) |
+| `keyboardControls` | Tab from a selected picture, video, embed or map reaches its keyboard controls: a resize handle that resizes with the arrow keys, or the map, which moves with them. Off by default; turn it on from your application's accessibility setting, as browsers don't say who needs it. Also a property. |
+| `schema` | The node types and content the document may have; see [Schema validation](schema.md). Also the `schema` property, and `validate()` checks the document against it. |
 
 ## Nodes
 

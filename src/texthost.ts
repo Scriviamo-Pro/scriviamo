@@ -197,7 +197,8 @@ export class TextHost {
 
     if (style.linkURL.length > 0) {
       let link = document.createElement("a")
-      link.href = style.linkURL
+      // An address that could run script keeps its look but leads nowhere.
+      if (Utilities.isSafeURL(style.linkURL)) link.href = style.linkURL
       if (style.linkTitle.length > 0) link.title = style.linkTitle
       link.append(span)
       return link

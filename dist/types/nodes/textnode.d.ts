@@ -5,6 +5,7 @@ export declare class TextNode extends Node {
     static exportStyles(sheet: Stylesheet, _editor: Editor | null): void;
     static identifier: string;
     static caption: string;
+    static captionString: string;
     static icon: string;
     static keywords: string;
     static create(editor: Editor): Node;
@@ -34,6 +35,11 @@ export declare class TextNode extends Node {
     get keepsParagraphs(): boolean;
     /** Whether the inspector offers the block's text and its typography. */
     get inspectorShowsText(): boolean;
+    /**
+     * Whether the text lines up within the block, so the inspector offers Text Alignment. False for
+     * a block only as wide as its text, such as a button, which moves with Alignment instead.
+     */
+    get alignsText(): boolean;
     get inspectorShowsTypography(): boolean;
     /** Adjusts content that replaces this block's text from the inspector, which has paragraphs paragraphs. */
     prepareReplacementContent(_replacement: RichText, _paragraphs: number): void;
@@ -82,6 +88,7 @@ export declare class HeadingNode extends TextNode {
     static exportStyles(sheet: Stylesheet, editor: Editor | null): void;
     static identifier: string;
     static caption: string;
+    static captionString: string;
     static icon: string;
     static keywords: string;
     static create(editor: Editor): Node;

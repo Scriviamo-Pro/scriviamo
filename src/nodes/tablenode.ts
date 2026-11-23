@@ -20,6 +20,7 @@ export class TableNode extends Node {
 
   static identifier: string = "table"
   static caption: string = "Table"
+  static captionString: string = "TextTableCaption"
   static icon: string = "bi bi-table"
   static keywords: string = "grid spreadsheet rows columns cells"
 

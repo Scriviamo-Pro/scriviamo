@@ -15,6 +15,7 @@ declare module "scriviamo" {
 export declare class RawContentNode extends CodeBlockNode {
     static identifier: string;
     static caption: string;
+    static captionString: string;
     static icon: string;
     inspectorSections(): Array<InspectorSection>;
     static keywords: string;

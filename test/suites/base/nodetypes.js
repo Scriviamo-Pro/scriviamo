@@ -134,4 +134,35 @@
     t.assert(first instanceof PE.DividerNode && first.lineThickness == 3 && first.lineColor.red == 255 && !first.borderTop.visible, "A divider did not round-trip through HTML.")
     t.assert(second instanceof PE.DividerNode && second.lineThickness == 2 && second.lineColor.green == 255 && !second.borderTop.visible, "A border-top rule did not import as the divider line.")
   })
+
+  test("Node types", "a picture resizes from the keyboard, from its resize handle", t => {
+    let editor = t.editor({keyboardControls: true})
+    let image = new PE.ImageNode()
+    image.sourceURL = "data:image/svg+xml;base64," + btoa('<svg xmlns="http://www.w3.org/2000/svg" width="400" height="200"></svg>')
+    image.displayWidth = 300
+    image.displayHeight = 150
+    editor.addNode(image)
+    editor.addNode(new PE.TextNode("After the picture"))
+    editor.selectNode(image)
+    let key = (target, key, options = {}) => target.dispatchEvent(new KeyboardEvent("keydown", {key, bubbles: true, cancelable: true, ...options}))
+    key(image.element, "Tab")
+    let handle = document.activeElement
+    t.assert(handle && handle.classList.contains("scv-resize-handle"), `Tab didn't reach the resize handle: ${handle && handle.className}`)
+    t.equal([handle.getAttribute("role"), handle.getAttribute("aria-label"), handle.getAttribute("aria-valuenow")], ["slider", editor.strings.TextWidthInspectorCaption, "300"], "The handle as a slider")
+    key(handle, "ArrowRight")
+    t.equal([image.displayWidth, image.displayHeight], [310, 155], "Wider, keeping the shape")
+    key(document.activeElement, "ArrowLeft", {shiftKey: true})
+    t.equal(image.displayWidth, 260, "Narrower by 50 with Shift")
+    t.assert(document.activeElement.classList.contains("scv-resize-handle"), "The handle lost the keyboard after resizing.")
+    key(document.activeElement, "Tab")
+    t.assert(!document.activeElement.classList.contains("scv-resize-handle"), "Tab from the handle didn't move on.")
+    editor.history.undo()
+    t.equal(editor.toJSONObject().nodes[0].displayWidth, 310, "Undo takes back the last step")
+    // Off, Tab goes straight to the next block, and the handle is out of the keyboard's way.
+    editor.keyboardControls = false
+    editor.selectNode(editor.nodeAt(0))
+    key(editor.nodeAt(0).element, "Tab")
+    t.equal(editor.selectedNode && editor.selectedNode.type, "text", "With keyboardControls off, Tab selects the next block")
+    t.equal(editor.nodeAt(0).element.querySelector(".scv-resize-handle").tabIndex, -1, "With keyboardControls off, the handle's tab order")
+  })
 }

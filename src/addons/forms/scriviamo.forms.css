@@ -163,3 +163,10 @@
   margin: 0;
   font-weight: 500;
 }
+
+/* A button or checkbox is only as wide as its content, so Alignment moves it along the line. */
+.scv-node[data-type="button"] > .scv-node-body,
+.scv-node[data-type="checkbox"] > .scv-node-body {
+  width: fit-content;
+  max-width: 100%;
+}

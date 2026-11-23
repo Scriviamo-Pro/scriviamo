@@ -9,7 +9,12 @@ export interface NodeClass {
     new (): Node;
     /** The JSON "type" value. The toolbar identifier is "node:" + identifier. */
     identifier: string;
+    /** The type's name in English, the default in every language that has no translation of it. */
     caption: string;
+    /** The name of the Strings text that translates caption; empty when there's only the default. */
+    captionString: string;
+    /** The type's name in the language of the strings given: the translation, or caption. */
+    localizedCaption(strings: Strings): string;
     icon: string;
     /** Extra words matched by the insertion search. */
     keywords: string;
@@ -59,12 +64,37 @@ export declare class Node {
     static droppedFileImportPriority: number;
     /** Makes a node from a dropped or pasted file, or returns null to decline it. */
     static importDroppedFile(_file: File, _editor: Editor): Node | null;
+    /** Decides between node types that claim the same pasted or dropped address: the highest wins. */
+    static droppedTextImportPriority: number;
+    /**
+     * Makes a node from an address pasted or dropped on its own, such as a picture's, or returns
+     * null to leave it to other types, and in the end a link. text is trimmed, with no spaces.
+     */
+    static importDroppedText(_text: string, _editor: Editor): Node | null;
+    /**
+     * The address in pasted or dropped text, with the extension of its file name in lowercase and
+     * the media type of a data: address, or null when the text isn't one address.
+     */
+    static droppedAddress(text: string): {
+        url: string;
+        extension: string;
+        mediaType: string;
+    } | null;
     static identifier: string;
+    /** The type's name in English, the default in every language that has no translation of it. */
     static caption: string;
+    /**
+     * The name of the Strings text that translates caption, such as "TextTableCaption", which the
+     * type registers with its other text, so locale packs can translate it. A type that leaves it
+     * empty has only its caption, and shows that in every language.
+     */
+    static captionString: string;
     static icon: string;
     static keywords: string;
     static insertable: boolean;
     static create(_editor: Editor): Node;
+    /** The type's name in the language of the strings given: its translation, or else caption. */
+    static localizedCaption(strings: Strings): string;
     /** Makes nodes from an imported HTML element, or returns undefined to leave the element to other types. */
     static importElement(_element: HTMLElement, _importer: HTMLImporter): Node | Array<Node> | null | undefined;
     static markdownShortcuts: Array<BlockShortcut>;
@@ -113,6 +143,7 @@ export declare class Node {
     body: HTMLElement | null;
     static defaultBorder(): NodeBorder;
     get type(): string;
+    /** The type's name, in the editor's language. */
     get typeName(): string;
     get strings(): Strings;
     /** True when users can drag the node's resize handle. */

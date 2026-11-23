@@ -14,7 +14,8 @@
       "TextZoomInCaption": "Acercar",
       "TextZoomOutCaption": "Alejar",
       "TextOpenMapCaption": "Abrir en OpenStreetMap",
-      "TextShowPinCaption": "Mostrar marcador"
+      "TextShowPinCaption": "Mostrar marcador",
+      "TextMapKeysHint": "Las flechas mueven el mapa; + y − acercan y alejan"
     }
   }
 }

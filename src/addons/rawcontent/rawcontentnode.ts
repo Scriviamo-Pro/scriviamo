@@ -20,6 +20,7 @@ Strings.register(RawcontentStrings)
 export class RawContentNode extends CodeBlockNode {
   static identifier: string = "rawcontent"
   static caption: string = "Raw HTML"
+  static captionString: string = "TextRawContentCaption"
   static icon: string = "bi bi-filetype-html"
 
   inspectorSections(): Array<InspectorSection> {

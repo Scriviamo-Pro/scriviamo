@@ -14,7 +14,8 @@
       "TextZoomInCaption": "Aumentar zoom",
       "TextZoomOutCaption": "Diminuir zoom",
       "TextOpenMapCaption": "Abrir no OpenStreetMap",
-      "TextShowPinCaption": "Mostrar marcador"
+      "TextShowPinCaption": "Mostrar marcador",
+      "TextMapKeysHint": "As setas movem o mapa; + e − aproximam e afastam"
     }
   }
 }

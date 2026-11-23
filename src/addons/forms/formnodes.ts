@@ -418,6 +418,15 @@ export class FormControlNode extends TextNode {
     wrapper.classList.toggle("scv-control-disabled", this.disabled)
   }
 
+  /**
+   * CSS that moves a control only as wide as its content, such as a button, to the middle or end
+   * of the line, as Alignment asks; empty at the start. Margins alone don't move an inline control.
+   */
+  protected htmlAlignmentCSS(): string {
+    let css = this.htmlBackgroundCSS()
+    return /margin-left:auto|margin-inline-start:auto/.test(css) ? "display:block;width:fit-content;max-width:100%;" : ""
+  }
+
   protected htmlFormAttributes(includeID: boolean = true, includeStyle: boolean = true): string {
     let result = ""
     if (includeID && this.id.length > 0) result += ` id="${Utilities.escapeAttribute(this.id)}"`
@@ -482,6 +491,7 @@ export enum TextFieldTypes {
 export class TextFieldNode extends FormControlNode {
   static identifier: string = "textfield"
   static caption: string = "Text Field"
+  static captionString: string = "TextTextFieldCaption"
   static icon: string = "bi bi-input-cursor-text"
   static keywords: string = "form input field textbox email password number date"
 
@@ -737,6 +747,7 @@ export class TextFieldNode extends FormControlNode {
 export class TextAreaNode extends TextFieldNode {
   static identifier: string = "textarea"
   static caption: string = "Text Area"
+  static captionString: string = "TextAreaCaption"
   static icon: string = "bi bi-textarea-resize"
   static keywords: string = "form input multiline comments message"
 
@@ -821,6 +832,7 @@ export class TextAreaNode extends TextFieldNode {
 export class LabelNode extends TextNode {
   static identifier: string = "label"
   static caption: string = "Label"
+  static captionString: string = "TextLabelCaption"
   static icon: string = "bi bi-tag"
   static keywords: string = "form caption"
 
@@ -894,6 +906,7 @@ export class LabelNode extends TextNode {
 export class CheckboxNode extends FormControlNode {
   static identifier: string = "checkbox"
   static caption: string = "Checkbox"
+  static captionString: string = "TextCheckboxCaption"
   static icon: string = "bi bi-check2-square"
   static keywords: string = "form toggle tick option agree"
 
@@ -1020,14 +1033,25 @@ export class CheckboxNode extends FormControlNode {
     return true
   }
 
+  // Only as wide as its caption, so it moves with Alignment rather than aligning its text.
+  get canAlignBlock(): boolean {
+    return true
+  }
+
+  get alignsText(): boolean {
+    return false
+  }
+
   toHTML(): string {
-    let result = `<input${this.htmlFormAttributes()} type="checkbox"`
+    let captioned = this.captionText.length > 0
+    let style = this.htmlAlignmentCSS() + this.htmlBackgroundCSS()
+    let result = `<input${this.htmlFormAttributes(true, false)}${!captioned && style.length > 0 ? ` style="${Utilities.escapeAttribute(style)}"` : ""} type="checkbox"`
     if (this.checked) result += " checked"
     if (this.required) result += " required"
     if (this.value.length > 0 && this.value != "on") result += ` value="${Utilities.escapeAttribute(this.value)}"`
     result += ">"
-    if (this.captionText.length == 0) return result
-    return `<label>${result}${this.content.htmlText()}</label>`
+    if (!captioned) return result
+    return `<label${style.length > 0 ? ` style="${Utilities.escapeAttribute(style)}"` : ""}>${result}${this.content.htmlText()}</label>`
   }
 
   toPlainText(): string {
@@ -1045,6 +1069,7 @@ export enum ButtonTypes {
 export class ButtonNode extends FormControlNode {
   static identifier: string = "button"
   static caption: string = "Button"
+  static captionString: string = "TextButtonCaption"
   static icon: string = "bi bi-hand-index"
   static keywords: string = "form submit reset action"
 
@@ -1189,8 +1214,18 @@ export class ButtonNode extends FormControlNode {
     return true
   }
 
+  // Only as wide as its caption, so it moves with Alignment rather than aligning its text.
+  get canAlignBlock(): boolean {
+    return true
+  }
+
+  get alignsText(): boolean {
+    return false
+  }
+
   toHTML(): string {
-    let attributes = `${this.htmlFormAttributes()} type="${ButtonNode.typeNames[this.buttonType]}"`
+    let style = this.htmlAlignmentCSS() + this.htmlBackgroundCSS()
+    let attributes = `${this.htmlFormAttributes(true, false)}${style.length > 0 ? ` style="${Utilities.escapeAttribute(style)}"` : ""} type="${ButtonNode.typeNames[this.buttonType]}"`
     if (this.value.length > 0) attributes += ` value="${Utilities.escapeAttribute(this.value)}"`
     let pairs: Array<[string, string]> = [["command", this.command], ["commandfor", this.commandFor], ["formaction", this.formAction], ["formenctype", this.formEnctype], ["formmethod", this.formMethod], ["formtarget", this.formTarget], ["popovertarget", this.popoverTarget], ["popovertargetaction", this.popoverTargetAction]]
     pairs.forEach(([name, value]) => { if (value.length > 0) attributes += ` ${name}="${Utilities.escapeAttribute(value)}"` })
@@ -1203,6 +1238,7 @@ export class ButtonNode extends FormControlNode {
 export class DropdownNode extends FormControlNode {
   static identifier: string = "select"
   static caption: string = "Dropdown"
+  static captionString: string = "TextDropdownCaption"
   static icon: string = "bi bi-menu-button-wide"
   static keywords: string = "form select choice combobox list"
 
@@ -1379,6 +1415,7 @@ export class RadioGroupNode extends DropdownNode {
 
   static identifier: string = "radiogroup"
   static caption: string = "Radio Group"
+  static captionString: string = "TextRadioGroupCaption"
   static icon: string = "bi bi-ui-radios"
   static keywords: string = "form radio choice option fieldset"
 
@@ -1630,6 +1667,7 @@ export class RadioGroupNode extends DropdownNode {
 export class DatalistNode extends Node {
   static identifier: string = "datalist"
   static caption: string = "Datalist"
+  static captionString: string = "TextDatalistCaption"
   static icon: string = "bi bi-card-list"
   static keywords: string = "form suggestions autocomplete options"
 
@@ -1755,6 +1793,7 @@ export class FormNode extends TableNode {
 
   static identifier: string = "form"
   static caption: string = "Form"
+  static captionString: string = "TextFormCaption"
   static icon: string = "bi bi-ui-checks-grid"
   static keywords: string = "form fields controls submit"
 

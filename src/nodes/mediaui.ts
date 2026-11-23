@@ -33,6 +33,7 @@ export class MediaUI {
 
   /** Lets the user drag handle to resize frame. ratio is height / width, or 0 to keep the height. */
   static attachResize(node: Node, handle: HTMLElement, frame: HTMLElement, ratio: () => number, done: (width: number, height: number) => void) {
+    MediaUI.attachKeyboardResize(node, handle, frame, ratio, done, 48)
     handle.addEventListener("pointerdown", event => {
       if (!node.editor || node.editor.readOnly || node.locked) return
       event.preventDefault()
@@ -62,6 +63,58 @@ export class MediaUI {
       handle.addEventListener("pointermove", move)
       handle.addEventListener("pointerup", up)
       handle.addEventListener("pointercancel", up)
+    })
+  }
+
+  /**
+   * Makes a resize handle a slider the keyboard reaches with Tab, when the editor's keyboardControls
+   * is on: the arrow keys make the block
+   * 10 pixels narrower or wider (50 with Shift), Page Up and Page Down 100, Home and End the
+   * narrowest and widest. Left and right follow the text's direction. Each change is one undo step.
+   */
+  static attachKeyboardResize(node: Node, handle: HTMLElement, frame: HTMLElement, ratio: () => number, done: (width: number, height: number) => void, minimum: number = 32) {
+    let maximum = () => node.element && node.element.parentElement ? node.element.parentElement.clientWidth : 2000
+    // In the keyboard's way only when the editor's keyboardControls is on.
+    handle.tabIndex = node.editor && node.editor.keyboardControls ? 0 : -1
+    handle.dataset.scvKeyboard = ""
+    handle.setAttribute("role", "slider")
+    handle.setAttribute("aria-orientation", "horizontal")
+    handle.setAttribute("aria-label", node.strings.TextWidthInspectorCaption)
+    let describe = () => {
+      handle.setAttribute("aria-valuemin", String(minimum))
+      handle.setAttribute("aria-valuemax", String(Math.round(maximum())))
+      handle.setAttribute("aria-valuenow", String(Math.round(frame.getBoundingClientRect().width)))
+    }
+    handle.addEventListener("focus", describe)
+    handle.addEventListener("keydown", event => {
+      if (!node.editor || node.editor.readOnly || node.locked || event.metaKey || event.ctrlKey || event.altKey) return
+      let current = frame.getBoundingClientRect().width
+      let step = event.shiftKey ? 50 : 10
+      let forward = getComputedStyle(frame).direction == "rtl" ? -1 : 1
+      let target: number
+      switch (event.key) {
+        case "ArrowRight": target = current + step * forward; break
+        case "ArrowLeft": target = current - step * forward; break
+        case "ArrowUp": target = current + step; break
+        case "ArrowDown": target = current - step; break
+        case "PageUp": target = current + 100; break
+        case "PageDown": target = current - 100; break
+        case "Home": target = minimum; break
+        case "End": target = maximum(); break
+        default: return
+      }
+      event.preventDefault()
+      event.stopPropagation()
+      let width = Math.round(Utilities.clamp(target, minimum, maximum()))
+      if (width == Math.round(current)) return
+      let factor = ratio()
+      done(width, factor > 0 ? Math.round(width * factor) : Math.round(frame.getBoundingClientRect().height))
+      // The block draws itself again; keep the keyboard on its new handle.
+      let again = node.element ? node.element.querySelector(".scv-resize-handle") as HTMLElement | null : null
+      if (again) {
+        again.focus()
+        again.setAttribute("aria-valuenow", String(width))
+      }
     })
   }
 

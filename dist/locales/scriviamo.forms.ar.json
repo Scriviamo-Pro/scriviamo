@@ -75,7 +75,8 @@
       "TextOnCaption": "تشغيل",
       "TextOffCaption": "إيقاف",
       "TextSoftCaption": "مرن",
-      "TextHardCaption": "صارم"
+      "TextHardCaption": "صارم",
+      "TextTextFieldCaption": "حقل نص"
     }
   }
 }

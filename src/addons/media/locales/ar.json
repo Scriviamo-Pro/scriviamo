@@ -7,7 +7,9 @@
       "TextPreviewFromFrameCaption": "استخدام الإطار الحالي كمعاينة",
       "TextRemovePreviewCaption": "إزالة المعاينة",
       "TextMediaUnavailableCaption": "لا يمكن تشغيل هذه الوسائط هنا.",
-      "TextReplaceMediaCaption": "استبدال"
+      "TextReplaceMediaCaption": "استبدال",
+      "TextAudioCaption": "صوت",
+      "TextVideoCaption": "فيديو"
     }
   }
 }

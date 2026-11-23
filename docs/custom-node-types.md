@@ -96,7 +96,8 @@ To add a type to one editor only, use `editor.nodeTypes.add(ProgressNode)` inste
 | Member | Meaning |
 |---|---|
 | `identifier` | The JSON type name. Required. Keep it stable and language-neutral. |
-| `caption`, `icon`, `keywords` | How menus and command search show the type |
+| `caption`, `icon`, `keywords` | How menus and command search show the type. `caption` is its name in English. |
+| `captionString` | The name of the `Strings` text that translates `caption`, such as `"TextProgressCaption"`, registered with the type's other text so locale packs can translate it. Without one, the type shows `caption` in every language. Menus, the inspector and `typeName` use `localizedCaption(strings)`, which gives the translation or `caption`; search finds the type by either name. |
 | `insertable` | False keeps the type out of the Insert menu while still loading it from JSON |
 | `create(editor)` | Makes the node the Insert menu adds |
 | `importElement(element, importer)` | Reads an HTML element; see [Reading HTML](#reading-html) |
@@ -105,6 +106,7 @@ To add a type to one editor only, use `editor.nodeTypes.add(ProgressNode)` inste
 | `markdownShortcuts` | Markdown typed at the start of a paragraph that turns it into this type; see below |
 | `blockKinds(strings, compact)` | Entries this type adds to the block type menu, as `[identifier, caption, icon]` |
 | `droppedFileTypes`, `importDroppedFile(file, editor)` | Files dropped or pasted onto the editor that this type makes nodes from: MIME types such as `"image/*"`, extensions such as `".csv"`, or `"*"` for any file. `droppedFileImportPriority` decides between types that take the same file |
+| `importDroppedText(text, editor)` | Makes a node from an address pasted or dropped on its own, or returns null to leave it to other types, and in the end a link. `Node.droppedAddress(text)` gives the address, its file name's extension and a `data:` address's media type. `droppedTextImportPriority` decides between types that take the same address |
 
 ## Drawing
 

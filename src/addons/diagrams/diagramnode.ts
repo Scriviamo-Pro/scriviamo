@@ -131,6 +131,7 @@ export class DiagramNode extends CodeBlockNode {
 
   static identifier: string = "diagram"
   static caption: string = "Diagram"
+  static captionString: string = "TextDiagramCaption"
   static icon: string = "bi bi-diagram-3"
   static keywords: string = "mermaid flowchart chart graph sequence gantt"
   // Higher than code blocks, so <pre><code class="language-mermaid"> becomes a diagram.

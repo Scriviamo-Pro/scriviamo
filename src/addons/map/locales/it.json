@@ -14,7 +14,8 @@
       "TextZoomInCaption": "Ingrandisci",
       "TextZoomOutCaption": "Riduci",
       "TextOpenMapCaption": "Apri in OpenStreetMap",
-      "TextShowPinCaption": "Mostra segnaposto"
+      "TextShowPinCaption": "Mostra segnaposto",
+      "TextMapKeysHint": "Le frecce spostano la mappa, + e − ingrandiscono e riducono"
     }
   }
 }

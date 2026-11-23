@@ -31,6 +31,7 @@ var AttachmentNode = class _AttachmentNode extends Node {
   }
   static identifier = "attachment";
   static caption = "File";
+  static captionString = "TextAttachmentCaption";
   static icon = "bi bi-paperclip";
   static keywords = "attachment file download upload document pdf zip";
   /** Any file no other type takes. */

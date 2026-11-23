@@ -14,7 +14,8 @@
       "TextZoomInCaption": "확대",
       "TextZoomOutCaption": "축소",
       "TextOpenMapCaption": "OpenStreetMap에서 열기",
-      "TextShowPinCaption": "핀 표시"
+      "TextShowPinCaption": "핀 표시",
+      "TextMapKeysHint": "화살표 키로 지도를 이동하고 + 와 − 로 확대·축소합니다"
     }
   }
 }

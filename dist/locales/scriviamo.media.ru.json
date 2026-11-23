@@ -7,7 +7,9 @@
       "TextPreviewFromFrameCaption": "Сделать текущий кадр обложкой",
       "TextRemovePreviewCaption": "Убрать обложку",
       "TextMediaUnavailableCaption": "Этот медиафайл нельзя воспроизвести здесь.",
-      "TextReplaceMediaCaption": "Заменить"
+      "TextReplaceMediaCaption": "Заменить",
+      "TextAudioCaption": "Аудио",
+      "TextVideoCaption": "Видео"
     }
   }
 }

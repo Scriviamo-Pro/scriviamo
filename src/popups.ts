@@ -829,7 +829,11 @@ export class ChoicePopup extends Popup {
 export class InsertionChooser extends ChoicePopup {
   constructor(strings: Strings, types: Array<NodeClass>, onSelect: (type: NodeClass) => void, choices: Array<InsertionChoice> = [], onChoice: (choice: InsertionChoice) => void = choice => choice.choose(null)) {
     let entries: Array<{item: ChoiceItem, search: string}> = types.filter(type => type.insertable)
-      .map(type => ({item: {caption: type.caption, icon: type.icon, value: () => onSelect(type)}, search: `${type.caption} ${type.keywords} ${type.identifier}`.toLowerCase()}))
+      .map(type => {
+        // Searched by the name shown and the English one, so either finds it.
+        let caption = type.localizedCaption(strings)
+        return {item: {caption, icon: type.icon, value: () => onSelect(type)}, search: `${caption} ${type.caption} ${type.keywords} ${type.identifier}`.toLowerCase()}
+      })
       .concat(choices.map(choice => ({item: {caption: choice.caption, icon: choice.icon, value: () => onChoice(choice)}, search: `${choice.caption} ${choice.keywords || ""}`.toLowerCase()})))
     super("", item => item.value(), {
       placeholder: strings.TextInsertNodeSearchHint,

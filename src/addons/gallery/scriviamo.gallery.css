@@ -51,6 +51,21 @@
 .scv-gallery-carousel .scv-gallery-track {
   display: flex;
   transition: transform 0.3s ease;
+  transform: translateX(calc(-100% * var(--scv-slide, 0)));
+}
+
+/* Right to left, the slides run leftwards, and previous and next point the other way. */
+[dir="rtl"] .scv-gallery-carousel .scv-gallery-track,
+.scv-gallery-carousel:dir(rtl) .scv-gallery-track {
+  transform: translateX(calc(100% * var(--scv-slide, 0)));
+}
+
+[dir="rtl"] .scv-gallery-nav .bi-chevron-left,
+[dir="rtl"] .scv-gallery-nav .bi-chevron-right,
+.scv-gallery-nav:dir(rtl) .bi-chevron-left,
+.scv-gallery-nav:dir(rtl) .bi-chevron-right {
+  display: inline-block;
+  transform: scaleX(-1);
 }
 
 .scv-gallery-carousel .scv-gallery-item {

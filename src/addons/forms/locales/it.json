@@ -75,7 +75,8 @@
       "TextOnCaption": "Attivo",
       "TextOffCaption": "Disattivo",
       "TextSoftCaption": "Morbido",
-      "TextHardCaption": "Rigido"
+      "TextHardCaption": "Rigido",
+      "TextTextFieldCaption": "Campo di testo"
     }
   }
 }

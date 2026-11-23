@@ -51,6 +51,7 @@ export declare class GalleryNode extends Node {
     static exportStyles(sheet: Stylesheet, _editor: Editor | null): void;
     static identifier: string;
     static caption: string;
+    static captionString: string;
     static icon: string;
     static keywords: string;
     static create(editor: Editor): Node;

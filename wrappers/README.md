@@ -15,7 +15,9 @@ Every wrapper offers the same things:
   JSON, HTML or Markdown that updates as people edit;
 - access to the `Editor` itself, for everything the components don't cover.
 
-Each framework's README shows how to use its components. Like Scriviamo itself, the components need Bootstrap 5's CSS
+Each framework's README shows how to use its components, and each has a guide in the docs:
+[React and Next.js](../docs/react.md), [Vue and Nuxt](../docs/vue.md), [Angular](../docs/angular.md)
+and [the web component](../docs/web-component.md). Like Scriviamo itself, the components need Bootstrap 5's CSS
 and Bootstrap Icons on the page.
 
 ## Settings
@@ -40,17 +42,17 @@ A setting that isn't given keeps the editor's default.
 
 ## Starters
 
-[`starters/`](../starters/README.md) has a Next.js app and a Nuxt app that use these components:
-an editor with autosave, a save endpoint, and documents rendered on the server.
+[`starters/`](../starters/README.md) has a Next.js app, a Nuxt app and an Angular app that use
+these components: an editor with autosave, a save endpoint, and documents rendered on the server.
 
 ## Add-ons
 
-Add-ons register their node types when they are imported, so import the add-on modules you use,
-from Scriviamo's `dist/addons/`, before the first editor is created, such as at the top of your
+Add-ons register their node types when they are imported, so import the add-ons you use, such
+as `scriviamo/addons/callouts`, before the first editor is created, such as at the top of your
 app's entry module.
 
-Load Scriviamo's stylesheet, `dist/scriviamo.css`, and those of the add-ons you use, like any
-other CSS. See [Getting started](../docs/getting-started.md) for Bootstrap and the icons the editor
+Load Scriviamo's stylesheet, `scriviamo/dist/scriviamo.css`, and those of the add-ons you use, like
+any other CSS. See [Getting started](../docs/getting-started.md) for Bootstrap and the icons the editor
 uses.
 
 ## Layout
@@ -80,8 +82,8 @@ npm run build
 `npm run check` type-checks without building. The Angular package builds with `ng-packagr`,
 which needs Node.js 20.19 or later.
 
-Scriviamo isn't published to npm yet, so each package's `.npmrc` stops npm from trying to install
-it as a peer dependency.
+The packages build against this repository's `dist/`, so each package's `.npmrc` stops npm from
+installing `scriviamo` from npm as their peer dependency.
 
 ## Smoke tests
 

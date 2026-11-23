@@ -78,6 +78,17 @@ anywhere else is pasted as it is.
 import; `PasteCleanup.source(html)` says whether HTML came from Word (`"word"`), Google Docs
 (`"googledocs"`), or neither (null).
 
+## Pasting and dropping addresses
+
+An address pasted on its own into an empty paragraph, or with blocks selected, becomes the block
+it's for: a picture's address an image, a sound's an audio block, a video's a video block, judged
+by the file name's extension or a `data:` address's media type. A link or picture dragged from
+another page does the same. Pasted inside a sentence, an address stays a link.
+
+Node types claim addresses with `importDroppedText(text, editor)`; see
+[Writing node types](custom-node-types.md). `editor.nodeForDroppedText(text)` is the node an address
+makes, or null.
+
 ## Files and uploads
 
 Pictures, audio, video and background images that people choose, drop or paste are embedded in

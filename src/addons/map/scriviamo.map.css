@@ -98,3 +98,9 @@
 .scv-map-button:hover {
   background: #f1f1f1;
 }
+
+/* Reached with Tab, the map moves with the arrow keys. */
+.scv-map:focus-visible {
+  outline: 2px solid var(--scv-accent);
+  outline-offset: 2px;
+}

@@ -210,12 +210,27 @@ var MediaNode = class extends Node {
 var AudioNode = class _AudioNode extends MediaNode {
   static identifier = "audio";
   static caption = "Audio";
+  static captionString = "TextAudioCaption";
   static icon = "bi bi-music-note-beamed";
   static keywords = "sound music podcast recording mp3";
   static importElement(element, importer) {
     return element.tagName == "AUDIO" ? MediaNode.readElement(new _AudioNode(), element, importer) : void 0;
   }
   static droppedFileTypes = ["audio/*"];
+  /** File name extensions of audio, for addresses pasted or dropped on their own. */
+  static audioExtensions = ["mp3", "wav", "ogg", "oga", "m4a", "aac", "flac", "opus"];
+  /** A sound's address, pasted or dropped on its own, becomes an audio block. */
+  static importDroppedText(text, _editor) {
+    let address = Node.droppedAddress(text);
+    if (!address || !(address.mediaType.startsWith("audio/") || _AudioNode.audioExtensions.includes(address.extension)))
+      return null;
+    let node = new _AudioNode();
+    if (address.url.toLowerCase().startsWith("data:"))
+      node.resourceData = address.url;
+    else
+      node.resourceURL = address.url;
+    return node;
+  }
   static importDroppedFile(file, _editor) {
     let node = new _AudioNode();
     Promise.resolve().then(() => node.loadFile(file));
@@ -242,12 +257,27 @@ var AudioNode = class _AudioNode extends MediaNode {
 var VideoNode = class _VideoNode extends MediaNode {
   static identifier = "video";
   static caption = "Video";
+  static captionString = "TextVideoCaption";
   static icon = "bi bi-film";
   static keywords = "movie clip film mp4 player";
   static importElement(element, importer) {
     return element.tagName == "VIDEO" ? MediaNode.readElement(new _VideoNode(), element, importer) : void 0;
   }
   static droppedFileTypes = ["video/*"];
+  /** File name extensions of video, for addresses pasted or dropped on their own. */
+  static videoExtensions = ["mp4", "webm", "mov", "m4v", "ogv"];
+  /** A video's address, pasted or dropped on its own, becomes a video block. */
+  static importDroppedText(text, _editor) {
+    let address = Node.droppedAddress(text);
+    if (!address || !(address.mediaType.startsWith("video/") || _VideoNode.videoExtensions.includes(address.extension)))
+      return null;
+    let node = new _VideoNode();
+    if (address.url.toLowerCase().startsWith("data:"))
+      node.resourceData = address.url;
+    else
+      node.resourceURL = address.url;
+    return node;
+  }
   static importDroppedFile(file, _editor) {
     let node = new _VideoNode();
     Promise.resolve().then(() => node.loadFile(file));

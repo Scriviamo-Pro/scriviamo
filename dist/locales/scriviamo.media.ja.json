@@ -7,7 +7,9 @@
       "TextPreviewFromFrameCaption": "現在のフレームをプレビューにする",
       "TextRemovePreviewCaption": "プレビューを削除",
       "TextMediaUnavailableCaption": "このメディアはここでは再生できません。",
-      "TextReplaceMediaCaption": "置き換え"
+      "TextReplaceMediaCaption": "置き換え",
+      "TextAudioCaption": "音声",
+      "TextVideoCaption": "動画"
     }
   }
 }

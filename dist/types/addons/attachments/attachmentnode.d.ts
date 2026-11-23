@@ -24,6 +24,7 @@ export declare class AttachmentNode extends Node {
     static exportStyles(sheet: Stylesheet, editor: Editor | null): void;
     static identifier: string;
     static caption: string;
+    static captionString: string;
     static icon: string;
     static keywords: string;
     /** Any file no other type takes. */

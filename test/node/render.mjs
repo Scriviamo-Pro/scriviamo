@@ -75,6 +75,23 @@ check(page.startsWith("<!doctype html>") && page.includes("<style>") && page.inc
 check(Editor.renderMarkdown(json).startsWith("# Report\n\nBody text\n\n- One\n- Two"), `The Markdown was wrong:\n${Editor.renderMarkdown(json)}`)
 check(Editor.renderPlainText(json).startsWith("Report\nBody text\nOne\nTwo"), `The plain text was wrong:\n${Editor.renderPlainText(json)}`)
 
+// A schema checks and cleans saved documents on a server, with no editor.
+const {DocumentSchema, SchemaIssueCodes} = base
+const tampered = JSON.parse(json)
+tampered.nodes.push({type: "no-such-type", id: "x"})
+const unsafe = new Editor(null)
+const linked = new TextNode("Click")
+linked.content.applyStyle(0, 5, style => style.linkURL = "javascript:alert(1)")
+unsafe.addNode(linked)
+tampered.nodes.push(...unsafe.toJSONObject().nodes)
+const schema = new DocumentSchema({excludedNodeTypes: ["table"]})
+const checked = schema.validate(tampered)
+const codes = checked.issues.map(issue => issue.code)
+check(!checked.valid && codes.includes(SchemaIssueCodes.typeNotAllowed) && codes.includes(SchemaIssueCodes.unknownType) && codes.includes(SchemaIssueCodes.unsafeAddress), `The schema's issues in Node were wrong: ${codes}`)
+const cleaned = schema.clean(tampered)
+check(cleaned.valid && !JSON.stringify(cleaned.document).includes("javascript:") && !cleaned.document.nodes.some(node => node.type == "table" || node.type == "no-such-type"), "Cleaning in Node left what the schema doesn't allow")
+check(!Editor.renderHTML(unsafe.toJSONObject()).includes("javascript:"), "Server-rendered HTML kept a javascript: link")
+
 if (failures.length > 0) {
   console.log(`✗  Node rendering: ${failures.length} failed\n${failures.map(failure => `    ${failure}`).join("\n")}`)
   process.exit(1)

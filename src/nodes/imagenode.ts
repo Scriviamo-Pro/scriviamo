@@ -1,4 +1,4 @@
-import {CodePoints, Editor, InspectorDefaults, InspectorEditors, InspectorItem, InspectorSection, LineBreak, Node, RichText, Stylesheet, TextHost, TextHostModes, TextStyle, ThemeColors, ToolbarItem, ToolbarItemKinds, ToolbarMenuItem, Utilities} from "../internal"
+import {CodePoints, Editor, InspectorDefaults, InspectorEditors, InspectorItem, InspectorSection, LineBreak, MediaUI, Node, RichText, Stylesheet, TextHost, TextHostModes, TextStyle, ThemeColors, ToolbarItem, ToolbarItemKinds, ToolbarMenuItem, Utilities} from "../internal"
 
 export enum ImageFillModes {
   /** object-fit: contain */
@@ -19,9 +19,22 @@ export class ImageNode extends Node {
 
   static identifier: string = "image"
   static caption: string = "Image"
+  static captionString: string = "TextImageCaption"
   static icon: string = "bi bi-image"
   static keywords: string = "picture photo figure illustration graphic"
   static droppedFileTypes: Array<string> = ["image/*"]
+
+  /** File name extensions of pictures, for addresses pasted or dropped on their own. */
+  static imageExtensions: Array<string> = ["png", "jpg", "jpeg", "gif", "webp", "avif", "svg", "bmp", "ico"]
+
+  /** A picture's address, pasted or dropped on its own, becomes an image. */
+  static importDroppedText(text: string, _editor: Editor): Node | null {
+    let address = Node.droppedAddress(text)
+    if (!address || !(address.mediaType.startsWith("image/") || ImageNode.imageExtensions.includes(address.extension))) return null
+    let node = new ImageNode()
+    node.sourceURL = address.url
+    return node
+  }
 
   static importDroppedFile(file: File, _editor: Editor): Node | null {
     let node = new ImageNode()
@@ -161,6 +174,13 @@ export class ImageNode extends Node {
 
     let handle = Utilities.element("span", "scv-resize-handle", {title: ""})
     handle.addEventListener("pointerdown", event => this.#beginResize(event, frame, image))
+    MediaUI.attachKeyboardResize(this, handle, frame, () => this.displayWidth > 0 && this.displayHeight > 0 ? this.displayHeight / this.displayWidth : (image.naturalWidth > 0 ? image.naturalHeight / image.naturalWidth : 0.75), (width, height) => {
+      this.willChange()
+      this.displayWidth = width
+      this.displayHeight = height
+      this.refresh()
+      this.changed()
+    })
     frame.append(handle)
     figure.append(frame)
 

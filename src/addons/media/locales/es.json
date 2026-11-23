@@ -7,7 +7,9 @@
       "TextPreviewFromFrameCaption": "Usar el fotograma actual como vista previa",
       "TextRemovePreviewCaption": "Quitar vista previa",
       "TextMediaUnavailableCaption": "Este contenido no se puede reproducir aquí.",
-      "TextReplaceMediaCaption": "Reemplazar"
+      "TextReplaceMediaCaption": "Reemplazar",
+      "TextAudioCaption": "Audio",
+      "TextVideoCaption": "Vídeo"
     }
   }
 }

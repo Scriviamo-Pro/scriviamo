@@ -47,4 +47,26 @@
       PE.MapNode.geocoder = saved
     }
   })
+
+  test(section, "the map moves and zooms from the keyboard", t => {
+    let editor = t.editor({keyboardControls: true})
+    let map = new PE.MapNode()
+    editor.addNode(map)
+    let frame = () => map.element.querySelector(".scv-map")
+    t.assert(frame().tabIndex == 0 && frame().getAttribute("aria-label").includes(editor.strings.TextMapKeysHint), "The map can't be reached, or doesn't say how to move it.")
+    let key = (key, options = {}) => {
+      frame().focus()
+      frame().dispatchEvent(new KeyboardEvent("keydown", {key, bubbles: true, cancelable: true, ...options}))
+    }
+    let {latitude, longitude, zoom} = map
+    key("ArrowUp")
+    t.assert(map.latitude > latitude && Math.abs(map.longitude - longitude) < 0.000001, `Up didn't move the map north only (${map.latitude}, ${map.longitude}).`)
+    key("ArrowRight", {shiftKey: true})
+    t.assert(map.longitude > longitude, "Right didn't move the map east.")
+    key("+")
+    t.equal(map.zoom, zoom + 1, "+ zooms in")
+    key("-")
+    t.equal(map.zoom, zoom, "- zooms out")
+    t.assert(document.activeElement === frame(), "The map lost the keyboard.")
+  })
 }

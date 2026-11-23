@@ -7,7 +7,9 @@
       "TextPreviewFromFrameCaption": "Usar o quadro atual como prévia",
       "TextRemovePreviewCaption": "Remover prévia",
       "TextMediaUnavailableCaption": "Esta mídia não pode ser reproduzida aqui.",
-      "TextReplaceMediaCaption": "Substituir"
+      "TextReplaceMediaCaption": "Substituir",
+      "TextAudioCaption": "Áudio",
+      "TextVideoCaption": "Vídeo"
     }
   }
 }

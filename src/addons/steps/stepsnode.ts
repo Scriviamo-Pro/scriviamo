@@ -47,6 +47,7 @@ export class StepsNode extends TableNode {
 
   static identifier: string = "steps"
   static caption: string = "Steps"
+  static captionString: string = "TextStepsCaption"
   static icon: string = "bi bi-list-ol"
   static keywords: string = "steps procedure how-to instructions timeline history milestones roadmap"
   /** Ahead of the list node, which would otherwise read these lists as plain ones. */

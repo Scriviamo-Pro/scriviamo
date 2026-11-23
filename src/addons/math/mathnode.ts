@@ -99,6 +99,7 @@ export class MathNode extends CodeBlockNode {
 
   static identifier: string = "math"
   static caption: string = "Math"
+  static captionString: string = "TextMathCaption"
   static icon: string = "bi bi-plus-slash-minus"
   static keywords: string = "equation formula latex tex katex mathematics"
   // Higher than code blocks, so <pre><code class="language-math"> becomes a formula.

@@ -25,4 +25,5 @@ export * from "./search";
 export * from "./toolbarview";
 export * from "./exporters";
 export * from "./editor";
+export * from "./schema";
 export * from "./inspectorsections";

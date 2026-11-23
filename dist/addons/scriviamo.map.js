@@ -14,7 +14,8 @@ var MapStrings = {
   TextZoomInCaption: "Zoom In",
   TextZoomOutCaption: "Zoom Out",
   TextOpenMapCaption: "Open in OpenStreetMap",
-  TextShowPinCaption: "Show Pin"
+  TextShowPinCaption: "Show Pin",
+  TextMapKeysHint: "Arrow keys move the map, + and \u2212 zoom"
 };
 Strings.register(MapStrings);
 var TileSize = 256;
@@ -47,6 +48,7 @@ var MapNode = class _MapNode extends Node {
   }
   static identifier = "map";
   static caption = "Map";
+  static captionString = "TextMapCaption";
   static icon = "bi bi-geo-alt";
   static keywords = "map location address place pin directions openstreetmap";
   static importElement(element, importer) {
@@ -202,6 +204,35 @@ var MapNode = class _MapNode extends Node {
     let controls = Utilities.element("div", "scv-map-controls");
     controls.append(this.#button("bi-plus-lg", this.strings.TextZoomInCaption, () => this.setZoom(this.zoom + 1)), this.#button("bi-dash-lg", this.strings.TextZoomOutCaption, () => this.setZoom(this.zoom - 1)));
     frame.append(controls);
+    frame.tabIndex = this.editor && this.editor.keyboardControls ? 0 : -1;
+    frame.dataset.scvKeyboard = "";
+    frame.setAttribute("role", "group");
+    frame.setAttribute("aria-label", `${this.typeName}. ${this.strings.TextMapKeysHint}`);
+    frame.addEventListener("keydown", (event) => {
+      if (event.target !== frame || !this.editor || this.editor.readOnly || this.locked || event.metaKey || event.ctrlKey || event.altKey)
+        return;
+      let step = event.shiftKey ? 256 : 64;
+      let moves = { ArrowUp: [0, -step], ArrowDown: [0, step], ArrowLeft: [-step, 0], ArrowRight: [step, 0] };
+      if (event.key in moves) {
+        let [dx, dy] = moves[event.key];
+        let point = _MapNode.unproject(center.x + dx, center.y + dy, this.zoom);
+        this.willChange();
+        this.latitude = Number(_MapNode.#clampLatitude(point.latitude).toFixed(6));
+        this.longitude = Number(point.longitude.toFixed(6));
+        this.refresh();
+        this.changed();
+      } else if (event.key == "+" || event.key == "=" || event.code == "NumpadAdd") {
+        this.setZoom(this.zoom + 1);
+      } else if (event.key == "-" || event.key == "_" || event.key == "\u2212" || event.code == "NumpadSubtract") {
+        this.setZoom(this.zoom - 1);
+      } else {
+        return;
+      }
+      event.preventDefault();
+      event.stopPropagation();
+      let again = this.element ? this.element.querySelector(".scv-map") : null;
+      again?.focus();
+    });
     frame.addEventListener("pointerdown", (event) => {
       if (event.target.closest("button, a") || !this.editor || this.editor.readOnly || this.locked)
         return;
