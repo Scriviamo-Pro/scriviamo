@@ -40,8 +40,7 @@ import "scriviamo/dist/addons/scriviamo.callouts.css"
 ```
 
 Every file in `dist/` below is in the package under `scriviamo/dist/`, so the paths in these docs
-work with `scriviamo/` in front. A beta is published with the `beta` tag:
-`npm install scriviamo@beta`.
+work with `scriviamo/` in front. `npm install scriviamo` gets the newest version.
 
 ## Building
 

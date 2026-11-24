@@ -19,7 +19,7 @@ const base = await import(`${dist}scriviamo.js`)
 const {Editor, HeadingNode, TextNode, ListNode, ListTypes, TableNode} = base
 const {existsSync} = await import("node:fs")
 const addons = {}
-for (const name of ["callouts", "math", "diagrams", "footnotes", "columns", "blocks", "forms", "media", "linkcards", "datatable", "rawcontent", "templates", "pdf", "assistant", "inspector", "collaboration", "steps", "tabs", "attachments", "gallery", "map", "charts", "signature", "dates", "status", "outline", "readability", "focus", "dictation", "word", "epub", "odt", "wikiimport", "accessibility", "versions", "trackchanges", "locking", "variables", "tasks", "git"]) {
+for (const name of ["callouts", "math", "diagrams", "footnotes", "columns", "blocks", "forms", "media", "linkcards", "datatable", "rawcontent", "templates", "pdf", "assistant", "inspector", "collaboration", "steps", "tabs", "attachments", "gallery", "map", "charts", "signature", "dates", "status", "outline", "readability", "focus", "dictation", "word", "epub", "odt", "wikiimport", "accessibility", "versions", "trackchanges", "locking", "variables", "tasks", "git", "editorjs", "tiptap", "quill", "lexical", "suneditor", "ckeditor"]) {
   if (!existsSync(`${root}/dist/addons/scriviamo.${name}.js`)) continue
   try {
     addons[name] = await import(`${dist}addons/scriviamo.${name}.js`)
@@ -91,6 +91,12 @@ check(!checked.valid && codes.includes(SchemaIssueCodes.typeNotAllowed) && codes
 const cleaned = schema.clean(tampered)
 check(cleaned.valid && !JSON.stringify(cleaned.document).includes("javascript:") && !cleaned.document.nodes.some(node => node.type == "table" || node.type == "no-such-type"), "Cleaning in Node left what the schema doesn't allow")
 check(!Editor.renderHTML(unsafe.toJSONObject()).includes("javascript:"), "Server-rendered HTML kept a javascript: link")
+
+// Documents from other editors, saved as JSON, convert on a server with no DOM.
+if (addons.editorjs) check(addons.editorjs.EditorJSImport.toHTML({blocks: [{type: "header", data: {text: "Moved", level: 2}}]}) == "<h2>Moved</h2>", "Editor.js didn't convert in Node")
+if (addons.tiptap) check(addons.tiptap.TipTapImport.toHTML({type: "doc", content: [{type: "paragraph", content: [{type: "text", text: "Moved", marks: [{type: "bold"}]}]}]}) == "<p><strong>Moved</strong></p>", "TipTap didn't convert in Node")
+if (addons.quill) check(addons.quill.QuillImport.toHTML({ops: [{insert: "Moved\n"}]}) == "<p>Moved</p>", "Quill didn't convert in Node")
+if (addons.lexical) check(addons.lexical.LexicalImport.toHTML({root: {type: "root", children: [{type: "paragraph", children: [{type: "text", text: "Moved", format: 2}]}]}}) == "<p><em>Moved</em></p>", "Lexical didn't convert in Node")
 
 if (failures.length > 0) {
   console.log(`✗  Node rendering: ${failures.length} failed\n${failures.map(failure => `    ${failure}`).join("\n")}`)

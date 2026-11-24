@@ -48,7 +48,7 @@ const ParityStylesheets = [
 ]
 
 /** Data the suites share. */
-const ParityFixtures = ["fixtures/desktop-strings.js", "fixtures/invoice.js"]
+const ParityFixtures = ["fixtures/desktop-strings.js", "fixtures/invoice.js", "fixtures/foreign-documents.js"]
 
 /** The packages a page tests: ?packages=base,forms, or every package. The base package is always included. */
 function ParityPackageList(parameters) {

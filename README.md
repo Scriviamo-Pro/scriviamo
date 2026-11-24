@@ -49,6 +49,7 @@ Scriviamo is a base package plus add-ons, all ES modules.
 | `focus` | Focus mode and typewriter scrolling |
 | `readability` | Grade level and long sentences in the status bar |
 | `dictation` | Voice typing |
+| `editorjs`, `tiptap`, `quill`, `lexical`, `suneditor`, `ckeditor` | Loading documents saved by Editor.js, TipTap and ProseMirror, Quill, Lexical, SunEditor and CKEditor |
 
 `src/examples/` has two example node types an application might add: a text block with its own
 commands, and an embedded YouTube video.
